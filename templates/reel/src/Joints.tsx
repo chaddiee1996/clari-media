@@ -2,7 +2,8 @@ import React from 'react';
 import { AbsoluteFill, Img, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from 'remotion';
 import { BODY, C, DISPLAY, Fonts, Grain, Moon, Out, Show, Stars, Words, ramp, easeIn, s } from './kit';
 
-export const JOINTS_FRAMES = s(22);
+export const JOINTS_FRAMES = s(24.4);
+const D = 2.4; // extra time for the real Joint Pain recording
 
 const centre: React.CSSProperties = { position: 'absolute', left: 100, right: 100, textAlign: 'center' };
 const big: React.CSSProperties = {
@@ -122,7 +123,7 @@ const Phone: React.FC<{ src: string; trim: number }> = ({ src, trim }) => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
   const inAt = s(12.8);
-  const outAt = s(17.0);
+  const outAt = s(17.0 + D);
   const rise = spring({ frame: f - inAt, fps, config: { damping: 18, stiffness: 80 } });
   const out = ramp(f, outAt - 14, outAt, easeIn);
   if (f < inAt || f > outAt) return null;
@@ -144,14 +145,23 @@ const Phone: React.FC<{ src: string; trim: number }> = ({ src, trim }) => {
 };
 
 const PhoneCaption: React.FC = () => (
-  <Show from={s(12.9)} to={s(17.0)}>
-    <Out at={s(16.6)}>
-      <div style={{ ...centre, top: 250 }}>
-        <Words text="Log it|when it flares." at={s(13.0)} stagger={2.4} style={{ ...big, fontSize: 84 }}
-          wordStyle={(w) => (w.startsWith('flares') || w === 'when' || w === 'it' ? undefined : undefined)} />
-      </div>
-    </Out>
-  </Show>
+  <>
+    <Show from={s(12.9)} to={s(15.5)}>
+      <Out at={s(15.1)}>
+        <div style={{ ...centre, top: 250 }}>
+          <Words text="Log it|when it flares." at={s(13.0)} stagger={2.4} style={{ ...big, fontSize: 84 }} />
+        </div>
+      </Out>
+    </Show>
+    <Show from={s(15.4)} to={s(17.0 + D)}>
+      <Out at={s(16.6 + D)}>
+        <div style={{ ...centre, top: 250 }}>
+          <Words text="The moon fills|as it gets stronger." at={s(15.5)} stagger={2.4} style={{ ...big, fontSize: 80 }}
+            wordStyle={(w) => (w === 'moon' || w === 'fills' ? pinkItalic : undefined)} />
+        </div>
+      </Out>
+    </Show>
+  </>
 );
 
 /* Scene 6: pattern, a week of moons filling */
@@ -159,10 +169,10 @@ const Pattern: React.FC = () => {
   const f = useCurrentFrame();
   const levels = [0.25, 0.5, 0.35, 0.8, 0.6, 0.9, 0.45];
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const from = s(17.0);
+  const from = s(17.0 + D);
   return (
-    <Show from={from} to={s(19.4)}>
-      <Out at={s(19.0)}>
+    <Show from={from} to={s(19.4 + D)}>
+      <Out at={s(19.0 + D)}>
         <div style={{ ...centre, top: 600 }}>
           <Words text="See the pattern." at={from + 2} stagger={2.4} style={{ ...big, fontSize: 96 }} />
           <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginTop: 60 }}>
@@ -191,7 +201,7 @@ const Pattern: React.FC = () => {
 const End: React.FC = () => {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const t0 = s(19.3);
+  const t0 = s(19.3 + D);
   const pop = spring({ frame: f - t0, fps, config: { damping: 14, stiffness: 60 } });
   const lift = (p: number): React.CSSProperties => ({ opacity: p, transform: `translateY(${(1 - p) * 26}px)`, filter: `blur(${(1 - p) * 8}px)` });
   const name = ramp(f, t0 + 4, t0 + 22);
