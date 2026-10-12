@@ -1,0 +1,128 @@
+{
+ "slug": "2026-10-15-nine-symptoms",
+ "slides": [
+  {
+   "kind": "cover",
+   "kicker": "Perimenopause",
+   "title": "9 symptoms <em>nobody</em> warns you about",
+   "body": "Every one of them is on the NHS list.",
+   "source": ""
+  },
+  {
+   "kind": "item",
+   "num": "01",
+   "title": "Your heart racing",
+   "body": "A faster, slower or more noticeable heartbeat. The NHS says to mention palpitations to your GP.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Heart Palpitations",
+    "icon": "heartbeat",
+    "level": 0.55
+   }
+  },
+  {
+   "kind": "item",
+   "num": "02",
+   "title": "Aching joints",
+   "body": "Muscle aches and joint pains. For some women they carry on after menopause.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Joint Pain",
+    "icon": "person-simple",
+    "level": 0.75
+   }
+  },
+  {
+   "kind": "item",
+   "num": "03",
+   "title": "Itchy skin",
+   "body": "Skin changes, including skin that feels dry and itchy.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Skin Changes",
+    "icon": "palette",
+    "level": 0.4
+   }
+  },
+  {
+   "kind": "item",
+   "num": "04",
+   "title": "Weight around the middle",
+   "body": "Weight gain is common, and it often settles around the stomach and upper body.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Weight Changes",
+    "icon": "arrows-out-simple",
+    "level": 0.5
+   }
+  },
+  {
+   "kind": "item",
+   "num": "05",
+   "title": "Worse headaches",
+   "body": "Headaches and migraines that are worse than they used to be.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Headache",
+    "icon": "first-aid",
+    "level": 0.6
+   }
+  },
+  {
+   "kind": "item",
+   "num": "06",
+   "title": "Thinning hair",
+   "body": "Hair thinning or hair loss.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Hair Thinning",
+    "icon": "scissors",
+    "level": 0.35
+   }
+  },
+  {
+   "kind": "item",
+   "num": "07",
+   "title": "Brain fog",
+   "body": "Problems with memory and concentration. Words, names, why you walked into the room.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Brain Fog",
+    "icon": "brain",
+    "level": 0.8
+   }
+  },
+  {
+   "kind": "item",
+   "num": "08",
+   "title": "Needing the loo more",
+   "body": "Needing to wee more often, or symptoms that feel like a UTI.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Bladder Urgency",
+    "icon": "drop",
+    "level": 0.45
+   }
+  },
+  {
+   "kind": "item",
+   "num": "09",
+   "title": "Feeling anxious",
+   "body": "Low mood, mood swings, or feeling irritable and anxious. Poor sleep can make it worse.",
+   "source": "Source: nhs.uk",
+   "app": {
+    "name": "Anxiety",
+    "icon": "warning-circle",
+    "level": 0.65
+   }
+  },
+  {
+   "kind": "end",
+   "title": "Sound <em>familiar?</em>",
+   "titleSize": 128,
+   "body": "These can have other causes too, so talk to your GP about anything new. Writing down when they happen makes that conversation easier.",
+   "cta": "Save this for your next appointment",
+   "source": "Free on the App Store and Google Play"
+  }
+ ]
+}
