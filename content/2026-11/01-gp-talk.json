@@ -1,0 +1,8 @@
+{"slug":"2026-11-02-gp-talk","slides":[
+ {"theme":"photo","img":"calendar.jpg","pos":"62% center","title":"How to talk to your GP about perimenopause","body":"Four things that make a short appointment count.","size":104},
+ {"theme":"dawn","title":"Book the right appointment","body":"Ask reception which GP is best to see about menopause. If you can, ask for a longer appointment.","source":"Source: Nuffield Health"},
+ {"theme":"night","title":"Bring a record","body":"Each symptom, how often it happens and how strong it feels. Weeks of notes say more than memory on the day.","source":"Source: Nuffield Health","phone":"app-log.png","phoneW":400,"phoneY":690,"tt":{"phoneW":480,"phoneY":1000}},
+ {"theme":"dawn","title":"Say it plainly","quotes":["I think this could be perimenopause.","Here's what I've noticed over the last three months.","What are my options?"]},
+ {"theme":"night","title":"Know the guidance","body":"For women over 45 with symptoms, NICE says perimenopause can be diagnosed without blood tests. Between 40 and 45, an FSH blood test may be considered.","source":"Source: NICE guideline NG23"},
+ {"theme":"photo","img":"dawn.jpg","pos":"center 40%","title":"Walk in with the whole picture","body":"Clari turns your daily notes into a GP summary you can share.","cta":"Save this for your appointment","source":"Free on the App Store and Google Play"}
+]}

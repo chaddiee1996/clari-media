@@ -1,0 +1,7 @@
+{"slug":"2026-11-23-four-screens","slides":[
+ {"theme":"night","title":"Clari, in four screens","body":"A private symptom diary for perimenopause. Your data stays on your phone.","phone":"app-home.png","phoneW":420,"phoneY":640,"tt":{"phoneW":520,"phoneY":860}},
+ {"theme":"dawn","title":"Tap how you feel","body":"Tap a symptom, then tap again as it gets stronger. Under a minute a day.","phone":"app-log.png","phoneW":420,"phoneY":640,"tt":{"phoneW":520,"phoneY":860}},
+ {"theme":"night","title":"See your month","body":"Each day's moon shows how strong your symptoms were, so patterns start to show.","phone":"app-calendar.png","phoneW":420,"phoneY":640,"tt":{"phoneW":520,"phoneY":860}},
+ {"theme":"dawn","title":"Share a summary with your GP","body":"30, 60 or 90 days of notes, turned into one clear summary you can share.","phone":"app-summary.png","phoneW":420,"phoneY":640,"tt":{"phoneW":520,"phoneY":860}},
+ {"theme":"photo","img":"dawn.jpg","pos":"center 40%","title":"Free to download","body":"Clari Pro adds unlimited history, deeper insights and GP summary reports.","badges":true,"source":"App Store and Google Play"}
+]}

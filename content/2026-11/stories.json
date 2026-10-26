@@ -1,0 +1,110 @@
+{
+ "slug": "2026-11-story",
+ "sizes": [
+  "story"
+ ],
+ "slides": [
+  {
+   "theme": "night",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Have you talked to a GP about perimenopause yet?",
+   "size": 100
+  },
+  {
+   "theme": "dawn",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "How long do perimenopause symptoms usually last?",
+   "size": 100
+  },
+  {
+   "theme": "night",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "How did you sleep last night?",
+   "size": 110
+  },
+  {
+   "theme": "dawn",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "What's one symptom nobody warned you about?",
+   "size": 100
+  },
+  {
+   "theme": "night",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Right now: too hot or too cold?",
+   "size": 110
+  },
+  {
+   "theme": "photo",
+   "img": "calendar.jpg",
+   "pos": "62% center",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Booking a GP appointment?",
+   "size": 100,
+   "body": "Ask reception which GP is best to see about menopause, and ask for a longer appointment if you can.",
+   "source": "Source: Nuffield Health"
+  },
+  {
+   "theme": "night",
+   "noMoon": true,
+   "title": "There's no routine test for perimenopause.",
+   "size": 104,
+   "body": "A doctor may diagnose it from your age and symptoms. Your notes help.",
+   "source": "Source: nhs.uk"
+  },
+  {
+   "theme": "dawn",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Tap once for mild. Tap again as it gets stronger.",
+   "size": 96,
+   "body": "That's how logging works in Clari.",
+   "phone": "app-log.png",
+   "phoneW": 560,
+   "phoneY": 980
+  },
+  {
+   "theme": "night",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Your GP summary, ready to share.",
+   "size": 100,
+   "body": "30, 60 or 90 days of notes in one place.",
+   "phone": "app-summary.png",
+   "phoneW": 560,
+   "phoneY": 900
+  },
+  {
+   "theme": "dawn",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Would a printable symptom checklist help?",
+   "size": 100
+  },
+  {
+   "theme": "photo",
+   "img": "tea.jpg",
+   "pos": "center 40%",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Under a minute a day.",
+   "size": 110,
+   "body": "Log today, see the pattern in a few weeks."
+  },
+  {
+   "theme": "night",
+   "noMoon": true,
+   "anchor": "top",
+   "title": "Clari is free to download.",
+   "size": 110,
+   "body": "Tap the link in our bio, or search Clari on the App Store or Google Play.",
+   "badges": true
+  }
+ ]
+}
