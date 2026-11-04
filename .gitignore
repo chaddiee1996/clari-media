@@ -3,3 +3,4 @@ templates/reel/out/
 templates/carousel/out/
 work/**/out/
 work/**/stills/
+work/**/.hyperframes/
