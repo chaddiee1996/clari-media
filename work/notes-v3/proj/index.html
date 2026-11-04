@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,28,400;1,28,400&family=Inter:wght@400;500;700&display=swap" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #FFF1E5; }
+      #root { position: relative; width: 1080px; height: 1920px; }
+      #stage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="35.1" data-width="1080" data-height="1920">
+      <canvas id="stage" class="clip" width="1080" height="1920" data-start="0" data-duration="35.1" data-track-index="0"></canvas>
+    </div>
+    <script>
+      // ============================================================
+      // Clari, "What never makes the notes". Data-story style, 9:16, 35.1 s, voice-led.
+      // One canvas drawn as a pure function of time. Beats follow the voice take (see BRIEF.md).
+      // Data: Hswen et al., JAMA Network Open (reported by STAT, 27 Aug 2026):
+      //   cognitive symptoms ~4x as often online as in clinical notes; emotional wellbeing ~3x.
+      // ============================================================
+      window.__timelines = window.__timelines || {};
+      const DUR = 35.1;
+      const W = 1080, H = 1920;
+      const ML = 96, MR = 984;
+      const PAPER = '#FFF1E5', INK = '#1A1A1A', GRID = '#E6D9CE', ACC = '#5B2A86';
+      const SANS = '"Inter", Arial, sans-serif';
+      const SERIF = '"Bodoni Moda", Georgia, serif';
+
+      // cue times from the voice take
+      const C = { notes: 3.6, brain: 7.44, memory: 8.6, words: 9.96, four: 12.29, mood: 16.94, three: 18.13,
+        real: 20.23, written: 21.99, so: 24.22, when: 25.73, often: 26.6, much: 27.65, take: 28.82, clari: 30.29 };
+
+      const ROWS = [
+        { label: 'Brain fog', at: C.brain, ratio: 3.9 },
+        { label: 'Memory slips', at: C.memory, ratio: 3.7 },
+        { label: 'Losing words', at: C.words, ratio: 4.0 },
+      ];
+      const MOOD = { label: 'Mood changes', at: C.mood, ratio: 2.9 };
+      const UNIT = 172;          // one "medical notes" bar length in px
+      const ROW_Y0 = 790, ROW_GAP = 166;
+
+      const cv = document.getElementById('stage');
+      const ctx = cv.getContext('2d');
+
+      const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+      const lerp = (a, b, k) => a + (b - a) * k;
+      const seg = (t, a, b) => clamp((t - a) / (b - a));
+      const E = {};
+      ['power2.out', 'power2.in', 'power2.inOut', 'power3.out', 'power3.inOut', 'expo.out', 'expo.inOut', 'sine.inOut', 'back.out(2.2)', 'back.out(1.2)']
+        .forEach(n => { E[n] = gsap.parseEase(n); });
+      const ez = (n, t, a, b) => E[n](seg(t, a, b));
+      function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+      // ---------- paper (static, seeded) ----------
+      const paper = document.createElement('canvas');
+      paper.width = W + 160; paper.height = H + 160;
+      (function () {
+        const p = paper.getContext('2d'), pw = paper.width, ph = paper.height, r = rng(4242);
+        p.fillStyle = PAPER; p.fillRect(0, 0, pw, ph);
+        for (let i = 0; i < 160; i++) {
+          const x = r() * pw, y = r() * ph, rad = 120 + r() * 320, dark = r() < 0.5, a = 0.008 + r() * 0.012;
+          const g = p.createRadialGradient(x, y, 0, x, y, rad);
+          g.addColorStop(0, dark ? `rgba(150,96,50,${a})` : `rgba(255,252,246,${a * 1.6})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+          p.fillStyle = g; p.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+        }
+        p.lineCap = 'round';
+        for (let i = 0; i < 3200; i++) {
+          const x = r() * pw, y = r() * ph, len = 6 + r() * 26, ang = r() * Math.PI, bend = (r() - 0.5) * 8, dark = r() < 0.55;
+          p.strokeStyle = dark ? `rgba(120,80,45,${0.035 + r() * 0.05})` : `rgba(255,255,250,${0.12 + r() * 0.18})`;
+          p.lineWidth = 0.6 + r() * 0.9;
+          const dx = Math.cos(ang) * len, dy = Math.sin(ang) * len;
+          p.beginPath(); p.moveTo(x, y); p.quadraticCurveTo(x + dx / 2 - dy / len * bend, y + dy / 2 + dx / len * bend, x + dx, y + dy); p.stroke();
+        }
+        const img = p.getImageData(0, 0, pw, ph), d = img.data;
+        for (let i = 0; i < d.length; i += 4) { const n = (r() - 0.5) * 9; d[i] += n; d[i + 1] += n * 0.92; d[i + 2] += n * 0.8; }
+        p.putImageData(img, 0, 0);
+      })();
+      // print hatch for the accent bars
+      const hatch = document.createElement('canvas'); hatch.width = 14; hatch.height = 14;
+      (function () { const h = hatch.getContext('2d'); h.strokeStyle = 'rgba(255,241,229,0.35)'; h.lineWidth = 1.4;
+        for (const o of [-14, 0, 14]) { h.beginPath(); h.moveTo(o, 14); h.lineTo(o + 14, 0); h.stroke(); } })();
+      const hatchPat = ctx.createPattern(hatch, 'repeat');
+
+      // Clari moon mark, drawn (no image files)
+      function moonMark(x, y, r, a) {
+        ctx.save(); ctx.globalAlpha = a;
+        ctx.fillStyle = ACC; ctx.beginPath(); ctx.roundRect(x - r, y - r, r * 2, r * 2, r * 0.42); ctx.fill();
+        // crescent: a disc with an offset disc cut away
+        const cc = document.createElement('canvas'); cc.width = cc.height = Math.ceil(r * 2);
+        const c2 = cc.getContext('2d');
+        c2.fillStyle = '#FFE9C9'; c2.beginPath(); c2.arc(r * 0.94, r * 1.04, r * 0.56, 0, Math.PI * 2); c2.fill();
+        c2.globalCompositeOperation = 'destination-out';
+        c2.beginPath(); c2.arc(r * 1.22, r * 0.80, r * 0.48, 0, Math.PI * 2); c2.fill();
+        ctx.drawImage(cc, x - r, y - r);
+        ctx.restore();
+      }
+
+      function haloText(str, x, y, fill, halo = 10) {
+        ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(255,241,229,0.92)'; ctx.lineWidth = halo; ctx.strokeText(str, x, y);
+        ctx.fillStyle = fill; ctx.fillText(str, x, y);
+      }
+      function ring(x, y, col, t, at) {
+        const k = seg(t, at, at + 0.7); if (k <= 0 || k >= 1) return;
+        const e = E['power2.out'](k);
+        ctx.save(); ctx.strokeStyle = col; ctx.globalAlpha = 0.55 * (1 - e); ctx.lineWidth = 2.5 * (1 - e) + 0.8;
+        ctx.beginPath(); ctx.arc(x, y, 14 + 62 * e, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
+      // words that rise through a mask line, staggered
+      function maskWords(words, x, y, font, col, t, at, out, stagger = 0.09, italicFrom = 99) {
+        let wx = x;
+        words.forEach((w, i) => {
+          const k = ez('power3.out', t, at + i * stagger, at + 0.55 + i * stagger);
+          const o = out == null ? 0 : ez('power2.in', t, out + i * 0.04, out + 0.35 + i * 0.04);
+          ctx.font = i >= italicFrom ? font.replace('400', 'italic 400') : font;
+          const m = ctx.measureText(w + ' ');
+          if (k > 0 && o < 1) {
+            ctx.save();
+            ctx.beginPath(); ctx.rect(wx - 6, y - 140, m.width + 12, 168); ctx.clip();
+            ctx.fillStyle = col; ctx.globalAlpha = 1;
+            ctx.fillText(w, wx, y + 110 * (1 - k) - 110 * o);
+            ctx.restore();
+          }
+          wx += m.width;
+        });
+      }
+
+      // ---------- the frame ----------
+      var draw = function (t) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const push = 1 + 0.02 * (t / DUR);
+        const ox = 540, oy = 900;
+        ctx.setTransform(push, 0, 0, push, ox - ox * push, oy - oy * push);
+        ctx.drawImage(paper, -80, -80);
+        const lx = lerp(220, 760, t / DUR), ly = lerp(260, 420, t / DUR);
+        let g = ctx.createRadialGradient(lx, ly, 0, lx, ly, 1500);
+        g.addColorStop(0, 'rgba(255,250,242,0.55)'); g.addColorStop(0.5, 'rgba(255,246,236,0.12)'); g.addColorStop(1, 'rgba(255,240,225,0)');
+        ctx.fillStyle = g; ctx.fillRect(-100, -100, W + 200, H + 200);
+        g = ctx.createRadialGradient(W * 0.5, H * 0.45, 600, W * 0.5, H * 0.5, 1500);
+        g.addColorStop(0, 'rgba(150,80,40,0)'); g.addColorStop(1, 'rgba(150,80,40,0.10)');
+        ctx.fillStyle = g; ctx.fillRect(-100, -100, W + 200, H + 200);
+        ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+
+        // ----- title block (0 to 20.2) -----
+        const barIn = ez('expo.out', t, 0.0, 0.5), barOut = ez('power2.in', t, C.take - 0.1, C.take + 0.25);
+        const barGap = ez('power2.in', t, C.brain - 0.1, C.brain + 0.2) * (1 - ez('expo.out', t, C.real, C.real + 0.5));
+        ctx.fillStyle = INK; ctx.fillRect(ML, 320, 84 * barIn * (1 - barOut) * (1 - barGap), 10);
+        const TF = `400 104px ${SERIF}`;
+        maskWords(['What', 'never', 'makes'], ML, 462, TF, INK, t, 0.1, C.brain + 0.05);
+        maskWords(['the', 'notes.'], ML, 574, TF, INK, t, 0.37, C.brain + 0.1, 0.09, 1);
+
+        // ----- shot 2: the comparison counter -----
+        {
+          const k = ez('power3.out', t, 0.9, 1.4), o = ez('power2.in', t, C.brain - 0.45, C.brain - 0.1);
+          if (k > 0 && o < 1) {
+            ctx.save(); ctx.globalAlpha = k * (1 - o);
+            ctx.font = `italic 400 76px ${SERIF}`; ctx.fillStyle = ACC;
+            ctx.fillText('One online community', ML, 860 + 20 * (1 - k));
+            ctx.font = `500 36px ${SANS}`; ctx.fillStyle = 'rgba(26,26,26,0.7)';
+            ctx.fillText('compared with', ML, 930 + 20 * (1 - k));
+            ctx.restore();
+          }
+          const nk = ez('power3.out', t, C.notes - 0.1, C.notes + 0.35);
+          if (nk > 0 && o < 1) {
+            const n = Math.round(2000000 * ez('expo.out', t, C.notes, C.notes + 2.2));
+            ctx.save(); ctx.globalAlpha = nk * (1 - o);
+            ctx.shadowColor = 'rgba(60,35,15,0.20)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 14;
+            ctx.font = `400 176px ${SERIF}`; ctx.fillStyle = INK;
+            const s = n.toLocaleString('en-GB');
+            ctx.fillText(s, ML, 1150 + 30 * (1 - nk) - 30 * o);
+            const sw = ctx.measureText(s).width;
+            ctx.font = `400 96px ${SERIF}`; ctx.fillText('+', ML + sw + 8, 1080 + 30 * (1 - nk) - 30 * o);
+            ctx.shadowColor = 'transparent';
+            ctx.font = `500 44px ${SANS}`; ctx.fillStyle = 'rgba(26,26,26,0.78)';
+            ctx.fillText('medical notes', ML, 1226 + 14 * (1 - ez('power3.out', t, C.notes + 0.3, C.notes + 0.8)));
+            ctx.restore();
+            // baseline rule draws under the counter
+            ctx.fillStyle = INK; ctx.globalAlpha = 1 - o;
+            ctx.fillRect(ML, 1270, (MR - ML) * ez('expo.out', t, C.notes + 0.2, C.notes + 1.0), 2.5);
+            ctx.globalAlpha = 1;
+          }
+        }
+
+        // community: a field of posts filling in, read left to right (1.0 to 3.5)
+        {
+          const o = ez('power2.in', t, 3.35, 3.75);
+          if (t > 1.0 && o < 1) {
+            ctx.save(); ctx.globalAlpha = 1 - o;
+            const cols = 16, rowsN = 5, gx = (MR - ML) / cols;
+            for (let rI = 0; rI < rowsN; rI++) for (let cI = 0; cI < cols; cI++) {
+              const i = rI * cols + cI, at = 1.05 + i * 0.03;
+              const k = E['back.out(2.2)'](seg(t, at, at + 0.25));
+              if (k <= 0) continue;
+              const x = ML + cI * gx + gx * 0.2, y = 1010 + rI * 46;
+              const wv = gx * (0.35 + 0.45 * ((i * 37) % 11) / 10);
+              ctx.fillStyle = (i % 7 === 3) ? ACC : 'rgba(26,26,26,0.55)';
+              ctx.beginPath(); ctx.roundRect(x, y, wv * k, 14, 7); ctx.fill();
+            }
+            ctx.restore();
+          }
+        }
+        // notes: thin record edges stacking under the counter (5.6 to 7.2)
+        {
+          const o = ez('power2.in', t, C.brain - 0.45, C.brain - 0.1);
+          if (t > 5.6 && o < 1) {
+            ctx.save(); ctx.globalAlpha = 1 - o;
+            for (let i = 0; i < 14; i++) {
+              const at = 5.6 + i * 0.11, k = ez('power3.out', t, at, at + 0.3);
+              if (k <= 0) continue;
+              ctx.fillStyle = i % 2 ? 'rgba(26,26,26,0.16)' : 'rgba(26,26,26,0.28)';
+              ctx.fillRect(ML + 6 * (i % 3), 1300 + i * 13 + 20 * (1 - k), (MR - ML - 40) * k, 6);
+            }
+            ctx.restore();
+          }
+        }
+
+        // ----- shots 3 to 6: the chart -----
+        const chartOut = ez('power2.in', t, C.so - 0.5, C.so - 0.1);
+        const focus = ez('power2.inOut', t, C.real, C.real + 1.8);   // bars fade to the rule colour
+        const rows = [...ROWS, MOOD];
+        // axis: a ruled baseline at the left edge of the bars, and light gridlines at each notes unit
+        const axisIn = ez('expo.out', t, C.brain - 0.2, C.brain + 0.5);
+        if (axisIn > 0 && chartOut < 1) {
+          ctx.save(); ctx.globalAlpha = 1 - chartOut;
+          const yTop = ROW_Y0 - 80, yBot = ROW_Y0 + ROW_GAP * 3 + 120;
+          for (let u = 1; u <= 4; u++) {
+            const x = ML + u * UNIT;
+            const k = ez('expo.out', t, 10.0 + u * 0.5, 10.7 + u * 0.5);
+            if (k <= 0) continue;
+            ctx.strokeStyle = GRID; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x, yTop); ctx.lineTo(x, lerp(yTop, yBot, k)); ctx.stroke();
+            ctx.font = `400 28px ${SANS}`; ctx.fillStyle = 'rgba(26,26,26,0.6)'; ctx.textAlign = 'center';
+            ctx.globalAlpha = (1 - chartOut) * k; ctx.fillText(u + '×', x, yTop - 18);
+            ctx.globalAlpha = 1 - chartOut; ctx.textAlign = 'left';
+          }
+          ctx.strokeStyle = INK; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(ML, yTop); ctx.lineTo(ML, lerp(yTop, yBot, axisIn)); ctx.stroke();
+          ctx.restore();
+        }
+        rows.forEach((row, i) => {
+          const y = ROW_Y0 + i * ROW_GAP;
+          const k = ez('power3.out', t, row.at, row.at + 0.5);
+          if (k <= 0 || chartOut >= 1) return;
+          ctx.save(); ctx.globalAlpha = 1 - chartOut;
+          // label
+          ctx.font = `500 46px ${SANS}`; ctx.fillStyle = INK;
+          ctx.save(); ctx.beginPath(); ctx.rect(ML + 20, y - 66, 700, 68); ctx.clip();
+          ctx.fillText(row.label, ML + 24, y - 16 + 56 * (1 - k)); ctx.restore();
+          // ink bar = how often it shows up in the notes
+          const ib = ez('power3.out', t, row.at + 0.12, row.at + 1.05);
+          const inkCol = focus > 0 ? INK : INK;
+          ctx.fillStyle = inkCol; ctx.globalAlpha = (1 - chartOut) * (1 - 0.65 * focus);
+          ctx.fillRect(ML + 2, y + 8, UNIT * ib, 42);
+          // accent bar unzips out of it = how often online
+          const grow = i < 3 ? ez('power3.inOut', t, C.four + 0.5 + i * 0.12, C.four + 2.3 + i * 0.12)
+                             : ez('power3.inOut', t, C.three - 0.2, C.three + 1.2);
+          if (grow > 0) {
+            const len = lerp(UNIT, UNIT * row.ratio, grow);
+            const lane = y + 8 + 42 + 6;
+            ctx.globalAlpha = (1 - chartOut);
+            ctx.fillStyle = focus > 0 ? `rgba(91,42,134,${1 - 0.7 * focus})` : ACC;
+            ctx.shadowColor = 'rgba(40,20,60,0.25)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 6;
+            ctx.fillRect(ML + 2, lane, len, 42);
+            ctx.shadowColor = 'transparent';
+            ctx.globalAlpha = (1 - chartOut) * 0.6 * (1 - focus); ctx.fillStyle = hatchPat; ctx.fillRect(ML + 2 + UNIT, lane, len - UNIT, 42);
+            ctx.globalAlpha = 1 - chartOut;
+            if (i === 0) {
+              const lk = ez('power3.out', t, C.four + 1.8, C.four + 2.3) * (1 - focus);
+              ctx.globalAlpha = (1 - chartOut) * lk;
+              ctx.font = `500 30px ${SANS}`;
+              haloText('online', ML + len + 18, lane + 31, ACC, 8);
+              ctx.fillStyle = 'rgba(26,26,26,0.72)';
+              haloText('in notes', ML + UNIT + 18, y + 39, 'rgba(26,26,26,0.72)', 8);
+            }
+            ring(ML + 2 + UNIT * row.ratio, lane + 24, ACC, t, i < 3 ? C.four + 2.3 + i * 0.12 : C.three + 1.2);
+          }
+          ctx.restore();
+        });
+
+        // raking light over the online bars once they are proven
+        const sweepBars = (a, b, rowsIdx) => {
+          const k = seg(t, a, b); if (k <= 0 || k >= 1 || chartOut >= 1) return;
+          const cx = lerp(ML - 300, MR + 300, E['power2.inOut'](k));
+          ctx.save();
+          ctx.beginPath();
+          rowsIdx.forEach(i => { const y = ROW_Y0 + i * ROW_GAP + 56; ctx.rect(ML + 2, y, UNIT * rows[i].ratio, 42); });
+          ctx.clip();
+          const lg = ctx.createLinearGradient(cx - 200, 0, cx + 200, 0);
+          lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, 'rgba(255,255,255,0.55)'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = lg; ctx.fillRect(ML, ROW_Y0, MR - ML, ROW_GAP * 4);
+          ctx.restore();
+        };
+        sweepBars(15.0, 16.6, [0, 1, 2]);
+        sweepBars(18.6, 19.9, [3]);
+
+        // hero multiplier, right aligned in the open space above the rows
+        const hero = (n, at, out, by) => {
+          const k = ez('power3.out', t, at, at + 0.5), o = out == null ? 0 : ez('power2.in', t, out, out + 0.35);
+          if (k <= 0 || o >= 1) return;
+          const c = Math.max(1, Math.round(n * ez('expo.out', t, at, at + 1.0)));
+          ctx.save(); ctx.globalAlpha = k * (1 - o);
+          ctx.shadowColor = 'rgba(40,20,60,0.22)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 14;
+          ctx.fillStyle = ACC; ctx.textAlign = 'left';
+          const big = `400 300px ${SERIF}`, small = `400 140px ${SERIF}`;
+          ctx.font = big; const wd = ctx.measureText(String(c)).width;
+          ctx.font = small; const wx = ctx.measureText('×').width;
+          const x = ML - 6;
+          ctx.font = big; ctx.fillText(String(c), x, by + 30 * (1 - k) - 30 * o);
+          ctx.font = small; ctx.fillText('×', x + wd + 8, by - 116 + 30 * (1 - k) - 30 * o);
+          ctx.restore();
+          return x;
+        };
+        {
+          const k = ez('power3.out', t, 8.0, 8.5), o = ez('power2.in', t, C.four + 0.1, C.four + 0.45);
+          if (k > 0 && o < 1) {
+            ctx.save(); ctx.globalAlpha = k * (1 - o); ctx.fillStyle = INK; ctx.textAlign = 'left';
+            ctx.font = `400 300px ${SERIF}`; const wd = ctx.measureText('1').width;
+            ctx.fillText('1', ML - 6, 600 + 30 * (1 - k) - 30 * o);
+            ctx.font = `400 140px ${SERIF}`; ctx.fillText('\u00d7', ML - 6 + wd + 8, 484 + 30 * (1 - k) - 30 * o);
+            ctx.font = `500 40px ${SANS}`; ctx.fillStyle = 'rgba(26,26,26,0.78)'; ctx.fillText('in the notes', ML + 330, 600 + 14 * (1 - k));
+            ctx.restore();
+          }
+        }
+        hero(4, C.four + 0.5, C.mood - 0.1, 600);
+        hero(3, C.three + 0.1, C.real - 0.1, 600);
+        // tiny label under the hero
+        {
+          const k = ez('power3.out', t, C.four + 1.0, C.four + 1.5) * (1 - ez('power2.in', t, C.real - 0.1, C.real + 0.25));
+          if (k > 0) {
+            ctx.save(); ctx.globalAlpha = k; ctx.font = `500 40px ${SANS}`; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(26,26,26,0.78)';
+            ctx.fillText('as often online', ML + 330, 600 + 14 * (1 - k)); ctx.restore();
+          }
+        }
+
+        // ----- shot 6: the point -----
+        const HF = `400 112px ${SERIF}`;
+        maskWords(['Real', 'symptoms.'], ML, 470, HF, INK, t, C.real + 0.05, C.so - 0.45);
+        maskWords(['Not', 'written', 'down.'], ML, 598, HF, ACC, t, C.written + 0.05, C.so - 0.4, 0.09, 0);
+
+        {
+          const k = ez('power2.inOut', t, C.written + 0.5, C.written + 1.6), o = ez('power2.in', t, C.so - 0.45, C.so - 0.1);
+          if (k > 0 && o < 1) {
+            ctx.save(); ctx.globalAlpha = 1 - o; ctx.strokeStyle = ACC; ctx.lineWidth = 6; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(ML, 626); ctx.lineTo(ML + 820 * k, 626); ctx.stroke(); ctx.restore();
+          }
+        }
+
+        // ----- shot 7: one week, logged -----
+        maskWords(['Write', 'it', 'down.'], ML, 470, HF, INK, t, C.so + 0.05, C.take - 0.45);
+        const wkIn = ez('expo.out', t, C.so + 0.3, C.so + 1.0), wkOut = ez('power2.in', t, C.take - 0.4, C.take - 0.05);
+        if (wkIn > 0 && wkOut < 1) {
+          const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+          const cw = (MR - ML) / 7, top = 700, hgt = 620;
+          ctx.save(); ctx.globalAlpha = 1 - wkOut;
+          for (let d = 0; d < 7; d++) {
+            const x = ML + d * cw;
+            const k = ez('power3.out', t, C.so + 0.3 + d * 0.24, C.so + 1.0 + d * 0.24);
+            ctx.strokeStyle = GRID; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x + cw, top + 70); ctx.lineTo(x + cw, lerp(top + 70, top + hgt, k)); ctx.stroke();
+            ctx.font = `500 32px ${SANS}`; ctx.fillStyle = 'rgba(26,26,26,0.7)'; ctx.textAlign = 'center';
+            ctx.globalAlpha = (1 - wkOut) * k; ctx.fillText(days[d], x + cw / 2, top + 40 + 14 * (1 - k));
+            ctx.globalAlpha = 1 - wkOut;
+          }
+          ctx.strokeStyle = INK; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.moveTo(ML, top + 70); ctx.lineTo(ML + (MR - ML) * wkIn, top + 70); ctx.stroke();
+          // entries: day, height (time of day), strength 1..3 drawn as a filling moon
+          const entries = [ { d: 1, y: 0.62, s: 2, at: C.when + 0.1 }, { d: 3, y: 0.30, s: 1, at: C.often + 0.15 }, { d: 5, y: 0.82, s: 3, at: C.often + 0.45 } ];
+          entries.forEach(en => {
+            const k = E['back.out(2.2)'](seg(t, en.at, en.at + 0.35));
+            if (k <= 0) return;
+            const x = ML + en.d * cw + cw / 2, y = top + 110 + en.y * (hgt - 150);
+            const wk = ez('power3.out', t, en.at, en.at + 0.5);
+            ctx.save(); ctx.globalAlpha = 0.16 * wk; ctx.fillStyle = ACC; ctx.fillRect(ML + en.d * cw + 2, top + 72, cw - 4, (hgt - 72) * wk); ctx.restore();
+            const sz = lerp(0.6, 1, k) * 34;
+            ctx.save();
+            ctx.shadowColor = 'rgba(60,35,15,0.28)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 6;
+            ctx.fillStyle = PAPER; ctx.beginPath(); ctx.arc(x, y, sz + 8, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = ACC; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI * 2); ctx.stroke();
+            // strength fills the moon as she says "how much"
+            const fill = en.s / 3 * ez('power3.out', t, C.much, C.much + 0.6) + (en.s === 1 ? 0 : 0);
+            const f0 = Math.max(0.18, fill);
+            ctx.save(); ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI * 2); ctx.clip();
+            ctx.fillStyle = ACC; ctx.fillRect(x - sz, y + sz - 2 * sz * f0, 2 * sz, 2 * sz * f0);
+            ctx.restore();
+            ring(x, y, ACC, t, en.at);
+            ctx.restore();
+          });
+          ctx.restore();
+          // one label at a time under the strip
+          const lab = (txt, a, b) => {
+            const k = ez('power3.out', t, a, a + 0.45), o = ez('power2.in', t, b, b + 0.3);
+            if (k <= 0 || o >= 1) return;
+            ctx.save(); ctx.globalAlpha = k * (1 - o); ctx.font = `700 44px ${SANS}`; ctx.fillStyle = ACC; ctx.textAlign = 'left';
+            ctx.fillText(txt, ML, top + hgt + 110 + 20 * (1 - k) - 20 * o); ctx.restore();
+          };
+        }
+
+        // ----- shot 8: end card -----
+        maskWords(['Take', 'it', 'with', 'you.'], ML, 470, HF, INK, t, C.take + 0.05, null);
+        {
+          const k = ez('power3.out', t, C.clari - 0.1, C.clari + 0.5);
+          if (k > 0) {
+            const y = 860 + 40 * (1 - k);
+            ctx.save(); ctx.globalAlpha = k;
+            ctx.shadowColor = 'rgba(40,20,60,0.25)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 10;
+            moonMark(ML + 70, y, 70 * lerp(0.85, 1, E['back.out(1.2)'](seg(t, C.clari - 0.1, C.clari + 0.4))), 1);
+            ctx.shadowColor = 'transparent';
+            ctx.fillStyle = INK; ctx.font = `400 128px ${SERIF}`; ctx.fillText('Clari', ML + 176, y + 44);
+            ctx.restore();
+            const lk = ez('power3.out', t, C.clari + 0.75, C.clari + 1.25);
+            ctx.save(); ctx.globalAlpha = lk; ctx.font = `500 42px ${SANS}`; ctx.fillStyle = 'rgba(26,26,26,0.8)';
+            ctx.fillText('The private perimenopause diary', ML, 1020 + 16 * (1 - lk));
+            ctx.fillStyle = INK; ctx.fillRect(ML, 1080, 760 * ez('power2.inOut', t, C.clari + 0.6, C.clari + 2.0), 3);
+            const ck = ez('power3.out', t, C.clari + 1.6, C.clari + 2.1);
+            ctx.globalAlpha = ck; ctx.font = `400 32px ${SANS}`; ctx.fillStyle = 'rgba(26,26,26,0.62)';
+            ctx.fillText('Data: JAMA Network Open, 2026', ML, 1400);
+            ctx.restore();
+          }
+        }
+      };
+
+      // ---------- captions (for people watching muted), timed to the voice ----------
+      const CAP = [
+        [0.0, 1.2, 'Researchers compared'], [1.2, 2.4, 'one of the biggest'], [2.4, 3.5, 'online menopause communities'],
+        [3.6, 4.6, 'with more than'], [4.6, 6.5, 'two million medical notes.'],
+        [7.44, 8.3, 'Brain fog.'], [8.6, 9.6, 'Memory slips.'], [9.96, 10.8, 'Losing words'], [10.8, 11.7, 'mid-sentence.'],
+        [12.29, 13.3, 'Women talked about these'], [13.3, 14.6, 'nearly four times as often'], [14.6, 15.5, 'as they showed up'], [15.5, 16.45, 'in the notes.'],
+        [16.94, 17.8, 'Mood changes?'], [18.13, 19.45, 'Nearly three times.'],
+        [20.23, 21.6, 'The symptoms are real.'], [21.99, 22.8, 'They just don\u2019t get'], [22.8, 23.5, 'written down.'],
+        [24.22, 25.35, 'So write them down.'], [25.73, 26.6, 'When it happens,'], [26.6, 27.5, 'how often,'], [27.65, 28.4, 'how much.'],
+        [28.82, 29.8, 'And take it with you.'], [30.29, 31.9, 'That\u2019s what Clari is for.'],
+      ];
+      function captions(t) {
+        for (let i = 0; i < CAP.length; i++) {
+          const [a, b0, txt] = CAP[i];
+          const nxt = i + 1 < CAP.length ? CAP[i + 1][0] : 99;
+          const b = Math.min(b0, nxt - 0.12);
+          if (t < a || t >= b + 0.12) continue;
+          const k = ez('power3.out', t, a, a + 0.18), o = ez('power2.in', t, b, b + 0.12);
+          ctx.save(); ctx.globalAlpha = k * (1 - o);
+          ctx.font = `700 50px ${SANS}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+          haloText(txt, ML, 1466 + 18 * (1 - k), INK, 12);
+          ctx.restore();
+        }
+      }
+      const _draw = draw;
+      draw = (t) => { _draw(t); ctx.setTransform(1, 0, 0, 1, 0, 0); captions(t); };
+
+      const tl = gsap.timeline({ paused: true });
+      const p = { t: 0 };
+      tl.to(p, { t: DUR, duration: DUR, ease: 'none', onUpdate: () => draw(p.t) }, 0);
+      window.__timelines['main'] = tl;
+      draw(0);
+      tl.seek(0);
+      Promise.all(['400 104px "Bodoni Moda"', 'italic 400 104px "Bodoni Moda"', '400 34px "Inter"', '500 42px "Inter"', '700 44px "Inter"']
+        .map(f => document.fonts.load(f))).then(() => draw(p.t));
+    </script>
+  </body>
+</html>

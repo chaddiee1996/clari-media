@@ -1,3 +1,5 @@
 node_modules/
 templates/reel/out/
 templates/carousel/out/
+work/**/out/
+work/**/stills/
