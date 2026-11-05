@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=IBM+Plex+Sans+Condensed:wght@700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  /* R8 "A new question at your Health Check"  look: blueprint, right-aligned annotations */
+  :root { --ground: #0E3A66; --line: #CFE3F7; --grid: #1C4D80; --text: #EAF3FC; --accent: #FFD23F; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ground);
+    font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+  .grid { position: absolute; left: -300px; top: -300px; width: 1680px; height: 2520px; transform-origin: 840px 1260px; }
+  #fine { opacity: 0.45;
+    background-image: linear-gradient(var(--grid) 1.5px, transparent 1.5px), linear-gradient(90deg, var(--grid) 1.5px, transparent 1.5px);
+    background-size: 24px 24px; }
+  #heavy { background-image: linear-gradient(var(--grid) 2px, transparent 2px), linear-gradient(90deg, var(--grid) 2px, transparent 2px);
+    background-size: 120px 120px; background-position: 0 0; }
+  svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  .ln { fill: none; stroke: var(--line); stroke-width: calc(4.5px * var(--k)); stroke-linejoin: miter; stroke-dasharray: 1 1; }
+  .th { fill: none; stroke: var(--line); stroke-width: calc(3px * var(--k)); stroke-linecap: round; stroke-dasharray: 1 1; }
+  .sk { fill: none; stroke: var(--line); stroke-width: calc(10px * var(--k)); stroke-linecap: round; stroke-dasharray: 1 1; opacity: 0.85; }
+  .con { fill: none; stroke: var(--line); stroke-width: calc(1.5px * var(--k)); stroke-dasharray: 1 1; opacity: 0.7; }
+  .hid { fill: none; stroke: var(--line); stroke-width: calc(3px * var(--k)); stroke-dasharray: 14 10; }
+  .sheet { fill: none; stroke: var(--line); stroke-width: 2px; opacity: 0.5; }
+  .cap { position: absolute; right: 140px; width: 820px; text-align: right; font-family: 'IBM Plex Sans Condensed', sans-serif; font-weight: 700;
+    letter-spacing: -0.01em; font-size: 108px; line-height: 112px; }
+  .capl { overflow: hidden; }
+  .capl > div { will-change: transform; }
+  .lab { position: absolute; font-weight: 700; font-size: 58px; letter-spacing: 0.04em; line-height: 66px; white-space: nowrap; overflow: hidden; }
+  .lab > div { will-change: transform; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="26.5" data-width="1080" data-height="1920">
+  <div id="fine" class="grid"></div>
+  <div id="heavy" class="grid"></div>
+  <svg id="sheetsvg" width="1080" height="1920"></svg>
+  <svg id="drawsvg" width="1080" height="1920"><defs id="defs"></defs><g id="cam"></g></svg>
+  <svg id="oversvg" width="1080" height="1920"></svg>
+  <div id="labels"></div>
+  <div id="caps"></div>
+</div>
+<script>
+const S = STUDIO, NS = 'http://www.w3.org/2000/svg';
+const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue(n).trim();
+const C = { line: tok('--line'), text: tok('--text'), accent: tok('--accent'), ground: tok('--ground') };
+const seg = S.seg, mix = S.mix;
+const el = (tag, parent, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs || {}) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+
+const CUES = [["Something new", 0.08, 1.08, 0], ["is coming to", 1.08, 1.96, 0], ["the NHS", 1.96, 2.4, 0], ["Health Check.", 2.4, 2.93, 0], ["In England,", 3.78, 4.45, 1], ["women aged", 4.79, 5.48, 2], ["forty to fifty-five", 5.48, 6.74, 2], ["will be asked", 7.02, 7.6, 3], ["about menopause", 7.6, 8.71, 3], ["and perimenopause.", 8.71, 9.65, 3], ["It's part of", 10.3, 10.92, 4], ["the government's", 10.92, 11.6, 4], ["plan for", 11.6, 12.05, 4], ["women's health.", 12.05, 12.65, 4], ["So when your", 13.21, 13.8, 5], ["invitation", 13.8, 14.35, 5], ["lands...", 14.35, 14.85, 5], ["go in ready.", 15.35, 16.22, 6], ["Your symptoms.", 16.73, 17.6, 7], ["How long.", 18.01, 18.6, 8], ["How often.", 18.95, 19.59, 9], ["It's your chance", 20.23, 21.25, 10], ["to be asked.", 21.25, 21.9, 10], ["Make it count.", 22.29, 23.24, 11]];
+const HOT = new Set(["forty to fifty-five", "about menopause", "and perimenopause.", "go in ready.", "Make it count."]);
+// display chunks: within a sentence the lines stack (max 3), right-aligned, like a note written beside the drawing
+const SENT = []; CUES.forEach(q => { (SENT[q[3]] = SENT[q[3]] || []).push(q); });
+
+// ---------- sheet frame (static, screen space)
+const sheet = document.getElementById('sheetsvg');
+el('rect', sheet, { x: 40, y: 40, width: 1000, height: 1840, class: 'sheet' });
+[[88, 88], [992, 88], [88, 1832], [992, 1832]].forEach(([x, y]) => el('path', sheet, { d: `M${x - 18},${y} h36 M${x},${y - 18} v36`, class: 'sheet' }));
+for (let y = 280; y < 1880; y += 240) el('path', sheet, { d: `M40,${y} h14 M1040,${y} h-14`, class: 'sheet' });
+
+// ---------- the drawing (world px)
+const cam = document.getElementById('cam'), defs = document.getElementById('defs');
+const strokes = [];
+const stroke = (parent, d, cls, t0, dur, ease) => { const e = el('path', parent, { d, class: cls, pathLength: 1 }); strokes.push({ e, t0, dur, ease: ease || 'power1.inOut' }); return e; };
+const G = p => el('g', p);
+
+// construction lines shoot across first, then fade
+const conG = G(cam);
+[720, 1400, 840, 1130, 1270].forEach((y, i) => stroke(conG, `M-400,${y} H1700`, 'con', 0.05 + 0.05 * i, 0.5, 'expo.out'));
+[170, 650, 760, 1180].forEach((x, i) => stroke(conG, `M${x},300 V1900`, 'con', 0.2 + 0.05 * i, 0.5, 'expo.out'));
+
+// envelope (it drops away once the letter is out)
+const env = G(cam);
+const envFill = el('path', env, { d: 'M140,1150 H680 V1500 H140 Z', fill: C.ground });
+stroke(env, 'M140,1150 H680 V1500 H140 Z', 'ln', 0.35, 0.8);
+stroke(env, 'M140,1150 L410,1340 L680,1150 M140,1500 L340,1320 M680,1500 L480,1320', 'th', 0.8, 0.6);
+
+// letter (an invitation, skeleton lines for text)
+const letter = G(cam);
+const lBack = el('rect', letter, { x: 170, y: 720, width: 480, height: 680, fill: C.ground });
+stroke(letter, 'M170,720 H650 V1400 H170 Z', 'ln', 0.5, 0.9);
+stroke(letter, 'M200,756 H620 V836 H200 Z', 'th', 0.9, 0.5);              // header band
+stroke(letter, 'M224,796 H470', 'sk', 1.1, 0.4);
+stroke(letter, 'M540,776 h56 v40 h-56 Z', 'th', 1.15, 0.35);               // small mark box
+stroke(letter, 'M200,880 H380 M200,912 H340 M200,944 H360', 'sk', 1.25, 0.5);  // address
+stroke(letter, 'M200,1000 H600 M200,1032 H580 M200,1064 H520', 'sk', 1.45, 0.5); // body
+// the new question box: hidden (dashed) first, turns solid when it is drawn
+const qHid = el('path', letter, { d: 'M200,1110 H620 V1270 H200 Z', class: 'hid' });
+const qClip = el('clipPath', defs, { id: 'qc' }), qRect = el('rect', qClip, { x: 200, y: 1270, width: 420, height: 0 });
+const qFill = el('rect', letter, { x: 200, y: 1110, width: 420, height: 160, fill: C.accent, 'clip-path': 'url(#qc)' });
+const qBox = stroke(letter, 'M200,1110 H620 V1270 H200 Z', 'ln', 7.1, 0.7);
+const qIn = G(letter);
+stroke(qIn, 'M228,1150 h36 v36 h-36 Z M228,1210 h36 v36 h-36 Z', 'th', 7.6, 0.4);
+stroke(qIn, 'M290,1168 H560 M290,1228 H520', 'sk', 7.75, 0.5);
+stroke(letter, 'M200,1320 H420 M200,1352 H300', 'sk', 1.6, 0.4);        // footer
+cam.appendChild(env);   // the envelope front sits over the letter until it drops away
+
+// dimension: 40 to 55 across the letter
+const dimG = G(cam);
+const dA = el('path', dimG, { fill: 'none', stroke: C.text, 'stroke-width': 4 }), dB = el('path', dimG, { fill: 'none', stroke: C.text, 'stroke-width': 4 });
+const dHa = el('path', dimG, { fill: C.text }), dHb = el('path', dimG, { fill: C.text });
+const dExt = stroke(dimG, 'M170,720 V640 M650,720 V640', 'th', 5.3, 0.3, 'power2.out');
+
+// notes card (your own notes: symptoms, how long, how often)
+const card = G(cam);
+el('rect', card, { x: 780, y: 760, width: 440, height: 560, fill: C.ground });
+stroke(card, 'M780,760 H1220 V1320 H780 Z', 'ln', 15.2, 0.8);
+stroke(card, 'M780,840 H1220', 'th', 15.6, 0.4);
+stroke(card, 'M812,800 H980', 'sk', 15.7, 0.3);
+const fields = [0, 1, 2].map(i => {
+  const y = 900 + i * 140, g = G(card);
+  stroke(g, `M812,${y} h44 v44 h-44 Z`, 'th', 16.7 + i * 1.1, 0.35);
+  stroke(g, `M880,${y + 22} H${1180 - i * 50}`, 'sk', 16.85 + i * 1.1, 0.45);
+  stroke(g, `M812,${y + 90} H1188`, 'th', 16.9 + i * 1.1, 0.4);
+  const tick = stroke(g, `M820,${y + 22} l12,14 l20,-28`, 'ln', 17.15 + i * 1.1, 0.25, 'power2.out');
+  return g;
+});
+
+// ---------- captions (right aligned, stacked per sentence) + their leader lines
+const capsEl = document.getElementById('caps'), over = document.getElementById('oversvg');
+const mctx = document.createElement('canvas').getContext('2d');
+const CAPW = 800, BASE = 124;
+function fitSize(txt) { let s = BASE; mctx.font = `700 ${s}px 'IBM Plex Sans Condensed'`; const w = mctx.measureText(txt).width; return w > CAPW ? Math.max(92, Math.floor(s * CAPW / w)) : s; }
+const capLines = CUES.map(q => {
+  const box = document.createElement('div'); box.className = 'cap capl';
+  const inner = document.createElement('div'); inner.innerHTML = q[0].replace('fifty-five', '<span style="white-space:nowrap">fifty-five</span>'); box.appendChild(inner);
+  inner.style.color = HOT.has(q[0]) ? C.accent : C.text;
+  capsEl.appendChild(box); return { q, box, inner };
+});
+capLines.forEach(L => { L.size = 124; });
+// where each sentence points in the drawing (world)
+const TARGET = [[410, 796], [290, 912], [600, 660], [410, 1190], [310, 1336], [410, 720], [1000, 760], [834, 922], [834, 1062], [834, 1202], [410, 1190], [410, 1190]];
+const leaders = SENT.map(() => ({ p: el('path', over, { fill: 'none', stroke: C.text, 'stroke-width': 4, pathLength: 1, 'stroke-dasharray': '1 1' }), d: el('circle', over, { r: 11, fill: C.text }) }));
+
+// mono labels inside the drawing area (screen space, right aligned)
+const labs = document.getElementById('labels');
+function mkLab(text, col) { const m = document.createElement('div'); m.className = 'lab'; const i = document.createElement('div'); i.textContent = text; m.appendChild(i); m.style.color = col || C.text; labs.appendChild(m); return m; }
+const dimLab = mkLab('40 TO 55');
+const figLab = mkLab('FIG. 1  INVITATION');
+const fig2Lab = mkLab('FIG. 2  YOUR NOTES');
+const srcLab = mkLab('SOURCE: UK GOVERNMENT'); srcLab.style.fontSize = '48px'; srcLab.style.lineHeight = '56px';
+
+// ---------- end card
+const endG = el('g', over);
+function moonMark() { /* drawn below in render as svg */ }
+const mk = el('g', endG);
+const mkSq = el('rect', mk, { x: -100, y: -100, width: 200, height: 200, rx: 42, fill: 'none', stroke: C.accent, 'stroke-width': 6, pathLength: 1, 'stroke-dasharray': '1 1' });
+const mkMoon = el('path', mk, { d: 'M 8 -62 A 62 62 0 1 0 60 26 A 50 50 0 1 1 8 -62 Z', fill: C.accent });
+const endName = mkLab('Clari'); Object.assign(endName.style, { fontFamily: "'IBM Plex Sans Condensed'", fontSize: '190px', lineHeight: '210px', letterSpacing: '-0.01em' });
+const endL1 = mkLab('SAVE THIS FOR'), endL2 = mkLab('YOUR HEALTH CHECK'), endL3 = mkLab('FREE ON APP STORE'), endL4 = mkLab('AND GOOGLE PLAY');
+endL1.style.color = endL2.style.color = C.accent;
+[endL3, endL4].forEach(e => { e.style.fontSize = '50px'; e.style.lineHeight = '60px'; });
+
+// ---------- camera
+const VA = { cx: 410, cy: 1060, s: 1.0 }, VB = { cx: 410, cy: 1030, s: 1.0 }, VC = { cx: 410, cy: 1130, s: 1.25 },
+      VD = { cx: 410, cy: 1060, s: 1.0 }, VE = { cx: 695, cy: 1040, s: 0.86 }, VF = { cx: 1000, cy: 1040, s: 1.22 }, VG = { cx: 695, cy: 1150, s: 0.9 };
+const lc = (a, b, p) => ({ cx: mix(a.cx, b.cx, p), cy: mix(a.cy, b.cy, p), s: mix(a.s, b.s, p) });
+function camAt(t) {
+  let c = VA;
+  c = lc(c, VB, seg(t, 4.3, 1.0, 'power2.inOut'));
+  c = lc(c, { cx: 410, cy: 990, s: 1.07 }, seg(t, 5.5, 1.5, 'sine.inOut'));
+  c = lc(c, VC, seg(t, 7.0, 1.2, 'power2.inOut'));
+  c = lc(c, { cx: 440, cy: 1180, s: 1.36 }, seg(t, 8.7, 1.5, 'sine.inOut'));
+  c = lc(c, VD, seg(t, 10.1, 1.2, 'power2.inOut'));
+  c = lc(c, VE, seg(t, 13.1, 1.4, 'power2.inOut'));
+  c = lc(c, VF, seg(t, 16.3, 1.0, 'power2.inOut'));
+  c = lc(c, VG, seg(t, 20.0, 1.2, 'power2.inOut'));
+  return Object.assign({ dx: 4 * S.wave(t, 2), dy: 3 * S.wave(t, 2, 0.25) }, c);
+}
+const SX = 540, SY = 1160;   // screen point the camera centre sits on
+
+function drawStroke(s, t) { const p = seg(t, s.t0, s.dur, s.ease); s.e.style.strokeDashoffset = 1 - p; s.e.style.visibility = p <= 0.0005 ? 'hidden' : 'visible'; }
+function maskIn(m, x, y, pin, alignRight) {
+  m.style.visibility = pin > 0.001 ? 'visible' : 'hidden';
+  const w = m.firstChild.offsetWidth;
+  m.style.transform = `translate(${alignRight ? x - w : x}px, ${y}px)`;
+  m.firstChild.style.transform = `translateY(${(1 - pin) * 108}%)`;
+}
+
+window.__timelines["main"] = S.play(function render(t) {
+  const endP = seg(t, 23.55, 0.7, 'power3.inOut');
+  const c = camAt(t), k = 1 / c.s;
+  const tx = SX - c.s * c.cx + c.dx, ty = SY - c.s * c.cy + c.dy;
+  cam.setAttribute('transform', `translate(${tx},${ty}) scale(${c.s})`);
+  cam.style.setProperty('--k', k);
+  cam.style.opacity = 1 - endP;
+  const scr = (x, y) => [tx + c.s * x, ty + c.s * y];
+  const gs = 1 + 0.3 * (c.s - 1), gx = 0.3 * (tx - (SX - VA.cx)), gy = 0.3 * (ty - (SY - VA.cy));
+  ['fine', 'heavy'].forEach(id => document.getElementById(id).style.transform = `translate(${gx}px, ${gy}px) scale(${gs})`);
+
+  strokes.forEach(s => drawStroke(s, t));
+  conG.style.opacity = 1 - seg(t, 2.4, 0.6, 'power2.in');
+  // letter rises out of the envelope (exploded view along y, damped settle), envelope drops away
+  const rise = seg(t, 1.2, 1.1, 'power3.inOut'), e0 = t - 2.3;
+  let ly = 420 * (1 - rise); if (e0 > 0) ly += -10 * Math.exp(-6 * e0) * Math.sin(2 * Math.PI * 2.2 * e0);
+  letter.setAttribute('transform', `translate(0,${ly})`);
+  const drop = seg(t, 3.0, 0.9, 'power3.in');
+  env.setAttribute('transform', `translate(0,${drop * 900})`); env.style.opacity = 1 - seg(t, 3.5, 0.4, 'power2.in');
+  // invitation lands: the letter lifts and sets down again with a settle
+  const lift = seg(t, 13.3, 0.45, 'power2.out') - seg(t, 13.85, 0.5, 'power3.in');
+  const e1 = t - 14.35; let ly2 = -70 * lift; if (e1 > 0) ly2 += -4 * Math.exp(-5 * e1) * Math.sin(2 * Math.PI * 1.3 * e1);
+  if (t > 13) letter.setAttribute('transform', `translate(0,${ly + ly2})`);
+  // question box: hidden line, then solid, then the yellow wipe
+  qHid.style.opacity = seg(t, 1.5, 0.4) * (1 - seg(t, 7.1, 0.4));
+  const fIn = seg(t, 8.25, 0.55, 'power3.inOut'), fOut = seg(t, 12.9, 0.4, 'power2.in'), fIn2 = seg(t, 20.25, 0.55, 'power3.inOut');
+  const fh = 160 * (fIn2 > 0 ? fIn2 : fIn * (1 - fOut));
+  qRect.setAttribute('y', 1270 - fh); qRect.setAttribute('height', fh);
+  qIn.style.stroke = fh > 80 ? C.ground : C.line;
+  qIn.querySelectorAll('path').forEach(p => p.style.stroke = fh > 80 ? C.ground : C.line);
+  // notes card slides in from the right (exploded view along x)
+  const cin = seg(t, 14.9, 0.9, 'power3.out'), e2 = t - 15.8;
+  let cxo = 520 * (1 - cin); if (e2 > 0) cxo += 9 * Math.exp(-6 * e2) * Math.sin(2 * Math.PI * 2.2 * e2);
+  letter.style.opacity = 1 - 0.8 * (seg(t, 16.2, 0.6) - seg(t, 19.9, 0.6));
+  card.setAttribute('transform', `translate(${cxo},0)`); card.style.opacity = cin > 0 ? 1 : 0;
+  // field ticks: the field being spoken about turns yellow, one at a time
+  fields.forEach((g, i) => { const on = seg(t, 16.75 + i * 1.1, 0.3) - (i < 2 ? seg(t, 17.85 + i * 1.1 - 0.05, 0.3) : seg(t, 20.0, 0.3));
+    g.querySelectorAll('path').forEach(p => p.style.stroke = on > 0.5 ? C.accent : C.line); });
+
+  // dimension 40 to 55, grows out of its number
+  {
+    const g = seg(t, 5.45, 0.55, 'expo.out') - seg(t, 7.0, 0.35, 'power2.in');
+    const vis = g > 0.002; [dA, dB, dHa, dHb].forEach(e => e.style.visibility = vis ? 'visible' : 'hidden');
+    dExt.style.opacity = vis ? 1 : 0;
+    const y = 660, mx = 410, half = 240, gap = 150, r1 = gap + (half - gap) * Math.max(0, g);
+    dA.setAttribute('d', `M${mx + gap},${y} H${mx + r1}`); dB.setAttribute('d', `M${mx - gap},${y} H${mx - r1}`);
+    const AH = 22, AW = 9;
+    dHa.setAttribute('d', `M${mx + r1},${y} l${-AH},${-AW} v${2 * AW} Z`); dHb.setAttribute('d', `M${mx - r1},${y} l${AH},${-AW} v${2 * AW} Z`);
+    const [nx, ny] = scr(mx, y);
+    const pn = seg(t, 5.4, 0.45, 'expo.out') - seg(t, 7.0, 0.3, 'power2.in');
+    dimLab.style.color = C.accent;
+    maskIn(dimLab, nx - dimLab.firstChild.offsetWidth / 2, ny - 33, Math.max(0, pn));
+  }
+  // figure labels (right aligned at the margin, just above the drawing)
+  { const p1 = seg(t, 13.6, 0.5, 'expo.out') - seg(t, 14.9, 0.3, 'power2.in');
+    maskIn(figLab, 940, 1468, Math.max(0, p1), true);
+    const p2 = seg(t, 15.4, 0.5, 'expo.out') - seg(t, 16.3, 0.3, 'power2.in') + seg(t, 20.6, 0.5, 'expo.out') - seg(t, 23.3, 0.3, 'power2.in');
+    maskIn(fig2Lab, 940, 1468, Math.max(0, p2), true);
+    const ps = seg(t, 4.0, 0.5, 'expo.out') - seg(t, 13.0, 0.3, 'power2.in');
+    maskIn(srcLab, 940, 222, Math.max(0, ps), true); }
+
+  // captions: one sentence at a time, its lines stacked right aligned under each other
+  let capTop = 300;
+  SENT.forEach((lines, si) => {
+    // the sentence leaves fully before the next one rises into the same place
+    const sEnd = SENT[si + 1] ? SENT[si + 1][0][1] - 0.42 : 23.45;
+    const out = seg(t, sEnd, 0.25, 'power2.in');
+    // a rolling window of two phrases: when a third arrives the oldest lifts away and the rest slide up
+    let y = capTop, lastY = capTop;
+    lines.forEach((q, j) => {
+      const L = capLines[CUES.indexOf(q)];
+      const pin = seg(t, q[1] - 0.12, 0.5, 'expo.out');
+      const gone = lines[j + 2] ? seg(t, lines[j + 2][1] - 0.16, 0.36, 'power3.inOut') : 0;
+      const vis = pin > 0.001 && out < 0.999 && gone < 0.999;
+      const h = L.inner.offsetHeight;
+      L.box.style.visibility = vis ? 'visible' : 'hidden';
+      L.box.style.top = (y - gone * h) + 'px';
+      L.box.style.height = h + 'px';
+      L.inner.style.transform = `translateY(${(1 - pin) * 105 - out * 105}%)`;
+      L.inner.style.opacity = 1 - gone;
+      y += h * (1 - gone); if (pin > 0) lastY = y;
+    });
+    // leader: from under the caption at the right margin, across and down to its part
+    const ld = leaders[si];
+    const lp = seg(t, lines[0][1] + 0.05, 0.6, 'power2.inOut') * (1 - out);
+    const tg = TARGET[si];
+    let [px, py] = scr(tg[0] + (si >= 6 && si <= 9 ? cxo : 0), tg[1] + (si <= 5 ? ly : 0));
+    const yTop = lastY + 26;
+    ld.p.setAttribute('d', `M940,${yTop} H${px} V${py}`);
+    ld.p.style.strokeDashoffset = 1 - lp;
+    const hotS = lines.some(q => HOT.has(q[0])); ld.p.style.stroke = hotS ? C.accent : C.text; ld.d.style.fill = hotS ? C.accent : C.text;
+    ld.p.style.visibility = lp > 0.001 && py > yTop + 20 ? 'visible' : 'hidden';
+    ld.d.setAttribute('cx', px); ld.d.setAttribute('cy', py); ld.d.setAttribute('r', 11 * Math.min(1, Math.max(0, (lp - 0.85) / 0.15)));
+  });
+
+  // end card: the mark draws itself, then the name and lines arrive behind masks
+  {
+    const m = seg(t, 23.7, 0.7, 'power1.inOut'), mf = seg(t, 24.2, 0.45, 'power3.out');
+    mk.setAttribute('transform', `translate(540,660)`); mk.style.visibility = m > 0 ? 'visible' : 'hidden';
+    mkSq.style.strokeDashoffset = 1 - m; mkMoon.style.opacity = mf; mkMoon.setAttribute('transform', `scale(${0.85 + 0.15 * mf})`);
+    const pn = seg(t, 24.1, 0.6, 'expo.out');
+    maskIn(endName, 540 - endName.firstChild.offsetWidth / 2, 800, pn);
+    const p1 = seg(t, 24.5, 0.55, 'expo.out'), p2 = seg(t, 24.62, 0.55, 'expo.out'), p3 = seg(t, 24.9, 0.55, 'expo.out'), p4 = seg(t, 25.0, 0.55, 'expo.out');
+    [[endL1, 1080, p1], [endL2, 1146, p2], [endL3, 1300, p3], [endL4, 1360, p4]].forEach(([e, y, p]) => maskIn(e, 540 - e.firstChild.offsetWidth / 2, y, p));
+    const ps2 = seg(t, 25.0, 0.5, 'expo.out');
+    if (t > 23.6) maskIn(srcLab, 540 + srcLab.firstChild.offsetWidth / 2, 1470, ps2, true);
+  }
+}, { loop: false });
+</script>
+</body>
+</html>

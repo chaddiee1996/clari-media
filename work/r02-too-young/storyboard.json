@@ -1,0 +1,56 @@
+{
+ "title": "Too young?",
+ "format": "9:16",
+ "seconds": 32.2,
+ "shots": [
+  {
+   "time": "0.0-2.6",
+   "graphic": "Told you're / too / young / for perimenopause? rise from masks, red dot rolls in",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "2.6-5.6",
+   "graphic": "Here's what NICE guidance actually says: NICE slam and slice, dot becomes the full stop",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "5.6-13.0",
+   "graphic": "Over 45 numeral slides in, red rule, symptoms, can be diagnosed without a blood test",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "13.0-17.8",
+   "graphic": "Between 40 to 45, a blood test can be considered",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "17.8-22.4",
+   "graphic": "Under 40, two blood tests: dot splits in two, 4 to 6 weeks apart bar fills",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "22.4-29.2",
+   "graphic": "Ink field flip: 'Too young' struck through, isn't the end of the conversation; Write down what you've noticed. And take it with you.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "29.2-32.2",
+   "graphic": "Red dot carved into a crescent, Clari",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

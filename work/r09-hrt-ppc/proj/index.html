@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,900;1,8..60,900&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  /* R9 "£19.80"  look: editorial paper, a magazine spread typeset by the voice */
+  :root { --paper: #F4EEE3; --ink: #141414; --accent: #0F5499; --rule: #141414; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--paper); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--paper); color: var(--ink);
+    font-family: 'Source Serif 4', serif; }
+  .abs { position: absolute; }
+  .rule { position: absolute; background: var(--ink); transform-origin: 0 50%; }
+  .serif { font-family: 'Source Serif 4', serif; font-weight: 900; font-variation-settings: 'opsz' 60; }
+  .cond { font-family: 'Archivo', sans-serif; font-weight: 800; font-stretch: 72%; text-transform: uppercase; }
+  .mask { position: absolute; overflow: hidden; }
+  .mask > .in { will-change: transform; white-space: nowrap; display: inline-block; }
+  .hw { display: inline-block; overflow: hidden; vertical-align: top; }
+  .hw > span { display: inline-block; will-change: transform; }
+  .wd { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+  .wd > span { display: inline-block; }
+  #num { font-variant-numeric: lining-nums; font-feature-settings: 'lnum' 1; white-space: nowrap; color: var(--accent); letter-spacing: -0.03em; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="26" data-width="1080" data-height="1920"></div>
+<script>
+const S = STUDIO, root = S.root, seg = S.seg, mix = S.mix;
+const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue(n).trim();
+const INK = tok('--ink'), BLUE = tok('--accent'), PAPER = tok('--paper');
+const add = (cls, st, html, parent) => { const d = document.createElement('div'); d.className = cls; Object.assign(d.style, st || {}); if (html != null) d.innerHTML = html; (parent || root).appendChild(d); return d; };
+const ML = 100, MR = 940, CW = MR - ML;
+
+// paper grain (static, seeded)
+{ const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1920; Object.assign(cv.style, { position: 'absolute', left: 0, top: 0, opacity: 0.6 }); root.appendChild(cv);
+  const g = cv.getContext('2d'), r = S.rng(9);
+  for (let i = 0; i < 160000; i++) { g.fillStyle = r() < 0.6 ? 'rgba(90,70,50,0.09)' : 'rgba(255,255,255,0.4)'; g.fillRect(r() * 1080, r() * 1920, 1 + (r() < 0.2), 1); }
+  for (let i = 0; i < 420; i++) { const x = r() * 1080, y = r() * 1920, a = r() * Math.PI, l = 6 + r() * 20; g.strokeStyle = 'rgba(90,70,50,0.07)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); } }
+
+// ---------- a line of type that is fitted (justified) to a width, revealed through a mask
+function fitLine(text, cls, x, y, w, opts) {
+  opts = opts || {};
+  const m = add('mask', { left: x + 'px', top: y + 'px', width: w + 'px', textAlign: opts.align || 'left' });
+  const html = text.split(' ').map(w => `<span class="wd"><span>${w}</span></span>`).join(' ');
+  const i = add('in ' + cls, { fontSize: '100px', lineHeight: '1', color: opts.color || INK }, html, m);
+  return { m, i, x, y, w, text, cap: opts.cap || 400, h: 0, fitted: false, align: opts.align, words: [...i.querySelectorAll('.wd > span')] };
+}
+function fit(L) {
+  if (L.fitted) return; L.i.style.fontSize = '100px';
+  const nat = L.i.scrollWidth || 1;
+  const s = Math.min(L.cap, 100 * L.w / nat * 0.995);
+  L.i.style.fontSize = s.toFixed(2) + 'px'; L.i.style.lineHeight = (s * 0.94).toFixed(2) + 'px';
+  L.h = s * 0.94; L.m.style.height = (L.h + s * 0.06) + 'px'; L.size = s;
+  if (document.fonts.status === 'loaded') L.fitted = true;
+}
+function show(L, t, tin, tout, y, wEnd) {
+  fit(L);
+  const p = seg(t, tin, 0.7, 'power3.out'), q = seg(t, tout, 0.4, 'power2.in');
+  L.m.style.visibility = p > 0.001 && q < 0.999 ? 'visible' : 'hidden';
+  if (y != null) L.m.style.top = y + 'px';
+  L.i.style.transform = `translateY(${((1 - p) * 104 - q * 104).toFixed(2)}%)`;
+  // a clean wipe that follows the voice across the line
+  // words rise one by one, in step with the voice
+  const n = L.words.length;
+  L.words.forEach((sp, k) => { const tw = wEnd ? tin + (wEnd - tin) * k / n : tin; const pw = seg(t, tw, 0.45, 'power3.out'); sp.style.transform = `translateY(${((1 - pw) * 105).toFixed(2)}%)`; });
+}
+// stack fitted lines in a column from top y
+function column(lines, cls, x, w, y0, gap, opts) { return lines.map(t => fitLine(t, cls, x, 0, w, Object.assign({ cap: 170, align: 'center' }, opts || {}))); }
+function placeCol(col, y0, gap) { let y = y0; col.forEach(L => { fit(L); L.m.style.top = y + 'px'; y += L.h + gap; }); return y; }
+
+// ---------- masthead
+const topRule = add('rule', { left: ML + 'px', top: '226px', width: CW + 'px', height: '12px' });
+const folL = fitLine('Worth knowing', 'cond', ML, 256, 400, { color: BLUE, cap: 52 });
+const folR = fitLine('Source: NHSBSA', 'cond', MR - 400, 256, 400, { cap: 52, align: 'right' });
+
+// ---------- headline band: spoken sentences, centred, words swap through a mask
+const HL = add('abs serif', { left: ML + 'px', top: '330px', width: CW + 'px', textAlign: 'center', fontSize: '112px', lineHeight: '112px', letterSpacing: '-0.02em' });
+const HEADS = [
+  { words: 'If you pay for HRT prescriptions in England...'.split(' '), at: [0.08, 0.3, 0.5, 0.65, 0.85, 1.4, 2.0, 2.3], out: 3.05 },
+  { words: "This one's worth knowing.".split(' '), at: [3.23, 3.5, 3.75, 3.95], out: 20.2 },
+  { words: 'Ask your pharmacist if yours is covered.'.split(' '), at: [20.55, 20.75, 20.95, 21.6, 21.8, 22.0, 22.15], out: 22.85 },
+];
+HEADS.forEach(h => {
+  h.el = add('abs', { left: 0, top: 0, width: CW + 'px' }, null, HL);
+  h.spans = h.words.map((w, k) => { const o = document.createElement('span'); o.className = 'hw'; const i = document.createElement('span'); i.textContent = w; o.appendChild(i); h.el.appendChild(o); h.el.appendChild(document.createTextNode(' ')); return i; });
+});
+HEADS[1].spans[3].style.color = BLUE;   // "knowing."
+const inkBar = add('rule', { left: '0px', top: '0px', width: '140px', height: '14px' });
+const midRule = add('rule', { left: ML + 'px', top: '650px', width: CW + 'px', height: '6px' });
+
+// ---------- the number
+const NUM = add('abs serif', { left: (ML - 40) + 'px', top: '650px', width: (CW + 80) + 'px', textAlign: 'center' });
+NUM.id = 'num';
+const numLine = add('rule', { left: ML + 'px', top: '1030px', width: CW + 'px', height: '16px', background: BLUE });
+const pound = add('abs serif', { left: ML + 'px', top: '650px', width: CW + 'px', textAlign: 'center', color: BLUE }, '£');
+
+// standfirst: the certificate's name, set as two justified lines
+const SF = [fitLine("There's an HRT prescription", 'cond', ML, 0, CW), fitLine('prepayment certificate.', 'cond', ML, 0, CW, { color: BLUE })];
+const SFT = [5.23, 7.05];
+
+// ---------- two justified columns with a centre rule
+const GUT = 44, COLW = (CW - GUT) / 2, CL = ML, CR = ML + COLW + GUT;
+const colRule = add('rule', { left: (ML + COLW + GUT / 2 - 3) + 'px', top: '1262px', width: '6px', height: '0px', transformOrigin: '50% 0' });
+const colTop = add('rule', { left: ML + 'px', top: '1240px', width: CW + 'px', height: '6px' });
+const A_L = column(['And covers', 'certain HRT', 'medicines'], 'cond', CL, COLW), A_R = column(['for twelve', 'months.'], 'cond', CR, COLW, 0, 0, { color: BLUE });
+const C_L = column(['You can buy', 'it online,'], 'cond', CL, COLW), C_R = column(['or at some', 'pharmacies.'], 'cond', CR, COLW);
+const A_T = [[10.89, 11.47, 12.4], [13.37, 13.9]], C_T = [[17.71, 18.3], [18.86, 19.3]];
+// pull-quote, right aligned
+const PQ = ['About the price', 'of two single', 'prescriptions.'].map((t, k) => {
+  const m = add('mask', { left: ML + 'px', width: CW + 'px', top: (1268 + k * 86) + 'px', height: '90px', textAlign: 'right' });
+  const i = add('in serif', { fontStyle: 'italic', fontSize: '80px', lineHeight: '88px', textAlign: 'right', color: INK, letterSpacing: '-0.015em' }, t.split(' ').map(w => `<span class="wd"><span>${w}</span></span>`).join(' '), m);
+  return { m, i, words: [...i.querySelectorAll('.wd > span')] };
+});
+const PQmark = add('abs serif', { left: (ML - 6) + 'px', top: '1236px', fontSize: '300px', lineHeight: '300px', color: BLUE, fontStyle: 'italic' }, '“');
+const pqBar = add('rule', { left: (MR + 22) + 'px', top: '1272px', width: '12px', height: '256px', background: BLUE, transformOrigin: '50% 0' });
+
+// ---------- end card
+const END = add('abs', { left: 0, top: 0, width: '1080px', height: '1920px' });
+const mark = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+mark.setAttribute('width', 200); mark.setAttribute('height', 200); mark.setAttribute('viewBox', '-100 -100 200 200');
+Object.assign(mark.style, { position: 'absolute', left: '440px', top: '560px', overflow: 'visible' });
+mark.innerHTML = `<rect x="-96" y="-96" width="192" height="192" rx="40" fill="${BLUE}"/><path d="M 8 -60 A 60 60 0 1 0 58 26 A 48 48 0 1 1 8 -60 Z" fill="${PAPER}"/>`;
+END.appendChild(mark);
+const endName = fitLine('Clari', 'serif', 240, 800, 600, { align: 'center', cap: 230 });
+const endA = fitLine('Send this to her.', 'serif', 140, 0, 800, { cap: 96, align: 'center', color: BLUE });
+const endB = fitLine('Free on App Store and Google Play', 'cond', 140, 0, 800, { cap: 60, align: 'center' });
+const endS = fitLine('Source: NHSBSA', 'cond', 140, 0, 800, { cap: 50, align: 'center' });
+
+window.__timelines["main"] = S.play(function render(t) {
+  const clear = seg(t, 22.9, 0.5, 'power2.in');   // the spread leaves before the end card
+  // masthead
+  topRule.style.transform = `scaleX(${seg(t, 0.0, 0.9, 'power3.inOut') * (1 - clear)})`;
+  show(folL, t, 0.35, 22.9); show(folR, t, 4.2, 22.9);
+  folL.m.style.left = ML + 'px';
+  // headline swaps
+  HEADS.forEach((h, hi) => {
+    let n = 0;
+    h.spans.forEach((sp, k) => {
+      const p = seg(t, h.at[k] - 0.1, 0.55, 'power3.out'), q = seg(t, h.out + 0.035 * k, 0.32, 'power2.in');
+      sp.style.transform = `translateY(${((1 - p) * 105 - q * 105).toFixed(2)}%)`;
+      if (p > 0 && q < 1) n++;
+    });
+    h.el.style.visibility = n ? 'visible' : 'hidden';
+    // vertically centre each headline in its band
+    const hh = h.el.offsetHeight; h.el.style.top = ((300 - hh) / 2) + 'px';
+  });
+  // ink bar sweeps under the band at each swap
+  { const sw = [3.0, 20.15, 0.0].map(s0 => seg(t, s0, 0.55, 'power3.inOut') - seg(t, s0 + 0.55, 0.35, 'power2.in'));
+    const a = Math.max(...sw); const which = sw.indexOf(a);
+    const s0 = [3.0, 20.15, 0.0][which], u = seg(t, s0, 0.9, 'power3.inOut');
+    inkBar.style.top = '632px'; inkBar.style.left = (ML + u * (CW - 140)) + 'px'; inkBar.style.opacity = a > 0.01 ? 1 : 0; }
+  midRule.style.transform = `scaleX(${seg(t, 0.4, 1.0, 'power3.inOut') * (1 - clear)})`;
+
+  // number: the pound sign waits, then the price counts up as it is said, in step with its blue line
+  { const big = 296;
+    NUM.style.fontSize = big + 'px'; NUM.style.lineHeight = (big * 1.1) + 'px'; pound.style.fontSize = big + 'px'; pound.style.lineHeight = (big * 1.1) + 'px';
+    const pp = seg(t, 5.1, 0.7, 'power3.out') * (t < 9.0 ? 1 : 0);
+    // the pound sign walks to where its number will stand (both measured from the real number element)
+    NUM.style.display = 'inline-block'; NUM.style.width = 'auto'; NUM.style.textAlign = 'left';
+    NUM.textContent = '£19.80'; const wFull = NUM.offsetWidth; NUM.textContent = '£'; const wP = NUM.offsetWidth;
+    const NX = 520 - wFull / 2;
+    const px = (NX + wP / 2 - 520) * seg(t, 5.9, 3.0, 'sine.inOut');
+    pound.style.transform = `translate(${px.toFixed(2)}px, ${(1 - pp) * 60}px)`; pound.style.opacity = pp;
+    const c = seg(t, 9.0, 1.55, 'power2.out');
+    const v = 19.8 * c;
+    NUM.textContent = '£' + v.toFixed(2);
+    // the count grows from the pound sign's final place, so the £ never jumps
+    NUM.style.left = NX + 'px';
+    const np = (t >= 9.0 ? 1 : 0) * (1 - clear);
+    NUM.style.opacity = np; NUM.style.transform = `translateY(${(1 - np) * 50 - clear * 60}px)`;
+    numLine.style.transform = `scaleX(${c * (1 - clear)})`; }
+
+  // standfirst
+  let y = 1072; SF.forEach((L, k) => { fit(L); show(L, t, SFT[k] - 0.1, 22.9, y, [6.95, 8.4][k]); y += L.h + 14; });
+
+  // columns
+  const colIn = seg(t, 10.7, 0.8, 'power3.inOut') * (1 - clear);
+  colRule.style.height = '270px'; colRule.style.transform = `scaleY(${colIn * (1 - seg(t, 14.5, 0.35, 'power2.in') + seg(t, 17.5, 0.5, 'power3.out'))})`;
+  colTop.style.transform = `scaleX(${seg(t, 10.6, 0.8, 'power3.inOut') * (1 - clear)})`;
+  placeCol(A_L, 1270, 10); placeCol(A_R, 1270, 10); placeCol(C_L, 1270, 10); placeCol(C_R, 1270, 10);
+  A_L.forEach((L, k) => show(L, t, A_T[0][k] - 0.1, 14.45 + 0.05 * k, null, [11.47, 12.4, 13.3][k]));
+  A_R.forEach((L, k) => show(L, t, A_T[1][k] - 0.1, 14.5 + 0.05 * k, null, [13.9, 14.25][k]));
+  C_L.forEach((L, k) => show(L, t, C_T[0][k] - 0.1, 22.9 + 0.04 * k, null, [18.3, 18.86][k]));
+  C_R.forEach((L, k) => show(L, t, C_T[1][k] - 0.1, 22.95 + 0.04 * k, null, [19.3, 19.9][k]));
+  // pull-quote
+  PQ.forEach((P, k) => { const p = seg(t, 14.75 + [0, 0.75, 1.5][k], 0.7, 'power3.out'), q = seg(t, 17.3 + 0.05 * k, 0.4, 'power2.in');
+    P.m.style.visibility = p > 0 && q < 1 ? 'visible' : 'hidden'; P.i.style.transform = `translateY(${(1 - p) * 104 - q * 104}%)`;
+    const t0w = 14.75 + [0, 0.8, 1.6][k]; P.words.forEach((sp, j) => { const pw = seg(t, t0w + j * 0.26, 0.45, 'power3.out'); sp.style.transform = `translateY(${((1 - pw) * 105).toFixed(2)}%)`; }); });
+  { const p = seg(t, 14.7, 0.6, 'back.out(1.6)'), q = seg(t, 17.25, 0.35, 'power2.in');
+    PQmark.style.opacity = p * (1 - q); PQmark.style.transform = `translateY(${(1 - p) * 40}px) scale(${0.8 + 0.2 * p})`;
+    pqBar.style.transform = `scaleY(${seg(t, 14.8, 1.2, 'power2.inOut') * (1 - q)})`; }
+
+  // end card
+  { const m = seg(t, 23.35, 0.7, 'back.out(1.4)');
+    mark.style.opacity = Math.min(1, m * 2); mark.style.transform = `scale(${0.6 + 0.4 * m}) rotate(${(1 - m) * -20}deg)`;
+    show(endName, t, 23.6, 99, 780);
+    show(endA, t, 24.0, 99, 1050);
+    show(endB, t, 24.3, 99, 1190);
+    show(endS, t, 24.5, 99, 1290); }
+}, { loop: false });
+</script>
+</body>
+</html>

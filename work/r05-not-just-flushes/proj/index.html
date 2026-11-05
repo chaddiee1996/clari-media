@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  :root { --paper: #F5F0E6; --pink: #FF48B0; --blue: #0078BF; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--paper); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--paper); font-family: 'Archivo Black', sans-serif; }
+  .plate { position: absolute; inset: 0; mix-blend-mode: multiply; }
+  .plate.p { color: var(--pink); } .plate.b { color: var(--blue); }
+  .sc { position: absolute; inset: 0; }
+  .it { position: absolute; left: 0; width: 1080px; text-align: center; white-space: nowrap; text-transform: uppercase; letter-spacing: -0.02em; line-height: 0.86; will-change: transform; }
+  .mono { font-family: 'Space Mono', monospace; font-weight: 700; text-transform: none; letter-spacing: -0.01em; line-height: 1.15; }
+  .shape { position: absolute; }
+  #grain { position: absolute; inset: 0; mix-blend-mode: multiply; opacity: 0.55; }
+  .bar { position: absolute; top: 0; height: 1920px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="25.5" data-width="1080" data-height="1920">
+  <div class="plate p" id="P"></div>
+  <div class="plate b" id="B"></div>
+  <div id="wipes"></div>
+  <canvas id="grain" width="540" height="960"></canvas>
+</div>
+<script>
+(function () {
+  const S = STUDIO;
+  const $ = id => document.getElementById(id);
+  const E = n => S.ease(n);
+  const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const pr = (t, a, b) => cl((t - a) / (b - a));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const BEAT = 60 / 86, b = n => 0.35 + n * BEAT;   // beat n time
+
+  // scenes: [id, start, end]. A roller wipe sits on each boundary.
+  const SCENES = [['s0', 0, b(5)], ['s1', b(5), b(19)], ['s2', b(19), b(23)], ['s3', b(23), b(28)], ['s4', b(28), b(31.5)], ['s5', b(31.5), 25.5]];
+  const SC = {};
+  ['P', 'B'].forEach(pl => SCENES.forEach(([id]) => { const d = document.createElement('div'); d.className = 'sc'; $(pl).appendChild(d); (SC[id] = SC[id] || {})[pl] = d; }));
+
+  // items: [scene, html, y, size, tin, plates, extra]
+  const ITEMS = [];
+  const add = (sc, html, y, size, tin, plates = 'pb', extra = {}) => ITEMS.push({ sc, html, y, size, tin, plates, ...extra });
+  // poster 0: hot flushes
+  add('s0', 'Hot', 420, 330, b(0));
+  add('s0', 'flushes.', 720, 196, b(1));
+  add('s0', 'That&rsquo;s the one', 1050, 84, b(2), 'b', { gapBefore: 150 });
+  add('s0', 'everyone knows.', 1150, 84, b(3), 'b');
+  // poster 1: the rest, a justified stack, one word per beat
+  const LIST = ['Night sweats', 'Brain fog', 'Anxiety', 'Mood changes', 'Palpitations', 'Headaches', 'Joint pain', 'Sleep problems', 'Skin changes', 'Lower sex drive', 'Vaginal dryness', 'UTIs'];
+  const LT = LIST.map((_, i) => b(6 + i * 1.5 * 0 + i));
+  add('s1', 'And the rest.', 0, 56, b(5.3), 'b', { mono: 1 });
+  LIST.forEach((w, i) => add('s1', w, 0, 100, b(6 + i), 'pb', { stack: i }));
+  // poster 2: all on the NHS list
+  add('s2', 'All on', 380, 230, b(19.5));
+  add('s2', 'the NHS', 610, 230, b(20.3));
+  add('s2', 'list.', 840, 300, b(21.1));
+  add('s2', 'Source: Cambridge University<br/>Hospitals NHS', 1380, 48, b(21.7), 'b', { mono: 1, fix: 1 });
+  // poster 3: years before
+  add('s3', 'And they can start', 330, 84, b(23.5));
+  add('s3', 'years', 470, 330, b(24.3));
+  add('s3', 'before your', 840, 132, b(25.1));
+  add('s3', 'periods stop.', 990, 132, b(25.9));
+  add('s3', 'Source: Cambridge University<br/>Hospitals NHS', 1380, 48, b(26.4), 'b', { mono: 1, fix: 1 });
+  // poster 4: CTA
+  add('s4', 'Send this', 560, 200, b(28.5));
+  add('s4', 'to her.', 800, 290, b(29.4));
+  // poster 5: end card
+  add('s5', 'Clari', 1010, 230, b(32.6), 'pb', { nocaps: 1 });
+  add('s5', 'Your perimenopause<br/>symptom diary', 1270, 54, b(33.2), 'b', { mono: 1 });
+
+  ITEMS.forEach(it => {
+    it.el = {};
+    for (const pl of ['P', 'B']) {
+      if ((pl === 'P' && !it.plates.includes('p')) || (pl === 'B' && !it.plates.includes('b'))) continue;
+      const d = document.createElement('div'); d.className = 'it' + (it.mono ? ' mono' : ''); d.innerHTML = `<span>${it.html}</span>`;
+      d.style.fontSize = it.size + 'px'; d.style.top = it.y + 'px'; if (it.nocaps) { d.style.textTransform = 'none'; d.style.letterSpacing = '-0.035em'; } SC[it.sc][pl].appendChild(d); it.el[pl] = d;
+    }
+  });
+
+  // shapes: halftone circle (pink) on poster 0, stripes (blue) on poster 2, rings on poster 4, crescent on the end card
+  function halftone(cx, cy, r, step, grow, id) {
+    let s = `<svg class="shape" id="${id}" width="1080" height="1920" viewBox="0 0 1080 1920" style="left:0;top:0">`;
+    for (let y = cy - r; y <= cy + r; y += step) for (let x = cx - r; x <= cx + r; x += step) {
+      const dx = x - cx, dy = y - cy; if (dx * dx + dy * dy > r * r) continue;
+      const k = (y - (cy - r)) / (2 * r); const rr = step * 0.5 * (0.25 + grow * k);
+      s += `<circle cx="${x}" cy="${y}" r="${Math.min(step * 0.56, rr).toFixed(1)}" fill="currentColor"/>`;
+    }
+    return s + '</svg>';
+  }
+  SC.s0.P.insertAdjacentHTML('afterbegin', halftone(540, 640, 430, 30, 1.0, 'ht0'));
+  SC.s2.B.insertAdjacentHTML('afterbegin', `<svg class="shape" id="st2" width="1080" height="1920" style="left:0;top:0">${Array.from({ length: 9 }, (_, i) => `<rect x="-60" y="${1110 + i * 44}" width="1200" height="22" fill="currentColor"/>`).join('')}</svg>`);
+  SC.s3.P.insertAdjacentHTML('afterbegin', `<svg class="shape" id="ci3" width="1080" height="1920" style="left:0;top:0"><circle cx="540" cy="620" r="250" fill="currentColor"/></svg>`);
+  SC.s4.P.insertAdjacentHTML('afterbegin', `<svg class="shape" id="rg4" width="1080" height="1920" style="left:0;top:0">${[520, 440, 360, 280, 200].map((r, i) => `<circle cx="540" cy="760" r="${r}" fill="none" stroke="currentColor" stroke-width="34"/>`).join('')}</svg>`);
+  SC.s5.P.insertAdjacentHTML('afterbegin', `<svg class="shape" id="mk5p" width="1080" height="1920" style="left:0;top:0"><path d="M600 330 A260 260 0 1 0 800 760 A210 210 0 1 1 600 330 Z" fill="currentColor"/></svg>`);
+  SC.s5.B.insertAdjacentHTML('afterbegin', `<svg class="shape" id="mk5b" width="1080" height="1920" style="left:0;top:0"><path d="M600 330 A260 260 0 1 0 800 760 A210 210 0 1 1 600 330 Z" fill="currentColor"/></svg>`);
+  // pink highlight band that follows the newest word in the stack
+  SC.s1.P.insertAdjacentHTML('afterbegin', `<div id="band" style="position:absolute; left:90px; width:900px; background:#FF48B0;"></div>`);
+
+  // roller wipes: blue bars plus one pink bar sweep across and clip the old sheet away
+  const wipes = $('wipes');
+  const WB = [[300, '#0078BF'], [90, '#FF48B0']];
+  const WG = 14, WW = WB.reduce((s, [w]) => s + w + WG, 0);
+  wipes.innerHTML = WB.map(([w, c]) => `<div class="bar" style="width:${w}px; background:${c}; mix-blend-mode:multiply;"></div>`).join('');
+  const wbars = [...wipes.children];
+
+  // grain: one fixed seeded texture
+  (function () { const c = $('grain'), g = c.getContext('2d'), R = S.rng(86), id = g.createImageData(540, 960);
+    for (let i = 0; i < id.data.length; i += 4) { const v = 255 - Math.pow(R(), 3) * 110; id.data[i] = v; id.data[i + 1] = v; id.data[i + 2] = v - 4; id.data[i + 3] = 255; }
+    g.putImageData(id, 0, 0); c.style.width = '1080px'; c.style.height = '1920px'; })();
+
+  // every poster is a centred stack: each big line is fitted to the same width, then the stack is centred in its region
+  const STACK = ITEMS.filter(i => i.stack != null);
+  const REGION = { s0: [300, 1290], s1: [290, 1530], s2: [300, 1300], s3: [270, 1320], s4: [420, 1250], s5: [880, 1470] };
+  const lineH = it => it.mono ? it.size * 1.15 * (it.html.includes('<br') ? 2 : 1) : it.size * 0.86;
+  function layout() {
+    for (const sc in REGION) {
+      const its = ITEMS.filter(i => i.sc === sc && !i.fix);
+      its.forEach(it => {
+        MEAS.className = it.mono ? 'mono' : ''; MEAS.style.textTransform = it.nocaps || it.mono ? 'none' : 'uppercase'; MEAS.innerHTML = it.html;
+        const w = MEAS.offsetWidth || 500; const fitW = it.mono ? 940 : 860;
+        it.size = it.mono ? (it.size0 || (it.size0 = it.size)) : Math.min(it.stack != null ? 250 : (it.size0 || (it.size0 = it.size)), 100 * fitW / w);
+      });
+      const [y0, y1] = REGION[sc];
+      const gapOf = it => it.mono ? 26 : (sc === 's1' ? 12 : Math.max(14, it.size * 0.1));
+      let total = its.reduce((s, it) => s + lineH(it) + gapOf(it) + (it.gapBefore || 0), 0) - gapOf(its[its.length - 1]);
+      const k = Math.min(1, (y1 - y0) / total);
+      if (k < 1) { its.forEach(it => { if (!it.mono) it.size *= k; }); total = its.reduce((s, it) => s + lineH(it) + gapOf(it) + (it.gapBefore || 0), 0) - gapOf(its[its.length - 1]); }
+      let y = y0 + Math.max(0, (y1 - y0 - total) / 2);
+      its.forEach(it => { y += it.gapBefore || 0; it.y = y; y += lineH(it) + gapOf(it); });
+    }
+    return ITEMS.map(it => ({ y: it.y, size: it.size }));
+  }
+  let lay = null;
+  const MEAS = document.createElement('span'); MEAS.style.cssText = 'position:absolute; left:0; top:-2000px; visibility:hidden; white-space:nowrap; font-size:100px; letter-spacing:-0.02em; font-family:"Archivo Black"';
+  $('root').appendChild(MEAS);
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines.main = S.play(function render(t) {
+    lay = layout();
+    ITEMS.forEach(it => { for (const pl in it.el) { it.el[pl].style.fontSize = it.size + 'px'; it.el[pl].style.top = it.y + 'px'; } });
+    // scenes + roller wipes
+    SCENES.forEach(([id, t0, t1], si) => {
+      // wipe at the start of this scene (except the first)
+      let leftClip = 0, rightClip = 0;
+      const wIn = si > 0 ? pr(t, t0 - 0.55, t0 + 0.45) : 1, wOut = si < SCENES.length - 1 ? pr(t, t1 - 0.55, t1 + 0.45) : 0;
+      const xin = lerp(-WW, 1080 + 40, E('sine.inOut')(wIn)), xout = lerp(-WW, 1080 + 40, E('sine.inOut')(wOut));
+      const vis = wIn > 0 && wOut < 1;
+      for (const pl of ['P', 'B']) {
+        const d = SC[id][pl]; d.style.display = vis ? 'block' : 'none';
+        // new sheet shows behind the trailing bar, old sheet ahead of the leading bar
+        const r = si > 0 && wIn < 1 ? 1080 - Math.max(0, xin) : 0;
+        const l = wOut > 0 ? Math.max(0, xout + WW) : 0;
+        d.style.clipPath = `inset(0 ${Math.max(0, r)}px 0 ${l}px)`;
+      }
+    });
+    // wipe bars position (whichever wipe is active)
+    let wx = -9999;
+    SCENES.forEach(([id, t0], si) => { if (si === 0) return; const w = pr(t, t0 - 0.55, t0 + 0.45); if (w > 0 && w < 1) wx = lerp(-WW, 1080 + 40, E('sine.inOut')(w)); });
+    let acc = 0; wbars.forEach((el, i) => { el.style.left = (wx + acc) + 'px'; acc += WB[i][0] + WG; el.style.display = wx > -9000 ? 'block' : 'none'; });
+    // items: stamp in (scale 1.12 to 1, small rotate settle); blue plate thumps off register and settles
+    ITEMS.forEach((it, k) => {
+      const a = E('power4.out')(pr(t, it.tin, it.tin + 0.25)), on = t >= it.tin;
+      const rot = (k % 2 ? 1.6 : -1.4) * (1 - E('elastic.out(1,0.5)')(pr(t, it.tin, it.tin + 0.6)));
+      const sc = 1.12 - 0.12 * a;
+      const th = 1 - E('power3.out')(pr(t, it.tin + 0.05, it.tin + 0.55));
+      // misregistration: settles at 4px; jitters 1 to 2px on beats
+      const beatN = Math.floor((t - 0.35) / BEAT), jit = (S.rng(beatN * 13 + 7)() - 0.5) * 3;
+      for (const pl in it.el) {
+        const el = it.el[pl]; el.style.visibility = on ? 'visible' : 'hidden';
+        const off = pl === 'B' ? [5 + 7 * th + jit, 3 + 5 * th] : [0, 0];
+        el.style.transform = `translate(${off[0]}px, ${off[1]}px) rotate(${rot}deg) scale(${sc})`;
+      }
+    });
+    // the pink band follows the newest stacked word
+    const band = $('band'); let bi = -1; STACK.forEach((it, i) => { if (t >= it.tin) bi = i; });
+    if (bi >= 0) {
+      let y = STACK[0].y, h = STACK[0].size * 0.86;
+      for (let i = 0; i <= bi; i++) { const k = E('expo.out')(pr(t, STACK[i].tin, STACK[i].tin + 0.4)); y = lerp(y, STACK[i].y, k); h = lerp(h, STACK[i].size * 0.86, k); }
+      band.style.display = 'block'; band.style.top = (y - 6) + 'px'; band.style.height = (h + 10) + 'px';
+    } else band.style.display = 'none';
+    // shapes: stamp and step on beats
+    const ht = $('ht0'); if (ht) { const a = E('power4.out')(pr(t, b(0.5), b(0.5) + 0.25)); ht.style.transform = `scale(${1.12 - 0.12 * a})`; ht.style.transformOrigin = '540px 640px'; ht.style.opacity = t > b(0.5) ? 1 : 0; }
+    const st = $('st2'); st.style.transform = `translateY(${-66 * Math.floor(Math.max(0, t - b(19.5)) / BEAT)}px)`; st.style.opacity = t > b(19.9) ? 1 : 0;
+    const ci = $('ci3'), ca = E('power4.out')(pr(t, b(23.9), b(23.9) + 0.25)); ci.style.opacity = t > b(23.9) ? 1 : 0; ci.style.transformOrigin = '540px 620px'; ci.style.transform = `scale(${(1.12 - 0.12 * ca) * (1 + 0.04 * Math.max(0, Math.floor((t - b(23.9)) / BEAT)) )})`;
+    const rg = $('rg4'); rg.style.opacity = t > b(28.2) ? 1 : 0; rg.style.transformOrigin = '540px 760px'; rg.style.transform = `scale(${1 + 0.06 * (Math.floor(Math.max(0, t - b(28.2)) / BEAT) % 3)})`;
+    const mk = E('power4.out')(pr(t, b(32.0), b(32.0) + 0.25)), mth = 1 - E('power3.out')(pr(t, b(32.1), b(32.1) + 0.6));
+    $('mk5p').style.opacity = $('mk5b').style.opacity = t > b(32.0) ? 1 : 0;
+    $('mk5p').style.transformOrigin = $('mk5b').style.transformOrigin = '560px 560px';
+    $('mk5p').style.transform = `scale(${1.12 - 0.12 * mk})`;
+    $('mk5b').style.transform = `translate(${-18 - 30 * mth}px, ${10 + 20 * mth}px) scale(${1.12 - 0.12 * mk})`;
+  }, { loop: false });
+})();
+</script>
+</body>
+</html>

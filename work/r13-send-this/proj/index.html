@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gabarito:wght@600;700;800;900&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #F2E8D5; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #F2E8D5; }
+  #cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+  #warm { position: absolute; left: -3000px; top: 0; font: 900 60px 'Gabarito'; }
+  #warm b { font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+  <canvas id="cv" class="clip" width="1080" height="1920" data-start="0" data-duration="20" data-track-index="0"></canvas>
+  <div id="warm">Send this <b>to her</b></div>
+</div>
+<script>
+/*
+ * Clari R13 "Send this to her". paper-world look, 9:16, 20 s, text only + music (108 bpm, beat 0.556 s).
+ * A pop-up paper world builds above a stack of handwritten-style paper notes anchored to the bottom.
+ * Two little houses on two hills (one friend, the other). Morning light warms slowly. Everything seeded.
+ *   0.0-4.0  sky, far hills, sun, back hills, houses, trees, clouds land one sheet per beat
+ *   0.6      note 1: To the friend who's been saying "I just don't feel like me."
+ *   4.45     note 2: Hot flushes. Brain fog. Bad sleep. Low mood. (rows push up from the bottom, one per beat and a half)
+ *   8.35     note 3: It might be worth asking your GP about perimenopause.
+ *  12.2      note 4: Menopause usually happens between 45 and 55. Sometimes earlier. Source: NHS Wales
+ *  15.6      a paper plane flies from her house to yours; note 5: Send this to her. + Clari
+ */
+(function () {
+  const W = 1080, H = 1920, DUR = 20, B = 60 / 108;
+  const P = { paper: '#F2E8D5', note: '#FBF5E9', sand: '#E3CBA8', sage: '#9CB49A', deep: '#5E7F6A', teal: '#2F5D62', ink: '#2B2B2B', rose: '#D98C7A', sky: '#F5DDC6' };
+  const F = (wt, px) => `${wt} ${px}px "Gabarito"`;
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+
+  // ---------- helpers ----------
+  function rng(seed) { let a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function noise1(seed) { const r = rng(seed), N = 1024, v = new Float32Array(N); for (let i = 0; i < N; i++) v[i] = r() * 2 - 1; return function (x) { const i = Math.floor(x), f = x - i, a = v[((i % N) + N) % N], b = v[(((i + 1) % N) + N) % N], s = f * f * (3 - 2 * f); return a + (b - a) * s; }; }
+  const EZ = {}; const ez = n => EZ[n] || (EZ[n] = gsap.parseEase(n));
+  const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const tw = (t, s, d, e) => t <= s ? 0 : t >= s + d ? 1 : ez(e || 'none')((t - s) / d);
+  const g = (x, c, w) => Math.exp(-Math.pow((x - c) / w, 2));
+  function hex(c) { const n = parseInt(c.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function mixc(a, b, k) { const A = hex(a), Bc = hex(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, Bc[i], k))).join(',')})`; }
+
+  // hand-cut edges: resample outline, nudge by seeded noise
+  function cut(pts, seed, step, amp, wob) {
+    const r = rng(seed), nz = noise1(seed + 7), n = pts.length, L = [0];
+    for (let i = 1; i <= n; i++) { const a = pts[i - 1], b = pts[i % n]; L.push(L[i - 1] + Math.hypot(b[0] - a[0], b[1] - a[1])); }
+    const tot = L[n], out = []; let s = 0, j = 0;
+    while (s < tot) { while (L[j + 1] < s) j++; const a = pts[j], b = pts[(j + 1) % n], f = (s - L[j]) / ((L[j + 1] - L[j]) || 1); const dx = b[0] - a[0], dy = b[1] - a[1], dl = Math.hypot(dx, dy) || 1; const d = nz(s / 70) * wob + (r() - 0.5) * amp * 2; out.push([a[0] + dx * f - dy / dl * d, a[1] + dy * f + dx / dl * d]); s += step * (0.5 + r()); }
+    return out;
+  }
+  function toPath(pts, p) { p = p || new Path2D(); p.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) p.lineTo(pts[i][0], pts[i][1]); p.closePath(); return p; }
+  function ridge(fn, x0, x1, bot) { const p = []; for (let x = x0; x <= x1; x += 4) p.push([x, fn(x)]); p.push([x1, bot]); p.push([x0, bot]); return p; }
+  function circ(cx, cy, r, n) { const p = []; n = n || 90; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return p; }
+  function rect(x, y, w, h) { return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]; }
+  const shape = (pts, seed, step, amp, wob) => toPath(cut(pts, seed, step || 11, amp === undefined ? 1.0 : amp, wob === undefined ? 2.0 : wob));
+
+  // grain tile
+  const GT = 256, grainC = document.createElement('canvas'); grainC.width = grainC.height = GT;
+  (function () { const x = grainC.getContext('2d'), id = x.createImageData(GT, GT), d = id.data, r = rng(9);
+    for (let i = 0; i < GT * GT; i++) { const v = (r() - 0.5); const c = v > 0 ? 255 : 0; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = c; d[i * 4 + 3] = Math.abs(v) * 60; }
+    x.putImageData(id, 0, 0);
+    for (let k = 0; k < 260; k++) { const sx = r() * GT, sy = r() * GT, a = r() * 6.28, l = 6 + r() * 20; x.strokeStyle = r() < 0.6 ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.08)'; x.lineWidth = 0.6 + r() * 0.6; x.beginPath(); x.moveTo(sx, sy); x.quadraticCurveTo(sx + Math.cos(a + 0.6) * l * 0.6, sy + Math.sin(a + 0.6) * l * 0.6, sx + Math.cos(a) * l, sy + Math.sin(a) * l); x.stroke(); }
+  })();
+  const grain = ctx.createPattern(grainC, 'repeat');
+
+  // paper finish: soft shadow + tight contact shadow, sun-lit rim on the top edge, grain
+  function sheet(p, col, o) {
+    o = o || {};
+    const lift = o.lift || 0;
+    ctx.save();
+    ctx.shadowColor = `rgba(43,43,43,${0.2 + 0.1 * lift})`; ctx.shadowBlur = 18 + 30 * lift; ctx.shadowOffsetX = -4 - 10 * lift; ctx.shadowOffsetY = 7 + 26 * lift;
+    ctx.fillStyle = mixc(col, '#FFF6E8', 0.45); ctx.fill(p);
+    ctx.shadowColor = 'rgba(0,0,0,0)';
+    ctx.shadowColor = 'rgba(43,43,43,0.18)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1.5; ctx.shadowOffsetX = 0; ctx.fill(p); ctx.shadowColor = 'rgba(0,0,0,0)';
+    ctx.clip(p);
+    ctx.translate(0, o.rim === undefined ? 2.6 : o.rim); ctx.fillStyle = o.fill || col; ctx.fill(p); ctx.translate(0, -(o.rim === undefined ? 2.6 : o.rim));
+    ctx.globalAlpha = 0.9; ctx.fillStyle = grain; ctx.fillRect(-200, -200, W + 400, H + 400);
+    ctx.restore();
+  }
+
+  // ---------- the world ----------
+  const farFn = x => 760 + 18 * Math.sin(x / 120 + 1) - 120 * g(x, 220, 190) - 70 * g(x, 900, 170);
+  const backFn = x => 860 + 12 * Math.sin(x / 100) - 90 * g(x, 760, 210) - 40 * g(x, 120, 160);
+  const leftFn = x => 960 - 130 * g(x, 210, 240) + 6 * Math.sin(x / 50);
+  const rightFn = x => 990 - 120 * g(x, 860, 230) + 6 * Math.sin(x / 60 + 2);
+  const frontFn = x => 1080 + 10 * Math.sin(x / 90) - 26 * g(x, 540, 300);
+  const SH = {
+    far: shape(ridge(farFn, -120, 1200, 2000), 101), back: shape(ridge(backFn, -120, 1200, 2000), 202),
+    left: shape(ridge(leftFn, -120, 620, 2000), 303), right: shape(ridge(rightFn, 460, 1200, 2000), 404),
+    front: shape(ridge(frontFn, -120, 1200, 2000), 505),
+    sun: shape(circ(0, 0, 118, 120), 606, 8, 0.6, 1.2),
+    moonCut: shape(circ(0, 0, 100, 110), 607, 8, 0.6, 1.2),
+  };
+  function cloud(cx, cy, s, seed) { const p = new Path2D(); const bumps = [[-70, 10, 46], [-20, -18, 60], [44, -4, 50], [86, 16, 34]]; for (const b of bumps) toPath(cut(circ(cx + b[0] * s, cy + b[1] * s, b[2] * s, 50), seed++, 7, 0.6, 1), p); toPath(cut(rect(cx - 112 * s, cy + 4 * s, 230 * s, 46 * s), seed, 8, 0.6, 1), p); return p; }
+  const CLOUDS = [{ p: cloud(0, 0, 1.15, 700), x: 250, y: 380, t: 2.75, from: -420, drift: 9 }, { p: cloud(0, 0, 0.85, 720), x: 860, y: 610, t: 3.05, from: 420, drift: -7 }];
+  function house(seed, wall, roof) {
+    const r = { wall: shape(rect(-58, -70, 116, 82), seed, 9, 0.6, 1), roof: shape([[-78, -64], [0, -138], [78, -64]], seed + 1, 9, 0.6, 1), door: shape(rect(-15, -34, 30, 46), seed + 2, 6, 0.4, 0.6), win: shape(rect(20, -52, 24, 22), seed + 3, 6, 0.4, 0.5), win2: shape(rect(-46, -52, 24, 22), seed + 4, 6, 0.4, 0.5), chim: shape(rect(30, -132, 18, 40), seed + 5, 6, 0.4, 0.5) };
+    r.wallC = wall; r.roofC = roof; return r;
+  }
+  const HOUSES = [Object.assign(house(800, P.note, P.teal), { x: 210, y: leftFn(210) + 14, t: 2.2 }), Object.assign(house(820, P.sand, P.deep), { x: 860, y: rightFn(860) + 14, t: 2.45 })];
+  function tree(kind, h, seed) { const p = new Path2D(); toPath(cut(rect(-5, -h * 0.4, 10, h * 0.42), seed, 5, 0.3, 0.4), p); if (kind) toPath(cut([[-h * 0.26, -h * 0.3], [0, -h], [h * 0.26, -h * 0.3]], seed + 1, 7, 0.5, 0.8), p); else toPath(cut(circ(0, -h * 0.62, h * 0.32, 40), seed + 1, 7, 0.5, 0.8), p); return p; }
+  const TREES = []; (function () { const r = rng(900); const spots = [[70, 0], [120, 1], [330, 1], [380, 0], [430, 1], [650, 0], [700, 1], [990, 1], [1030, 0], [560, 1]];
+    spots.forEach((s, i) => { const onLeft = s[0] < 520; const fn = onLeft ? leftFn : rightFn; const h = 92 + r() * 60; TREES.push({ p: tree(s[1], h, 910 + i * 3), x: s[0], y: fn(s[0]) + 10, t: 1.7 + 0.045 * i + r() * 0.04, col: s[1] ? P.deep : P.sage, par: onLeft ? 0.5 : 0.55 }); }); })();
+  const BIRDS = [[-40, 0], [24, -20], [70, 8]];
+  const PLANE = new Path2D('M -46 -10 L 54 -2 L -30 22 L -18 2 Z');
+  const PLANE_FOLD = new Path2D('M -18 2 L 54 -2 L -30 22 Z');
+
+  // camera: slow push in with parallax (near sheets move more)
+  function cam(t) { return { Z: 1 + 0.055 * ez('sine.inOut')(clamp(t / DUR, 0, 1)), fx: 540, fy: 780 }; }
+  function setLayer(c, par, slide) { const k = 1 + (c.Z - 1) * par; ctx.setTransform(k, 0, 0, k, c.fx * (1 - k), c.fy * (1 - k) + (slide || 0)); }
+  function bigLand(t, land) { const e = tw(t, land - 0.55, 0.55, 'back.out(0.7)'); return { e, slide: (1 - e) * 900, lift: clamp((1 - e) * 3, 0, 1) }; }
+
+  // breezes: a gust runs left to right through the trees (and nudges the houses) while a note is being read
+  const GUSTS = [9.25, 10.15, 11.05, 11.95, 13.1, 14.0, 14.9];
+  function gust(t, x) { let g = 0; for (const s0 of GUSTS) { const st = s0 + x / 1080 * 0.45, p = (t - st) / 0.55; if (p > 0 && p < 1) g = Math.max(g, Math.sin(Math.PI * p) * (1 - 0.3 * p)); } return g; }
+  function drawWorld(t) {
+    const c = cam(t);
+    const warm = tw(t, 0, DUR, 'sine.inOut');
+    // sky
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const sky = ctx.createLinearGradient(0, 0, 0, 1100);
+    sky.addColorStop(0, mixc('#F7E4D0', '#F8E9D6', warm)); sky.addColorStop(1, mixc('#F4D3BD', '#F6E2CC', warm));
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 0.7; ctx.fillStyle = grain; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    // sun rises behind the far hills; at the end a paper disc slides over it and leaves a crescent moon
+    { const k = 1 + (c.Z - 1) * 0.12; const e = tw(t, 0.4, 0.6, 'back.out(1.5)');
+      if (e > 0) { const sy = lerp(760, 470, ez('sine.out')(clamp((t - 0.4) / 6, 0, 1))) + (1 - e) * 200; ctx.setTransform(k, 0, 0, k, c.fx * (1 - k), c.fy * (1 - k)); ctx.translate(560, sy);
+        sheet(SH.sun, P.rose, { lift: 1 - e });
+        const mc = tw(t, 16.9, 0.7, 'power3.out');
+        if (mc > 0) { ctx.save(); ctx.translate(lerp(260, 52, mc), lerp(-150, -38, mc)); ctx.fillStyle = mixc('#F7E4D0', '#F8E9D6', warm); ctx.shadowColor = 'rgba(43,43,43,0.14)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = -3; ctx.shadowOffsetY = 5; ctx.fill(SH.moonCut); ctx.restore(); }
+      } }
+    // clouds
+    for (const cl of CLOUDS) { const e = tw(t, cl.t, 0.75, 'power3.out'); if (e <= 0) continue; setLayer(c, 0.15); ctx.translate(cl.x + (1 - e) * cl.from + cl.drift * (t - cl.t), cl.y); sheet(cl.p, P.note, { rim: 2 }); }
+    // birds
+    if (t > 3.2) { setLayer(c, 0.2); const bx = 120 + (t - 3.2) * 34, by = 520 - (t - 3.2) * 6; ctx.strokeStyle = P.ink; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      BIRDS.forEach((b, i) => { const fl = Math.sin(t * 9 + i * 1.7) * 9; const x = bx + b[0], y = by + b[1]; ctx.globalAlpha = tw(t, 3.2 + i * 0.1, 0.3); ctx.beginPath(); ctx.moveTo(x - 16, y - 4 - fl); ctx.quadraticCurveTo(x - 6, y - 6, x, y + 2); ctx.quadraticCurveTo(x + 6, y - 6, x + 16, y - 4 - fl); ctx.stroke(); }); ctx.globalAlpha = 1; }
+    // big sheets back to front, one per beat
+    const LAY = [['far', P.sand, 0.22, 0.3 + B * 0], ['back', mixc(P.sage, '#E8DCC0', 0.35), 0.36, 0.3 + B * 1], ['left', P.sage, 0.5, 0.3 + B * 2], ['right', mixc(P.sage, P.deep, 0.35), 0.55, 0.3 + B * 3]];
+    for (const L of LAY) {
+      const s = bigLand(t, L[3]); if (s.e <= 0) continue; setLayer(c, L[2], s.slide); sheet(SH[L[0]], L[1], { lift: s.lift });
+      if (L[0] === 'left' || L[0] === 'right') {
+        for (const tr of TREES) { if ((tr.x < 520) !== (L[0] === 'left')) continue; const e = tw(t, tr.t, 0.42, 'back.out(1.5)'); if (e <= 0) continue; const gu = gust(t, tr.x); ctx.save(); ctx.translate(tr.x, tr.y + (1 - e) * 60); ctx.transform(1, 0, -0.32 * gu, 1, 0, 0); ctx.scale(1 + 0.1 * gu, Math.max(0.05, e) * (1 - 0.22 * gu)); sheet(tr.p, tr.col, { lift: 1 - e + 0.4 * gu, rim: 2 }); ctx.restore(); }
+        const hs = HOUSES[L[0] === 'left' ? 0 : 1]; const e = tw(t, hs.t, 0.5, 'back.out(1.6)');
+        if (e > 0) { ctx.save(); const hg = gust(t, hs.x); ctx.translate(hs.x, hs.y + (1 - e) * 80 - 18 * hg); ctx.rotate(0.05 * hg); ctx.scale(1.4, 1.4 * Math.max(0.05, e)); sheet(hs.chim, P.ink, { rim: 1.5 }); sheet(hs.wall, hs.wallC, { lift: 1 - e }); sheet(hs.roof, hs.roofC, { lift: 1 - e }); ctx.fillStyle = P.ink; ctx.fill(hs.door); ctx.fill(hs.win); ctx.fill(hs.win2); ctx.restore(); }
+      }
+    }
+    // the front meadow the notes sit on
+    { const s = bigLand(t, 0.3 + B * 4); if (s.e > 0) { setLayer(c, 0.8, s.slide); sheet(SH.front, mixc(P.sand, P.note, 0.25), { lift: s.lift }); } }
+    // paper plane from her house to yours, trailing a dotted line
+    const p0 = 15.0, p1 = 16.7;
+    if (t > p0) {
+      setLayer(c, 0.55);
+      const path = u => { const x = lerp(HOUSES[0].x + 30, HOUSES[1].x - 20, u), y = lerp(HOUSES[0].y - 150, HOUSES[1].y - 150, u) - 330 * Math.sin(Math.PI * u); return [x, y]; };
+      const u = ez('power1.inOut')(clamp((t - p0) / (p1 - p0), 0, 1));
+      ctx.fillStyle = P.ink;
+      for (let k = 0; k < 40; k++) { const uu = k / 40; if (uu > u - 0.03) break; const q = path(uu); ctx.beginPath(); ctx.arc(q[0], q[1], 4.5, 0, Math.PI * 2); ctx.fill(); }
+      const q = path(u), q2 = path(Math.min(1, u + 0.01)); const ang = Math.atan2(q2[1] - q[1], q2[0] - q[0]);
+      const land = t > p1 ? Math.exp(-(t - p1) * 6) * Math.sin((t - p1) * 20) * 0.15 : 0;
+      ctx.translate(q[0], q[1]); ctx.rotate(u < 1 ? ang : land); ctx.scale(2.2, 2.2);
+      sheet(PLANE, '#FFFFFF', { rim: 1.2, lift: u < 1 ? 0.6 : 0 }); ctx.fillStyle = 'rgba(43,43,43,0.16)'; ctx.fill(PLANE_FOLD);
+    }
+  }
+
+  // ---------- the notes ----------
+  const BOTTOM = 1540, NX = 92, NW = 896;
+  // each note: rows from top to bottom; every row [text, weight, px, colour]
+  const NOTES = [
+    { t: 0.62, rot: -0.012, rows: [["To the friend who's", 800, 66], ['been saying', 800, 66], ['“I just don’t', 900, 126, 'gap'], ['feel like me.”', 900, 126]] },
+    { t: 8 * B, rot: 0.009, list: true, rows: [['Hot flushes.', 900, 118], ['Brain fog.', 900, 118], ['Bad sleep.', 900, 118], ['Low mood.', 900, 118]] },
+    { t: 15 * B, rot: -0.008, mark: { row: 2, at: 1.0 }, rows: [['It might be worth asking', 800, 66], ['your GP about', 900, 122, 'gap'], ['perimenopause.', 900, 122]] },
+    { t: 22 * B, rot: 0.011, mark: { row: 2, at: 0.9 }, rows: [['Menopause usually happens', 800, 62], ['between', 900, 96, 'gap'], ['45 and 55.', 900, 170], ['Sometimes earlier.', 800, 66, 'gap'], ['Source: NHS Wales', 700, 50, 'gap']] },
+    { t: 28 * B, rot: -0.01, end: true, rows: [['Send this', 900, 150], ['to her.', 900, 150]] },
+  ];
+  function rowsLayout(rows) { // bottom anchored: last baseline at BOTTOM - 70
+    const out = []; let y = BOTTOM - 74;
+    for (let i = rows.length - 1; i >= 0; i--) { const r = rows[i]; ctx.font = F(r[1], r[2]); let px = r[2]; const w = ctx.measureText(r[0]).width; if (w > 780) px = Math.floor(px * 780 / w); out.unshift({ s: r[0], wt: r[1], px, y }); y -= px * 1.02 + (r[3] ? 24 : 0); if (i > 0 && rows[i - 1][3] === undefined && r[3]) {} }
+    return { rows: out, top: y + 20 };
+  }
+  function noteShape(top, seed) { return shape(rect(NX, top - 56, NW, BOTTOM - top + 56), seed, 14, 1.2, 2.4); }
+  function drawNote(n, idx, t) {
+    const next = NOTES[idx + 1];
+    const e = tw(t, n.t, 0.6, 'back.out(0.7)');
+    if (e <= 0) return;
+    const leave = next ? tw(t, next.t - 0.08, 0.42, 'power2.in') : 0;
+    if (leave >= 1) return;
+    if (!n.L) n.L = rowsLayout(n.rows);
+    let top = n.L.top;
+    if (n.end) top = Math.min(top, 1120 - 120);
+    if (!n.p || n.top !== top) { n.p = noteShape(top, 1200 + idx * 17); n.top = top; }
+    const slide = (1 - e) * 1000 + leave * 1100;
+    const rot = n.rot * (1 + (1 - tw(t, n.t, 0.8, 'back.out(1.4)')) * 3);
+    ctx.setTransform(1, 0, 0, 1, 0, slide);
+    ctx.translate(540, BOTTOM); ctx.rotate(rot); ctx.translate(-540, -BOTTOM);
+    sheet(n.p, P.note, { lift: clamp((1 - e) * 3, 0, 1) + leave });
+    // a strip of washi tape holds the note
+    ctx.save(); ctx.translate(n.end ? 860 : 540, top - 56); ctx.rotate(-0.04 + idx * 0.03); ctx.fillStyle = 'rgba(217,140,122,0.55)'; ctx.fillRect(-90, -22, 180, 44); ctx.restore();
+    ctx.fillStyle = P.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    if (n.list) {
+      // rows push up from the bottom, one every beat and a half
+      const shown = []; for (let i = 0; i < n.rows.length; i++) shown.push(tw(t, n.t + 0.35 + i * 1.5 * B, 0.45, 'power3.out'));
+      const R = n.L.rows, pitch = R[1].y - R[0].y;
+      let count = 0; for (const k of shown) count += k;
+      ctx.save(); ctx.beginPath(); ctx.rect(NX, top - 40, NW, BOTTOM - top + 10); ctx.clip();
+      for (let i = 0; i < R.length; i++) {
+        if (shown[i] <= 0) continue;
+        const y = R[R.length - 1].y - (count - 1 - i) * pitch + (1 - shown[i]) * 60;
+        ctx.globalAlpha = shown[i]; ctx.font = F(R[i].wt, R[i].px); ctx.fillText(R[i].s, 540, y);
+      }
+      ctx.restore(); ctx.globalAlpha = 1;
+    } else {
+      n.L.rows.forEach((r, i) => { const k = tw(t, n.t + 0.2 + i * 0.12, 0.45, 'power3.out'); ctx.globalAlpha = k; ctx.font = F(r.wt, r.px); ctx.fillText(r.s, 540, r.y + (1 - k) * 30); });
+      ctx.globalAlpha = 1;
+    }
+    // a rose marker underlines the key words while the note is read
+    if (n.mark) {
+      const r = n.L.rows[n.mark.row]; ctx.font = F(r.wt, r.px); const w = ctx.measureText(r.s).width;
+      const k = tw(t, n.t + n.mark.at, 0.55, 'power2.inOut');
+      if (k > 0) { ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.strokeStyle = 'rgba(217,140,122,0.85)'; ctx.lineWidth = 20; ctx.lineCap = 'round'; ctx.beginPath();
+        const x0 = 540 - w / 2 - 10, x1 = 540 + w / 2 + 10, y = r.y + 18;
+        for (let i = 0; i <= 40 * k; i++) { const u = i / 40; const x = lerp(x0, x1, u), yy = y + 5 * Math.sin(u * 9) - 4 * u; i ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy); }
+        ctx.stroke(); ctx.restore(); }
+    }
+    if (n.end) { // Clari mark on the note
+      const k = tw(t, n.t + 1.25, 0.5, 'back.out(1.6)');
+      if (k > 0) {
+        const y = top + 44;
+        ctx.save(); ctx.translate(540 - 150, y); ctx.scale(k, k);
+        ctx.fillStyle = '#5B2A86'; ctx.beginPath(); ctx.roundRect(-52, -52, 104, 104, 30); ctx.fill();
+        ctx.fillStyle = '#FFF1E5'; ctx.beginPath(); ctx.arc(-4, 4, 32, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5B2A86'; ctx.beginPath(); ctx.arc(12, -10, 28, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        ctx.globalAlpha = k; ctx.font = F(900, 110); ctx.textAlign = 'left'; ctx.fillStyle = P.ink; ctx.fillText('Clari', 540 - 82, y + 38); ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  function draw(t) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    drawWorld(t);
+    for (let i = 0; i < NOTES.length; i++) drawNote(NOTES[i], i, t);
+    // soft warm light from the top right, and a gentle shade low down
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'soft-light';
+    const lg = ctx.createRadialGradient(820, 300, 0, 820, 300, 1300); lg.addColorStop(0, 'rgba(255,236,210,0.55)'); lg.addColorStop(1, 'rgba(120,90,60,0.25)');
+    ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  const p = { t: 0 };
+  const tl = gsap.timeline({ paused: true });
+  tl.to(p, { t: DUR, duration: DUR, ease: 'none', onUpdate: () => draw(p.t) }, 0);
+  window.__timelines = window.__timelines || {};
+  window.__timelines['main'] = tl;
+  draw(0);
+  if (document.fonts) document.fonts.ready.then(() => { NOTES.forEach(n => { n.L = null; n.p = null; }); draw(p.t); });
+})();
+</script>
+</body>
+</html>

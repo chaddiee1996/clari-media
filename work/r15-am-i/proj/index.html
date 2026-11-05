@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #FFFFFF; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #FFFFFF; }
+  #cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+  #warm { position: absolute; left: -3000px; top: 0; font: 900 60px 'Inter'; }
+  #warm b { font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="25.4" data-width="1080" data-height="1920">
+  <canvas id="cv" class="clip" width="1080" height="1920" data-start="0" data-duration="25.4" data-track-index="0"></canvas>
+  <div id="warm">Am I in <b>51</b></div>
+</div>
+<script>
+/*
+ * Clari R15 "Am I in perimenopause?". swiss-grid look, 9:16, 25.4 s, text only + music (118 bpm, beat 0.508 s).
+ * Everything hangs off ONE right edge (x 940). 12 columns between x 96 and 940, 8 px baseline.
+ * Text enters by a masked slide up (expo.out 0.6 s) and leaves by power3.in 0.35 s. Every cut is on a beat.
+ * A row of black tiles across the top walks one tile into the gap every two beats, all the way through.
+ *   beat 0   Am I in / perimenopause?
+ *   beat 5   The signs people miss:  then 5 signs swap in one row mask, every two beats, numbered 01 to 05
+ *   beat 16  45 to 55 | beat 21  51 (counts up) | beat 26  1 in 100     Source: NHS Wales
+ *   beat 31  Symptoms can start years before your periods stop.
+ *   beat 38  Only your GP can tell you. A record of your symptoms helps.
+ *   beat 44  end card: Clari
+ */
+(function () {
+  const W = 1080, H = 1920, DUR = 25.4, B = 60 / 118;
+  const C = { ground: '#FFFFFF', ink: '#111111', grid: '#E9E9E9', red: '#E4002B' };
+  const F = (wt, px) => `${wt} ${px}px "Inter"`;
+  const RIGHT = 940, LEFT = 96;
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const EZ = {}; const ez = n => EZ[n] || (EZ[n] = gsap.parseEase(n));
+  const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const tw = (t, s, d, e) => t <= s ? 0 : t >= s + d ? 1 : ez(e || 'expo.out')((t - s) / d);
+  const bt = n => n * B;
+
+  function setFont(wt, px) { ctx.font = F(wt, px); ctx.letterSpacing = (px >= 120 ? -0.04 : px >= 80 ? -0.025 : -0.008) * px + 'px'; }
+  function width(s, wt, px) { setFont(wt, px); return ctx.measureText(s).width; }
+  function fit(lines, wt, px, maxW) { let m = 0; for (const l of lines) m = Math.max(m, width(l, wt, px)); return m > maxW ? Math.floor(px * maxW / m) : px; }
+  // a row of type in its own mask: slides up in, slides up out
+  function row(s, base, px, wt, tin, tout, col, opts) {
+    opts = opts || {};
+    const kin = tw(tin + 0, tin, 0.6, 'expo.out') , kout = tout ? tw(tout + 0, tout, 0.35, 'power3.in') : 0;
+    const k1 = tw(T, tin, 0.6, 'expo.out'), k2 = tout ? tw(T, tout, 0.35, 'power3.in') : 0;
+    if (k1 <= 0 || k2 >= 1) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, base - px * 0.98, W, px * 1.24); ctx.clip();
+    setFont(wt, px); ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    const dy = (1 - k1) * px * 1.15 - k2 * px * 1.15;
+    if (opts.red) { // last character in red
+      const a = s.slice(0, -1), b = s.slice(-1); const wb = ctx.measureText(b).width;
+      ctx.fillStyle = C.red; ctx.fillText(b, opts.x || RIGHT, base + dy);
+      ctx.fillStyle = col || C.ink; ctx.fillText(a, (opts.x || RIGHT) - wb + px * 0.04, base + dy);
+    } else { ctx.fillStyle = col || C.ink; ctx.fillText(s, opts.x || RIGHT, base + dy); }
+    ctx.restore();
+  }
+  let T = 0;
+
+  function grid() {
+    ctx.fillStyle = C.ground; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = C.grid;
+    const col = (RIGHT - LEFT - 11 * 24) / 12;
+    for (let c = 0; c <= 12; c++) { const x = LEFT + c * (col + 24) - (c === 12 ? 24 : 0); ctx.fillRect(x - 1, 0, 2, H); if (c > 0 && c < 12) ctx.fillRect(x - 24 - 1, 0, 2, H); }
+    for (const y of [220, 1540]) ctx.fillRect(0, y - 1, W, 2);
+  }
+  // tiles: 5 cells across the top band, 4 tiles, the gap walks right to left every two beats
+  const TL = { y: 236, s: 148, g: 24 };
+  function tiles(t) {
+    const step = Math.floor(t / (2 * B)), f = tw(t - step * 2 * B, 0, 0.45, 'expo.inOut');
+    const gap = (k) => 4 - (k % 5);           // gap position after k moves
+    const g0 = gap(step), g1 = gap(step + 1);  // the tile at g1 slides into g0
+    const fade = 1 - tw(t, bt(43.6), 0.35, 'power3.in');
+    if (fade <= 0) return;
+    ctx.globalAlpha = fade;
+    for (let c = 0; c < 5; c++) {
+      if (c === g0) continue;
+      let x = LEFT + c * (TL.s + TL.g);
+      if (c === g1) x = lerp(LEFT + g1 * (TL.s + TL.g), LEFT + g0 * (TL.s + TL.g), f);
+      ctx.fillStyle = (step % 5 === c) ? C.ink : C.ink; ctx.fillRect(x, TL.y, TL.s, TL.s * 0.5);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  const SIGNS = [['Periods', 'changing.'], ['Sleep', 'going.'], ['Brain', 'fog.'], ['Mood', 'changes.'], ['Joint', 'aches.']];
+  let PXS = null;
+  function sizes() {
+    PXS = {
+      am: fit(['Am I in'], 900, 250, 800), peri: fit(['perimenopause?'], 900, 200, 800),
+      signsH: fit(['The signs', 'people miss:'], 900, 132, 800), sign: fit(SIGNS.flat(), 900, 190, 800),
+      n1: fit(['45 to 55'], 900, 300, 800), n3: fit(['1 in 100'], 900, 300, 800),
+      sym: fit(['Symptoms can', 'start years', 'before your', 'periods stop.'], 900, 140, 800),
+      gp: fit(['Only your GP', 'can tell you.'], 900, 150, 800), rec: fit(['A record of your', 'symptoms helps.'], 800, 84, 800),
+    };
+  }
+
+  function draw(t) {
+    T = t; if (!PXS) sizes();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.letterSpacing = '0px';
+    grid(); tiles(t);
+    // ---- shot 1: the question ----
+    {
+      const o = bt(5) - 0.3;
+      row('Am I in', 860, PXS.am, 900, 0.05, o);
+      row('perimenopause?', 860 + PXS.peri * 1.08, PXS.peri, 900, bt(1), o, null, { red: true });
+    }
+    // ---- shot 2: the signs ----
+    {
+      const a = bt(5), o = bt(16) - 0.3;
+      row('The signs', 560, PXS.signsH, 900, a, o);
+      row('people miss:', 560 + PXS.signsH * 1.0, PXS.signsH, 900, a + 0.08, o);
+      const base1 = 1150, base2 = base1 + PXS.sign * 0.98;
+      SIGNS.forEach((sg, i) => {
+        const tin = bt(6 + i * 2), tout = i < 4 ? bt(8 + i * 2) - 0.12 : o;
+        row(String(i + 1).padStart(2, '0'), 870, 96, 800, tin, tout, C.red);
+        row(sg[0], base1, PXS.sign, 900, tin + 0.04, tout);
+        row(sg[1], base2, PXS.sign, 900, tin + 0.1, tout + 0.03);
+      });
+      // a thin progress rule under the signs: five ink blocks fill on the grid
+      const k = tw(t, a, 0.4) * (1 - tw(t, o, 0.35, 'power3.in'));
+      if (k > 0) for (let i = 0; i < 5; i++) { const f = tw(t, bt(6 + i * 2), 0.5, 'expo.out'); ctx.fillStyle = f > 0 ? C.ink : C.grid; const w = (800 - 4 * 16) / 5; const x = RIGHT - 800 + i * (w + 16); ctx.globalAlpha = k; ctx.fillRect(x, base2 + 70, w * (f > 0 ? f : 1), 14); }
+      ctx.globalAlpha = 1;
+    }
+    // ---- shot 3: the numbers ----
+    {
+      const s1 = bt(16), s2 = bt(21), s3 = bt(26), o = bt(31) - 0.3;
+      row('45 to 55', 980, PXS.n1, 900, s1, s2 - 0.12);
+      row('when menopause', 1120, 68, 800, s1 + 0.15, s2 - 0.12);
+      row('usually happens.', 1200, 68, 800, s1 + 0.2, s2 - 0.12, null, { red: true });
+      // 51 counts up from 40
+      const cnt = Math.round(lerp(40, 51, tw(t, s2, 0.9, 'expo.out')));
+      row(String(cnt), 1020, 520, 900, s2, s3 - 0.12);
+      row('the average age', 1150, 68, 800, s2 + 0.15, s3 - 0.12);
+      row('in the UK.', 1230, 68, 800, s2 + 0.2, s3 - 0.12, null, { red: true });
+      row('1 in 100', 980, PXS.n3, 900, s3, o);
+      row('women go through it', 1120, 68, 800, s3 + 0.15, o);
+      row('before 40.', 1200, 68, 800, s3 + 0.2, o, null, { red: true });
+      row('Source: NHS Wales', 1440, 52, 700, s1 + 0.5, o);
+    }
+    // ---- shot 4: years before ----
+    {
+      const a = bt(31), o = bt(38) - 0.3, L = ['Symptoms can', 'start years', 'before your', 'periods stop.'];
+      L.forEach((l, i) => row(l, 640 + i * PXS.sym * 1.02, PXS.sym, 900, a + i * 0.12, o, null, i === 3 ? { red: true } : null));
+      row('Source: Cambridge University', 1360, 52, 700, a + 0.9, o);
+      row('Hospitals NHS', 1430, 52, 700, a + 0.95, o);
+    }
+    // ---- shot 5: GP ----
+    {
+      const a = bt(38), o = bt(44) - 0.3;
+      row('Only your GP', 760, PXS.gp, 900, a, o);
+      row('can tell you.', 760 + PXS.gp * 1.02, PXS.gp, 900, a + 0.08, o, null, { red: true });
+      // a rule lands, then the second thought
+      const k = tw(t, a + 1.0, 0.6, 'expo.out') * (1 - tw(t, o, 0.35, 'power3.in'));
+      ctx.fillStyle = C.ink; ctx.fillRect(RIGHT - 800 * k, 1040, 800 * k, 14);
+      row('A record of your', 1200, PXS.rec, 800, a + 1.3, o);
+      row('symptoms helps.', 1200 + PXS.rec * 1.08, PXS.rec, 800, a + 1.4, o);
+    }
+    // ---- end card ----
+    {
+      const a = bt(44);
+      const k = tw(t, a, 0.6, 'expo.out');
+      if (k > 0) {
+        // the moon tile slides up into place on the grid
+        const s = 220, x = RIGHT - s, y = 560 + (1 - k) * 260;
+        ctx.save(); ctx.beginPath(); ctx.rect(x - 10, 540, s + 20, s + 40); ctx.clip();
+        ctx.fillStyle = C.ink; ctx.fillRect(x, y, s, s);
+        ctx.fillStyle = C.ground; ctx.beginPath(); ctx.arc(x + s * 0.47, y + s * 0.53, s * 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(x + s * 0.6, y + s * 0.42, s * 0.26, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(x + s * 0.8, y + s * 0.8, s * 0.07, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+      row('Clari', 1080, 270, 900, a + 0.15, 0);
+      row('The symptom diary', 1200, 68, 800, a + 0.35, 0);
+      row('for perimenopause.', 1280, 68, 800, a + 0.4, 0, null, { red: true });
+      row('Free on the App Store', 1420, 52, 700, a + 0.6, 0);
+      row('and Google Play', 1484, 52, 700, a + 0.65, 0);
+    }
+  }
+
+  const p = { t: 0 };
+  const tl = gsap.timeline({ paused: true });
+  tl.to(p, { t: DUR, duration: DUR, ease: 'none', onUpdate: () => draw(p.t) }, 0);
+  window.__timelines = window.__timelines || {};
+  window.__timelines['main'] = tl;
+  draw(0);
+  if (document.fonts) document.fonts.ready.then(() => { PXS = null; draw(p.t); });
+})();
+</script>
+</body>
+</html>

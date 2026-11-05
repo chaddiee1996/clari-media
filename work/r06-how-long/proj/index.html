@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,800;9..144,900&family=JetBrains+Mono:wght@700;800&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  /* R6 "How long does it last?"  look: time-travel, centred on one moving timeline */
+  :root { --ink: #15120F; --ivory: #F3EEE4; --ochre: #E3914A; --ember: #2A211A; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ink); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ink); }
+  #c { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  #fl { position: absolute; left: -9999px; top: 0; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="24.5" data-width="1080" data-height="1920">
+  <div id="fl"><span style="font-family:'Fraunces';font-weight:900">a</span><span style="font-family:'JetBrains Mono';font-weight:800">a</span></div>
+  <canvas id="c" width="1080" height="1920"></canvas>
+</div>
+<script>
+const S = STUDIO, W = 1080, H = 1920, TAU = Math.PI * 2;
+const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue(n).trim();
+const INK = tok('--ink'), IVORY = tok('--ivory'), OCHRE = tok('--ochre'), EMBER = tok('--ember');
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const seg = S.seg, mix = S.mix, cl = (v, a, b) => Math.min(b, Math.max(a, v));
+const SERIF = "'Fraunces', serif", MONO = "'JetBrains Mono', monospace";
+
+// spoken phrases: [text, start, end, sentence]
+const CUES = [["How long does it last?", 0.08, 1.42, 0], ["Symptoms can start", 2.39, 3.18, 1], ["months,", 3.18, 3.83, 1], ["or even years,", 3.83, 4.57, 1], ["before your periods stop.", 4.57, 6.36, 1], ["And the NHS says", 7.01, 8.02, 2], ["they last around", 8.02, 8.89, 2], ["four years", 8.89, 9.53, 2], ["after your last period.", 9.53, 10.8, 2], ["For some women...", 11.35, 12.09, 3], ["much longer.", 12.59, 13.42, 4], ["That's a long time", 14.28, 15.13, 5], ["to keep it all", 15.13, 16.34, 5], ["in your head.", 16.34, 16.76, 5], ["So don't.", 17.19, 17.87, 6], ["Keep a note.", 18.25, 18.91, 7], ["And let the pattern", 19.26, 20.26, 8], ["speak for you.", 20.26, 21.0, 8]];
+const HOT = new Set(["months,", "or even years,", "four years", "much longer.", "So don't."]);
+const END = 21.35;
+
+// ---------- grain: three seeded noise tiles, cycled 12 times a second
+const grains = [0, 1, 2].map(k => {
+  const g = document.createElement('canvas'); g.width = 360; g.height = 640;
+  const x = g.getContext('2d'), im = x.createImageData(360, 640), r = S.rng(31 + k);
+  for (let i = 0; i < im.data.length; i += 4) { const v = 128 + (r() - 0.5) * 150; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; }
+  x.putImageData(im, 0, 0); return g;
+});
+// dust motes for the light beam
+const dr = S.rng(5), DUST = Array.from({ length: 70 }, () => [dr() * W, dr() * H, 0.6 + dr() * 2.2, dr() * TAU, 0.2 + dr() * 0.8]);
+
+// ---------- camera along the timeline: world x (0 = last period), zoom z
+// 1 year = 360 world px
+const YR = 360;
+function cam(t) {
+  let cx = mix(-9800, -3400, seg(t, 0, 2.6, 'power3.out'));
+  cx = mix(cx, -1100, seg(t, 2.4, 2.0, 'power2.inOut'));
+  cx = mix(cx, 0, seg(t, 4.6, 1.8, 'power3.inOut'));
+  cx = mix(cx, 2 * YR, seg(t, 7.0, 1.4, 'power3.inOut'));
+  cx = mix(cx, 3.4 * YR, seg(t, 9.3, 1.8, 'power2.inOut'));
+  cx = mix(cx, 10 * YR, seg(t, 11.3, 2.4, 'power3.in'));          // years flying past
+  cx = mix(cx, 12 * YR, seg(t, 13.7, 1.2, 'power2.out'));
+  let z = 1;
+  z = mix(z, 0.42, seg(t, 2.6, 1.5, 'power3.inOut'));
+  z = mix(z, 1, seg(t, 4.7, 1.6, 'power3.inOut'));
+  z = mix(z, 0.53, seg(t, 7.0, 1.4, 'power3.inOut'));
+  z = mix(z, 0.45, seg(t, 11.3, 1.5, 'power2.inOut'));
+  const v = (camX(t + 0.02) - camX(t - 0.02)) / 0.04;   // speed, for the smear
+  return { cx, z, v };
+}
+function camX(t) {   // cx only, for speed
+  let cx = mix(-9800, -3400, seg(t, 0, 2.6, 'power3.out'));
+  cx = mix(cx, -1100, seg(t, 2.4, 2.0, 'power2.inOut'));
+  cx = mix(cx, 0, seg(t, 4.6, 1.8, 'power3.inOut'));
+  cx = mix(cx, 2 * YR, seg(t, 7.0, 1.4, 'power3.inOut'));
+  cx = mix(cx, 3.4 * YR, seg(t, 9.3, 1.8, 'power2.inOut'));
+  cx = mix(cx, 10 * YR, seg(t, 11.3, 2.4, 'power3.in'));
+  cx = mix(cx, 12 * YR, seg(t, 13.7, 1.2, 'power2.out'));
+  return cx;
+}
+const LY = 1240;  // timeline y on screen
+
+// ---------- caption block: centred, wraps, travels in on the timeline's direction with ghost copies
+function wrap(text, size, maxW) {
+  c.font = `900 ${size}px ${SERIF}`;
+  const words = text.split(' '), lines = []; let cur = '';
+  for (const w of words) { const tryL = cur ? cur + ' ' + w : w; if (c.measureText(tryL).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tryL; }
+  lines.push(cur); return lines;
+}
+function caption(t) {
+  for (let i = 0; i < CUES.length; i++) {
+    const [txt, t0, t1, sn] = CUES[i];
+    const nx = CUES[i + 1];
+    // the phrase has fully left before the next one travels in
+    let tEnd = nx ? (nx[1] - t1 > 1.0 ? t1 + 0.55 : nx[1] - 0.36) : END;
+    const pin = seg(t, t0 - 0.12, 0.42, 'expo.out'), pout = seg(t, tEnd, 0.22, 'power2.in');
+    if (pin <= 0 || pout >= 1) continue;
+    const hot = HOT.has(txt), first = i === 0;
+    const size = first ? 172 : hot ? 178 : 132;
+    const lines = wrap(txt, size, first ? 760 : 840);
+    const lh = size * 1.02, cy = 690, top = cy - (lines.length * lh) / 2 + size * 0.74;
+    const dx = (1 - pin) * 200 - pout * 220;
+    c.save();
+    c.font = `900 ${size}px ${SERIF}`; c.textAlign = 'center';
+    c.fillStyle = hot ? OCHRE : IVORY;
+    // ghosts trail while it travels
+    const sp = Math.max(1 - pin, pout);
+    if (sp > 0.02) for (let g = 3; g >= 1; g--) {
+      c.globalAlpha = 0.16 * sp * (4 - g) / 3;
+      lines.forEach((l, k) => c.fillText(l, 540 + dx + g * 46, top + k * lh));
+    }
+    c.globalAlpha = Math.min(1, pin * 1.6) * (1 - pout);
+    lines.forEach((l, k) => c.fillText(l, 540 + dx, top + k * lh));
+    c.restore();
+  }
+}
+
+// ---------- the timeline
+function timeline(t, C, A) {
+  const { cx, z, v } = C;
+  const sx = X => 540 + (X - cx) * z;
+  const smear = cl(Math.abs(v) * z / 3500, 0, 1);
+  c.save(); c.globalAlpha = A;
+  // the line itself (thick, ivory, the thing every scene shares)
+  c.fillStyle = IVORY; c.fillRect(0, LY - 4, W, 8);
+  // ticks: month ticks small, year ticks tall
+  const step = YR / 12, i0 = Math.floor((cx - 560 / z) / step) - 1, i1 = Math.ceil((cx + 560 / z) / step) + 1;
+  for (let i = i0; i <= i1; i++) {
+    const X = i * step, x = sx(X), yr = i % 12 === 0;
+    if (z < 0.5 && !yr && i % 3) continue;
+    const h = yr ? 56 : 22, w = yr ? 6 : 3;
+    for (let g = smear > 0.05 ? 3 : 0; g >= 0; g--) {
+      c.globalAlpha = A * (g ? 0.22 * smear * (4 - g) / 3 : 1);
+      c.fillRect(x - w / 2 + g * 18 * Math.sign(v), LY - 4 - h, w, h);
+    }
+  }
+  // month initials ride under the ticks while the camera is close: the calendar flying past
+  const ma = A * (1 - seg(t, 5.6, 0.5, 'power2.in'));
+  if (false) {
+    c.font = `800 48px ${MONO}`; c.textAlign = 'center';
+    const MON = 'JFMAMJJASOND';
+    for (let i = i0; i <= i1; i++) { const X = i * step; if (X >= -10) continue;
+      const m = ((i % 12) + 12) % 12, x = sx(X + step / 2);
+      for (let g = smear > 0.05 ? 3 : 0; g >= 0; g--) {
+        c.globalAlpha = ma * (g ? 0.2 * smear * (4 - g) / 3 : 1) * (m === 0 ? 1 : 0.9);
+        c.fillStyle = m === 0 ? OCHRE : IVORY; c.fillText(MON[m], x + g * 18 * Math.sign(v), LY + 76);
+      } }
+  }
+  c.globalAlpha = A;
+  // "before" zone: symptoms can start months or years before (grows left from the marker)
+  const bz = seg(t, 3.15, 0.65, 'power3.out'), by = seg(t, 3.85, 0.9, 'power3.out');
+  const bandL = -(0.9 * YR * bz + 3.6 * YR * by);
+  const bandA = 1 - seg(t, 13.8, 0.6, 'power2.in');
+  if (bz > 0) {
+    c.save(); c.globalAlpha = A * bandA;
+    const x0 = sx(bandL), x1 = sx(0);
+    c.beginPath(); c.rect(x0, LY - 120, x1 - x0, 104); c.clip();
+    c.strokeStyle = OCHRE; c.lineWidth = 7;
+    for (let k = -40; k < 80; k++) { const xx = sx(k * 46 - 3000) ; c.beginPath(); c.moveTo(xx, LY - 16); c.lineTo(xx + 104, LY - 120); c.stroke(); }
+    c.restore();
+    // band edge labels
+    c.save(); c.globalAlpha = A * bandA; c.font = `800 54px ${MONO}`; c.textAlign = 'center'; c.fillStyle = OCHRE;
+    const la = seg(t, 3.25, 0.4, 'power3.out'), lb = seg(t, 3.95, 0.4, 'power3.out');
+    if (la > 0) { c.globalAlpha = A * bandA * la; c.fillText('MONTHS', sx(-0.45 * YR), LY - 150 - 20 * (1 - la)); }
+    if (lb > 0) { c.globalAlpha = A * bandA * lb; c.fillText('YEARS', sx(-2.7 * YR), LY - 150 - 20 * (1 - lb)); }
+    c.restore();
+  }
+  // marker: periods stop / last period
+  const mk = seg(t, 4.9, 0.5, 'expo.out');
+  if (mk > 0) {
+    const x = sx(0);
+    c.fillStyle = IVORY; c.fillRect(x - 4, LY - 4 - 250 * mk, 8, 250 * mk);
+    c.beginPath(); c.arc(x, LY - 4 - 250 * mk, 16, 0, TAU); c.fill();
+    c.font = `800 50px ${MONO}`; c.textAlign = 'center';
+    const lab = t < 8.6 ? ['PERIODS', 'STOP'] : ['LAST', 'PERIOD'];
+    const sw = seg(t, 8.45, 0.3, 'power2.inOut');
+    c.globalAlpha = A * mk * (t < 8.6 ? 1 - sw : sw);
+    c.fillText(lab[0], x, LY + 84); c.fillText(lab[1], x, LY + 142);
+    c.globalAlpha = A;
+  }
+  // after: an ochre bar draws year by year, around 4 years, then for some much longer
+  const head = 4 * YR * seg(t, 8.15, 1.35, 'power2.inOut') + 7 * YR * seg(t, 12.4, 1.7, 'power2.in');
+  if (head > 1) {
+    const x0 = sx(0), x1 = sx(head);
+    c.fillStyle = OCHRE;
+    const solid = Math.min(x1, sx(4 * YR));
+    c.fillRect(x0, LY - 46, solid - x0, 42);
+    // past four years: the bar keeps going, broken
+    if (head > 4 * YR) for (let X = 4 * YR + 30; X < head; X += 90) {
+      const a = sx(X), b = Math.min(sx(X + 58), x1); if (b > a) c.fillRect(a, LY - 46, b - a, 42);
+    }
+    // year numbers pop as the head passes them
+    c.font = `800 64px ${MONO}`; c.textAlign = 'center';
+    for (let y = 1; y <= 4; y++) {
+      const p = seg(t, 8.15 + 1.35 * Math.acos(1 - 2 * y / 4) / Math.PI - 0.05, 0.3, 'back.out(2)');
+      const k = cl(head / YR - y + 1, 0, 1);
+      if (k <= 0 || p <= 0) continue;
+      c.fillStyle = y === 4 ? OCHRE : IVORY;
+      c.save(); c.translate(sx(y * YR), LY + 96); c.scale(0.7 + 0.3 * p, 0.7 + 0.3 * p);
+      c.globalAlpha = A * Math.min(1, p) * (1 - seg(t, 13.6, 0.5, 'power2.in')); c.fillText(String(y), 0, 0); c.restore();
+    }
+    const yl = seg(t, 9.45, 0.45, 'expo.out') * (1 - seg(t, 12.3, 0.4, 'power2.in'));
+    if (yl > 0) { c.globalAlpha = A * yl; c.font = `800 54px ${MONO}`; c.fillStyle = OCHRE; c.fillText('YEARS AFTER', sx(2 * YR), LY + 184 + 16 * (1 - yl)); }
+    c.globalAlpha = A;
+  }
+  c.restore();
+}
+
+// ---------- the notes: a cloud of loose days, then a diary page with a pattern in it
+const COLS = 12, ROWS = 7, GX = 66, GY = 74;
+const dots = []; { const r = S.rng(77);
+  for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
+    const a = r() * TAU, rr = Math.sqrt(r());
+    dots.push({ i, j, hx: 540 + Math.cos(a) * 360 * rr, hy: 1200 + Math.sin(a) * 290 * rr, ph: r() * TAU, f: 0.4 + r() * 0.7, d: r() });
+  } }
+// a pattern: on each column, one day stands out, and together they make a wave
+const PAT = Array.from({ length: COLS }, (_, i) => Math.round(3 + 2.6 * Math.sin(i * 0.78 + 0.6)));
+function notes(t) {
+  const born = seg(t, 13.9, 0.9, 'power3.out');
+  if (born <= 0) return;
+  const gone = seg(t, 21.15, 0.55, 'power3.in');
+  const grid = seg(t, 18.15, 0.9, 'power3.inOut');
+  const freeze = 1 - seg(t, 17.1, 0.5, 'power2.out');
+  const pat = seg(t, 19.25, 0.9, 'power2.out');
+  const gx0 = 540 - (COLS - 1) * GX / 2, gy0 = 1220 - (ROWS - 1) * GY / 2;
+  // page edge of the diary
+  if (grid > 0) {
+    c.save(); c.globalAlpha = grid * (1 - gone); c.strokeStyle = IVORY; c.lineWidth = 5;
+    const pw = COLS * GX + 40, ph = ROWS * GY + 40;
+    c.strokeRect(540 - pw / 2, gy0 - GY / 2 - 20 + 6, pw, ph);
+    c.restore();
+  }
+  const pts = [];
+  dots.forEach((d, n) => {
+    const drift = 1 - 0;
+    const wob = freeze;
+    // the loose days swirl round and round, like thoughts
+    const ang = (0.5 + 0.7 * d.f) * Math.min(t, 17.4) * 0.55 + d.ph, rx = d.hx - 540, ry = d.hy - 1200;
+    const fx = 540 + rx * Math.cos(ang) - ry * Math.sin(ang) * 0.9, fy = 1200 + rx * Math.sin(ang) * 0.8 + ry * Math.cos(ang) * 0.8;
+    const gx = gx0 + d.i * GX, gy = gy0 + d.j * GY;
+    const k = seg(t, 18.15 + d.d * 0.35, 0.8, 'power3.inOut');
+    // start: dots fall off the timeline into the cloud
+    const sx = mix(540 + (d.i - 6) * 70, fx, born), sy = mix(LY, fy, born);
+    const x = mix(sx, gx, k), y = mix(sy, gy, k);
+    const isPat = PAT[d.i] === d.j;
+    const r = isPat ? mix(11, 20, pat) : 11;
+    c.globalAlpha = born * (1 - gone);
+    c.fillStyle = isPat && pat > 0 ? OCHRE : IVORY;
+    c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+    if (isPat) pts[d.i] = [x, y];
+  });
+  // the pattern line draws through the standout days
+  if (pat > 0) {
+    const dl = seg(t, 19.5, 1.2, 'power2.inOut');
+    c.save(); c.globalAlpha = 1 - gone; c.strokeStyle = OCHRE; c.lineWidth = 8; c.lineJoin = 'round'; c.lineCap = 'round';
+    c.beginPath(); const n = dl * (COLS - 1);
+    for (let i = 0; i <= Math.floor(n); i++) { const p = pts[i]; i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); }
+    const fi = Math.floor(n), fr = n - fi;
+    if (fi < COLS - 1 && pts[fi + 1]) c.lineTo(mix(pts[fi][0], pts[fi + 1][0], fr), mix(pts[fi][1], pts[fi + 1][1], fr));
+    c.stroke(); c.restore();
+  }
+  c.globalAlpha = 1;
+}
+
+// ---------- Clari moon mark + end card
+function moon(x, y, r) {
+  c.save();
+  c.fillStyle = OCHRE; c.beginPath(); c.roundRect(x - r, y - r, 2 * r, 2 * r, r * 0.42); c.fill();
+  const g = document.createElement('canvas'); g.width = g.height = Math.ceil(2 * r);
+  const q = g.getContext('2d'); q.fillStyle = INK;
+  q.beginPath(); q.arc(r * 0.94, r * 1.04, r * 0.56, 0, TAU); q.fill();
+  q.globalCompositeOperation = 'destination-out'; q.beginPath(); q.arc(r * 1.22, r * 0.8, r * 0.48, 0, TAU); q.fill();
+  c.drawImage(g, x - r, y - r); c.restore();
+}
+function endCard(t) {
+  const p = seg(t, 21.5, 0.6, 'expo.out');
+  if (p <= 0) return;
+  // the timeline returns, short and calm, under the name
+  c.save(); c.globalAlpha = 1; c.translate(0, 60);
+  const lw = 640 * seg(t, 21.45, 0.9, 'power3.inOut');
+  c.fillStyle = IVORY; c.fillRect(540 - lw / 2, 1010, lw, 8);
+  for (let k = -6; k <= 6; k++) { if (Math.abs(k * 53) < lw / 2) c.fillRect(540 + k * 53 - 2, 1010 - (k % 3 ? 20 : 44), 4, k % 3 ? 20 : 44); }
+  const m = seg(t, 21.6, 0.6, 'back.out(1.6)');
+  moon(540, 690, 92 * Math.max(0.001, 0.7 + 0.3 * m));
+  c.globalAlpha = p; c.textAlign = 'center';
+  c.fillStyle = IVORY; c.font = `900 172px ${SERIF}`; c.fillText('Clari', 540, 940 + 30 * (1 - p));
+  const q = seg(t, 22.0, 0.5, 'power3.out');
+  c.globalAlpha = q; c.font = `900 66px ${SERIF}`; c.fillStyle = IVORY;
+  c.fillText('Keep a note.', 540, 1140 + 20 * (1 - q)); c.fillStyle = OCHRE; c.fillText('Save this.', 540, 1218 + 20 * (1 - q));
+  const s = seg(t, 22.35, 0.5, 'power3.out');
+  c.globalAlpha = s; c.font = `800 48px ${MONO}`; c.fillStyle = IVORY;
+  c.fillText('FREE ON APP STORE', 540, 1352); c.fillText('AND GOOGLE PLAY', 540, 1410);
+  c.globalAlpha = s; c.fillStyle = OCHRE; c.fillText('SOURCE: NHS WALES', 540, 1490);
+  c.restore();
+}
+
+window.__timelines["main"] = S.play(function render(t) {
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+  c.fillStyle = INK; c.fillRect(0, 0, W, H);
+  // warm light pool behind the headline: the firelight of the piece (one hue, no shift)
+  const fl = 1 + 0.04 * Math.sin(t * 7.1) + 0.03 * Math.sin(t * 12.7);
+  const lg = c.createRadialGradient(540, 700, 40, 540, 760, 900 * fl);
+  lg.addColorStop(0, 'rgba(58,44,32,1)'); lg.addColorStop(1, 'rgba(21,18,15,0)');
+  c.fillStyle = lg; c.fillRect(0, 0, W, H);
+  // dust drifting in the light
+  DUST.forEach(([x, y, r, ph, a]) => {
+    const yy = (y - t * 22 * a + H) % H, xx = x + 18 * Math.sin(t * 0.6 + ph);
+    c.globalAlpha = 0.25 * a; c.fillStyle = IVORY; c.beginPath(); c.arc(xx, yy, r, 0, TAU); c.fill();
+  });
+  c.globalAlpha = 1;
+  // a faint clock dial spins behind the opening question
+  const da = 1 - seg(t, 1.9, 0.8, 'power2.in');
+  if (da > 0) {
+    c.save(); c.translate(540, 640); c.rotate(-t * 2.4 * (1 - seg(t, 0, 2.4, 'power2.out')) - t * 0.4);
+    c.fillStyle = 'rgba(243,238,228,' + (0.16 * da) + ')';
+    for (let k = 0; k < 60; k++) { c.save(); c.rotate(k * TAU / 60); c.fillRect(-3, -470, 6, k % 5 ? 26 : 62); c.restore(); }
+    c.restore();
+  }
+  const C = cam(t);
+  const tlA = (1 - seg(t, 13.9, 0.7, 'power2.inOut'));
+  if (tlA > 0) timeline(t, C, tlA);
+  notes(t);
+  caption(t);
+  // source while the fact is on screen
+  const sa = seg(t, 7.3, 0.5, 'power3.out') * (1 - seg(t, 13.4, 0.4, 'power2.in'));
+  if (sa > 0) { c.globalAlpha = sa; c.font = `800 48px ${MONO}`; c.textAlign = 'center'; c.fillStyle = IVORY; c.fillText('SOURCE: NHS WALES', 540, 1522); c.globalAlpha = 1; }
+  endCard(t);
+  // vignette + moving grain
+  const vg = c.createRadialGradient(540, 900, 500, 540, 900, 1250);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+  c.fillStyle = vg; c.fillRect(0, 0, W, H);
+  // exposure punch on the big turns
+  let punch = 0; [2.39, 7.01, 11.35, 17.19, 21.45].forEach(tt => { if (t >= tt - 0.05) punch = Math.max(punch, 1 - seg(t, tt - 0.05, 0.35, 'power2.out')); });
+  if (punch > 0) { c.fillStyle = `rgba(255,240,220,${0.07 * punch})`; c.fillRect(0, 0, W, H); }
+  c.globalCompositeOperation = 'overlay'; c.globalAlpha = 0.22;
+  c.drawImage(grains[Math.floor(t * 12) % 3], 0, 0, W, H);
+  c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+}, { loop: false });
+</script>
+</body>
+</html>

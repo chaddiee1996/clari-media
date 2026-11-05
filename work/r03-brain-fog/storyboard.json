@@ -1,0 +1,63 @@
+{
+ "title": "Brain fog, a short list",
+ "format": "9:16",
+ "seconds": 23.6,
+ "shots": [
+  {
+   "time": "0.0-2.5",
+   "graphic": "THINGS I / LOST / this week card",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "2.5-5.0",
+   "graphic": "Top right: The word for COLANDER, badge 'the spaghetti thing'",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "5.0-7.5",
+   "graphic": "Ink flip, centre: THE CAR KEYS, card 'in the fridge'",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "7.5-10.0",
+   "graphic": "Bottom left: WHY I CAME UPSTAIRS, letters climb like stairs, 'still no idea'",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "10.0-12.5",
+   "graphic": "Ink, top left: MY FRIEND'S NAME, card 'known her 20 years'",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "12.5-14.8",
+   "graphic": "Centre: MY TRAIN OF THOUGHT leaves the frame letter by letter, 'it left'",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "14.8-19.8",
+   "graphic": "Paper: NHS fact and source; yellow: It's called BRAIN FOG.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "19.8-23.6",
+   "graphic": "CTA staggered lines, SENTENCES. card; Clari end card",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

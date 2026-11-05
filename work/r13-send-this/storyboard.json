@@ -1,0 +1,49 @@
+{
+ "title": "R13 Send this to her",
+ "format": "9:16",
+ "seconds": 20,
+ "shots": [
+  {
+   "time": "0.0-4.4",
+   "graphic": "paper sheets land one per beat: hills, sun, two houses, trees, clouds, birds; note 1 slides up",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "4.4-8.3",
+   "graphic": "note 2: symptoms push up from the bottom one by one",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "8.3-12.2",
+   "graphic": "note 3: ask your GP",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "12.2-15.6",
+   "graphic": "note 4: 45 and 55, source",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "15.0-16.7",
+   "graphic": "a paper plane flies from one house to the other on a dotted trail",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "15.6-20.0",
+   "graphic": "note 5: Send this to her + Clari mark; a paper disc turns the sun into a crescent",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

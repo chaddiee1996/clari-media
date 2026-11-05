@@ -4,3 +4,12 @@ templates/carousel/out/
 work/**/out/
 work/**/stills/
 work/**/.hyperframes/
+work/**/*.wav
+work/**/*.mp4
+work/**/*.mp3
+work/**/*.m4a
+work/**/*.aac
+work/**/*.png
+work/**/*.jpg
+work/**/*.webm
+work/**/renders/

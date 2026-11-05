@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #0B1220; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #0B1220; }
+  #cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+  #warm { position: absolute; left: -3000px; top: 0; font: 700 60px 'Space Grotesk'; }
+  #warm b { font-weight: 500; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+  <canvas id="cv" class="clip" width="1080" height="1920" data-start="0" data-duration="20" data-track-index="0"></canvas>
+  <div id="warm">Private <b>GP</b></div>
+</div>
+<script>
+/*
+ * Clari R14 "Private, by design". midnight-grid look, 9:16, 20 s, voiced (VO 17.04 s) + end card.
+ * Right-aligned headlines on a navy dot grid hang off one strong right edge (x 940), shared with the phone.
+ * Every headline line rises through a mask on its spoken phrase (measured from the VO).
+ *   0.00  phone outline draws, diary rows land inside it
+ *   3.73  a lock forms on the phone (blue pulse rides the shackle); it clicks shut at 6.4
+ *   7.01  an account node lands, is struck out, goes muted
+ *   8.96  a wire draws from the phone to a switch; "and when" flips it; the pulse runs on to a GP node
+ *  11.46  the GP node fills into a summary made from the diary rows
+ *  15.18  everything rewinds into the phone; "Private, / by design."
+ *  17.04  the lock turns into the Clari moon; end card
+ */
+(function () {
+  const W = 1080, H = 1920, DUR = 20;
+  const C = { ground: '#0B1220', dot: '#1E2A44', panel: '#111A2E', border: '#2A3A5E', text: '#EEF2FA', blue: '#3D8BFF', muted: '#46557A' };
+  const F = (wt, px) => `${wt} ${px}px "Space Grotesk"`;
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const EZ = {}; const ez = n => EZ[n] || (EZ[n] = gsap.parseEase(n));
+  const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const tw = (t, s, d, e) => t <= s ? 0 : t >= s + d ? 1 : ez(e || 'power3.out')((t - s) / d);
+
+  // ---------- captions: [screen start, end, lines [text, time], size, accent line index] ----------
+  const SCREENS = [
+    { a: 0.0, b: 3.55, lines: [['Your symptoms', 0.05], ["are nobody's", 0.75], ['business', 1.35], ['but yours.', 2.05]], px: 132, wipe: [3, 2.7] },
+    { a: 3.73, b: 6.85, lines: [["That's why", 3.73], ['Clari keeps', 4.2], ['your symptom', 4.8], ['data on', 5.45], ['your phone.', 5.95]], px: 132, blue: 4 },
+    { a: 7.01, b: 8.8, lines: [['No account', 7.01], ['needed', 7.7], ['to start.', 8.05]], px: 150 },
+    { a: 8.96, b: 11.3, lines: [['You decide', 8.96], ['what to', 9.55], ['share,', 9.9], ['and when.', 10.48]], px: 146, blue: 3 },
+    { a: 11.46, b: 15.0, lines: [['like a', 11.46], ['summary for', 11.75], ['your GP, made', 12.45], ['from your', 13.4], ['own notes.', 13.95]], px: 128 },
+    { a: 15.18, b: 17.0, lines: [['Private,', 15.18], ['by design.', 16.1]], px: 180, blue: 1 },
+  ];
+  const RIGHT = 940, BASE0 = 1100;
+  function layoutScreen(s) {
+    ctx.font = F(700, s.px); ctx.letterSpacing = (-0.03 * s.px) + 'px'; let m = 0; for (const l of s.lines) m = Math.max(m, ctx.measureText(l[0]).width); ctx.letterSpacing = '0px';
+    s.fpx = m > 800 ? Math.floor(s.px * 800 / m) : s.px;
+    const lh = s.fpx * 1.06; const n = s.lines.length;
+    // the block hangs so its last baseline sits at 1470
+    s.bases = s.lines.map((_, i) => 1470 - (n - 1 - i) * lh);
+  }
+  function drawCaptions(t) {
+    for (const s of SCREENS) {
+      if (t < s.a - 0.01 || t > s.b + 0.35) continue;
+      if (!s.bases) layoutScreen(s);
+      const out = tw(t, s.b, 0.3, 'power2.in');
+      s.lines.forEach((l, i) => {
+        const k = tw(t, l[1] - 0.05, 0.5, 'power3.out'); if (k <= 0) return;
+        const y = s.bases[i];
+        ctx.save(); ctx.beginPath(); ctx.rect(0, y - s.fpx * 1.0, W, s.fpx * 1.3); ctx.clip();
+        ctx.font = F(700, s.fpx); ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = s.blue === i ? C.blue : C.text;
+        ctx.letterSpacing = (-0.03 * s.fpx) + 'px';
+        ctx.fillText(l[0], RIGHT, y + (1 - k) * s.fpx * 1.1 - out * s.fpx * 1.1);
+        if (s.wipe && s.wipe[0] === i) { // the key words turn blue with a wipe, left to right
+          const wk = tw(t, s.wipe[1], 0.5, 'power2.inOut'); const w = ctx.measureText(l[0]).width;
+          if (wk > 0) { ctx.beginPath(); ctx.rect(RIGHT - w - 10, y - s.fpx, (w + 20) * wk, s.fpx * 1.3); ctx.clip(); ctx.fillStyle = C.blue; ctx.fillText(l[0], RIGHT, y + (1 - k) * s.fpx * 1.1 - out * s.fpx * 1.1); }
+        }
+        ctx.restore();
+      });
+    }
+  }
+
+  // ---------- geometry ----------
+  const PH = { x: 660, y: 236, w: 280, h: 480, r: 50 };
+  function rrPath(x, y, w, h, r) { const p = new Path2D(); p.roundRect(x, y, w, h, r); return p; }
+  const phonePath = rrPath(PH.x, PH.y, PH.w, PH.h, PH.r);
+  // draw a path progressively with dashes
+  function drawOn(path, len, k, col, lw) { if (k <= 0) return; ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.setLineDash([len * k, len * 2]); ctx.stroke(path); ctx.restore(); }
+  const PH_LEN = 2 * (PH.w + PH.h) - (8 - 2 * Math.PI) * PH.r;
+  const ROWS = [0, 1, 2, 3, 4].map(i => ({ y: PH.y + 96 + i * 70, w: [150, 110, 170, 130, 96][i], dot: i % 2 === 0 }));
+  const LK = { x: PH.x + PH.w / 2, y: PH.y + PH.h / 2 + 30 };
+  const ACCT = { x: 330, y: 430, r: 96 };
+  const GP = { x: 140, y: 420, w: 290, h: 330 };
+  const SW = { x: 520, y: 330 };   // the switch sits on the wire
+  // wire: phone left edge -> switch -> down into the GP node
+  const WIRE = [[PH.x, 330], [SW.x + 60, 330], [SW.x - 60, 330], [GP.x + GP.w / 2, 330], [GP.x + GP.w / 2, GP.y]];
+  const wireLen = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  function polyOn(pts, k, col, lw) {
+    let L = 0; const segs = []; for (let i = 1; i < pts.length; i++) { const d = wireLen(pts[i - 1], pts[i]); segs.push(d); L += d; }
+    let rem = L * k; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    let tip = pts[0];
+    for (let i = 1; i < pts.length && rem > 0; i++) { const d = segs[i - 1], f = Math.min(1, rem / d); tip = [lerp(pts[i - 1][0], pts[i][0], f), lerp(pts[i - 1][1], pts[i][1], f)]; ctx.lineTo(tip[0], tip[1]); rem -= d; }
+    ctx.stroke(); return tip;
+  }
+
+  function lock(x, y, s, shut, col, alpha) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(s, s);
+    // shackle
+    const lift = (1 - shut) * 34;
+    ctx.strokeStyle = col; ctx.lineWidth = 16; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-46, -20 - lift); ctx.lineTo(-46, -60 - lift); ctx.arc(0, -60 - lift, 46, Math.PI, 0); ctx.lineTo(46, -20 - lift * (shut < 1 ? 0.2 : 1)); ctx.stroke();
+    // body
+    ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(-74, -26, 148, 120, 22); ctx.fill();
+    ctx.fillStyle = C.ground; ctx.beginPath(); ctx.arc(0, 22, 15, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(-6, 26, 12, 36);
+    ctx.restore();
+  }
+
+  function grid(t, cam) {
+    ctx.fillStyle = C.ground; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = C.dot;
+    const ox = cam.x % 40, oy = cam.y % 40;
+    for (let y = -40; y < H + 40; y += 40) for (let x = -40; x < W + 40; x += 40) { ctx.fillRect(x - ox - 1.5 + 20, y - oy - 1.5 + 20, 3, 3); }
+  }
+
+  function draw(t) {
+    // camera: rests, then drifts one grid pitch per scene
+    const cam = { x: 40 * tw(t, 3.6, 0.8, 'power3.inOut') - 40 * tw(t, 8.8, 0.8, 'power3.inOut'), y: 40 * tw(t, 11.3, 0.8, 'power3.inOut') + 40 * tw(t, 15.0, 0.8, 'power3.inOut') };
+    ctx.setTransform(1, 0, 0, 1, 0, 0); grid(t, cam);
+    const rewind = tw(t, 15.0, 0.7, 'power3.inOut');   // the flow pulls back into the phone
+    const endk = tw(t, 17.04, 0.7, 'power3.inOut');
+    ctx.save(); ctx.translate(lerp(0, 540 - (PH.x + PH.w / 2), endk), 0);
+    // --- phone ---
+    const pk = tw(t, 0.1, 1.1, 'power2.inOut');
+    const active = tw(t, 3.73, 0.4) * (1 - tw(t, 8.96, 0.4)) + tw(t, 15.18, 0.4);
+    ctx.globalAlpha = 1 - endk;
+    ctx.fillStyle = C.panel; ctx.globalAlpha = pk * (1 - endk); ctx.fill(phonePath); ctx.globalAlpha = 1 - endk;
+    drawOn(phonePath, PH_LEN, pk, active > 0.5 ? C.blue : C.text, 8);
+    // a blue pulse runs once round the phone before the lock arrives
+    { const k = tw(t, 2.45, 1.25, 'power2.inOut'); if (k > 0 && k < 1) { ctx.save(); ctx.strokeStyle = C.blue; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.setLineDash([260, PH_LEN]); ctx.lineDashOffset = -k * (PH_LEN + 260) + 260; ctx.globalAlpha = Math.sin(Math.PI * k) * 0.6 + 0.4; ctx.stroke(phonePath); ctx.restore(); }
+      // and the diary rows answer it, one after another
+      ROWS.forEach((r, i) => { const q = tw(t, 2.6 + i * 0.16, 0.5, 'power2.inOut'); if (q > 0 && q < 1) { ctx.save(); ctx.globalAlpha = Math.sin(Math.PI * q); ctx.fillStyle = C.blue; ctx.beginPath(); ctx.roundRect(PH.x + 78, r.y - 12, r.w, 24, 12); ctx.fill(); ctx.restore(); } }); }
+    // notch speaker
+    if (pk > 0.6) { ctx.fillStyle = C.text; ctx.globalAlpha = tw(t, 0.8, 0.3) * (1 - endk); ctx.beginPath(); ctx.roundRect(PH.x + PH.w / 2 - 40, PH.y + 34, 80, 12, 6); ctx.fill(); }
+    // diary rows inside: dot + bar, land one per beat (wipe from the left + short slide)
+    const rowsDim = tw(t, 3.9, 0.5) * 0.65 * (1 - tw(t, 11.46, 0.4) * 0) ;
+    ROWS.forEach((r, i) => {
+      const k = tw(t, 1.0 + i * 0.32, 0.5); if (k <= 0) return;
+      const gone = tw(t, 15.0 + (4 - i) * 0.05, 0.35, 'power2.in');
+      ctx.globalAlpha = (1 - rowsDim) * (1 - gone) * (1 - endk);
+      const x0 = PH.x + 34;
+      ctx.fillStyle = i === 2 ? C.blue : C.text;
+      ctx.beginPath(); ctx.arc(x0 + 14, r.y, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C.border; ctx.beginPath(); ctx.roundRect(x0 + 44, r.y - 12, r.w * k, 24, 12); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    // --- lock ---
+    const lk = tw(t, 3.9, 0.6, 'power3.out'); const shut = tw(t, 6.3, 0.18, 'power2.in');
+    if (lk > 0) {
+      const big = tw(t, 15.18, 0.8, 'power3.inOut');
+      const s = lerp(0.5, 0.82, lk) * lerp(1, 1.3, big) * (1 + (t > 6.48 ? 0.06 * Math.exp(-(t - 6.48) * 9) * Math.sin((t - 6.48) * 30) : 0));
+      const col = C.blue;
+      lock(LK.x, LK.y - 30 * big, s, shut, col, lk * (1 - endk));
+    }
+    // --- account node: lands, gets struck out, goes muted ---
+    const ak = tw(t, 7.05, 0.5) * (1 - tw(t, 8.8, 0.3, 'power2.in'));
+    if (ak > 0) {
+      ctx.save(); ctx.globalAlpha = ak; const strike = tw(t, 7.75, 0.45, 'power2.inOut'); const col = strike > 0.9 ? C.muted : C.text;
+      ctx.translate((1 - tw(t, 7.05, 0.5)) * -40, 0);
+      ctx.fillStyle = C.panel; ctx.strokeStyle = col; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(ACCT.x, ACCT.y, ACCT.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(ACCT.x, ACCT.y - 24, 28, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(ACCT.x, ACCT.y + 58, 50, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = C.blue; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.beginPath();
+      const a = [ACCT.x - 80, ACCT.y - 80], b = [ACCT.x + 80, ACCT.y + 80]; ctx.moveTo(a[0], a[1]); ctx.lineTo(lerp(a[0], b[0], strike), lerp(a[1], b[1], strike)); if (strike > 0) ctx.stroke();
+      ctx.restore();
+    }
+    // --- the share flow: wire, switch, GP node ---
+    const wk1 = tw(t, 9.0, 0.6, 'power2.inOut') * (1 - rewind);           // to the switch
+    const flip = tw(t, 10.48, 0.35, 'back.out(1.6)');
+    const wk2 = tw(t, 10.8, 0.6, 'power2.inOut') * (1 - rewind);
+    if (wk1 > 0) {
+      ctx.globalAlpha = 1 - endk;
+      polyOn(WIRE.slice(0, 2), wk1, C.border, 8);
+      const tip = polyOn(WIRE.slice(0, 2), wk1, flip > 0 ? C.border : C.blue, 8);
+      if (wk1 < 1) { ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(tip[0], tip[1], 13, 0, Math.PI * 2); ctx.fill(); }
+      // switch
+      const sk = tw(t, 9.5, 0.4) * (1 - rewind);
+      if (sk > 0) {
+        ctx.globalAlpha = sk * (1 - endk);
+        ctx.fillStyle = flip > 0.5 ? C.blue : C.panel; ctx.strokeStyle = flip > 0.5 ? C.blue : C.text; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.roundRect(SW.x - 60, SW.y - 34, 120, 68, 34); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = flip > 0.5 ? C.ground : C.text; ctx.beginPath(); ctx.arc(SW.x + lerp(26, -26, flip), SW.y, 22, 0, Math.PI * 2); ctx.fill();
+      }
+      if (wk2 > 0) {
+        ctx.globalAlpha = 1 - endk;
+        polyOn(WIRE.slice(2), 1, C.border, 8);
+        const tip2 = polyOn(WIRE.slice(2), wk2, C.blue, 8);
+        if (wk2 < 1) { ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(tip2[0], tip2[1], 13, 0, Math.PI * 2); ctx.fill(); }
+      }
+    }
+    const gk = tw(t, 11.3, 0.5) * (1 - rewind);
+    if (gk > 0) {
+      ctx.save(); ctx.globalAlpha = gk * (1 - endk);
+      // wipe in from its input side (top)
+      ctx.beginPath(); ctx.rect(GP.x - 10, GP.y - 10, GP.w + 20, (GP.h + 20) * gk); ctx.clip();
+      ctx.fillStyle = C.panel; ctx.strokeStyle = C.blue; ctx.lineWidth = 8; ctx.beginPath(); ctx.roundRect(GP.x, GP.y, GP.w, GP.h, 24); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = C.text; ctx.font = F(700, 64); ctx.textAlign = 'left'; ctx.fillText('GP', GP.x + 36, GP.y + 92);
+      ctx.fillStyle = C.blue; ctx.fillRect(GP.x + 36, GP.y + 116, 60, 8);
+      // summary lines fill in, made from the diary rows (13.17 on)
+      for (let i = 0; i < 4; i++) { const k = tw(t, 13.2 + i * 0.28, 0.45); if (k <= 0) continue; ctx.fillStyle = i === 1 ? C.blue : C.border; ctx.beginPath(); ctx.roundRect(GP.x + 36, GP.y + 160 + i * 44, [200, 150, 214, 110][i] * k, 22, 11); ctx.fill(); }
+      ctx.restore();
+    }
+    // rows travel down the wire into the summary
+    for (let i = 0; i < 4; i++) {
+      const k = tw(t, 12.95 + i * 0.28, 0.5, 'power2.inOut'); if (k <= 0 || k >= 1) continue;
+      const pts = [[PH.x + 60, ROWS[i].y], ...WIRE.slice(0, 4), [GP.x + 50, GP.y + 170 + i * 44]];
+      // find point along polyline
+      let L = 0; const segs = []; for (let j = 1; j < pts.length; j++) { const d = wireLen(pts[j - 1], pts[j]); segs.push(d); L += d; }
+      let rem = L * k, q = pts[0]; for (let j = 1; j < pts.length; j++) { if (rem <= segs[j - 1]) { const f = rem / segs[j - 1]; q = [lerp(pts[j - 1][0], pts[j][0], f), lerp(pts[j - 1][1], pts[j][1], f)]; break; } rem -= segs[j - 1]; }
+      ctx.fillStyle = C.blue; ctx.globalAlpha = 1 - endk; ctx.beginPath(); ctx.roundRect(q[0] - 22, q[1] - 11, 44, 22, 11); ctx.fill(); ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+    // --- end card: the lock becomes the Clari moon ---
+    if (t > 16.9) {
+      const k = tw(t, 17.1, 0.6, 'back.out(1.4)');
+      const cx = 540, cy = 640;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(lerp(0.6, 1, k), lerp(0.6, 1, k)); ctx.globalAlpha = tw(t, 17.0, 0.3);
+      ctx.fillStyle = C.blue; ctx.beginPath(); ctx.roundRect(-130, -130, 260, 260, 76); ctx.fill();
+      ctx.fillStyle = C.text; ctx.beginPath(); ctx.arc(-10, 10, 80, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C.blue; ctx.beginPath(); ctx.arc(30, -26, 70, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      const wk = tw(t, 17.45, 0.5);
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 860, W, 220); ctx.clip();
+      ctx.fillStyle = C.text; ctx.font = F(700, 190); ctx.textAlign = 'center'; ctx.letterSpacing = '-4px'; ctx.fillText('Clari', 540, 1040 + (1 - wk) * 200); ctx.restore();
+      const lk2 = tw(t, 17.8, 0.5);
+      ctx.save(); ctx.globalAlpha = lk2; ctx.fillStyle = C.text; ctx.font = F(500, 56); ctx.textAlign = 'center';
+      ctx.fillText('Free on the App Store', 540, 1190 + (1 - lk2) * 30); ctx.fillText('and Google Play', 540, 1262 + (1 - lk2) * 30); ctx.restore();
+      ctx.fillStyle = C.blue; ctx.fillRect(540 - 60 * lk2, 1310, 120 * lk2, 8);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (t < 17.0) drawCaptions(t);
+  }
+
+  const p = { t: 0 };
+  const tl = gsap.timeline({ paused: true });
+  tl.to(p, { t: DUR, duration: DUR, ease: 'none', onUpdate: () => draw(p.t) }, 0);
+  window.__timelines = window.__timelines || {};
+  window.__timelines['main'] = tl;
+  draw(0);
+  if (document.fonts) document.fonts.ready.then(() => { SCREENS.forEach(s => s.bases = null); draw(p.t); });
+})();
+</script>
+</body>
+</html>

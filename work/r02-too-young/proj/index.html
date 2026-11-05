@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@800;900&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  :root { --ground: #F1EEE6; --ink: #111111; --red: #E63022; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ground);
+    font-family: 'Inter Tight', sans-serif; color: var(--ink); }
+  #paper { position: absolute; inset: 0; }
+  .ln { position: absolute; right: 140px; overflow: hidden; line-height: 0.9; font-weight: 800; letter-spacing: -0.03em;
+        padding: 0.04em 0.06em 0.12em 0.4em; text-align: right; white-space: nowrap; }
+  .ln .in { display: block; will-change: transform; }
+  .num { position: absolute; right: 120px; font-weight: 900; letter-spacing: -0.06em; line-height: 0.78; font-size: 720px;
+         white-space: nowrap; will-change: transform; font-variant-numeric: tabular-nums; }
+  .neg { color: var(--ground); }
+  .dm { display: inline-block; width: 0.2em; height: 0.2em; }
+  .bar { position: absolute; background: var(--red); }
+  #panel { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; background: var(--ink); }
+  #dot, #dot2 { position: absolute; left: 0; top: 0; border-radius: 50%; background: var(--red); }
+  #cut { position: absolute; left: 0; top: 0; border-radius: 50%; background: var(--ground); }
+  .slice { position: absolute; right: 150px; font-weight: 900; letter-spacing: -0.045em; line-height: 0.9; font-size: 350px; white-space: nowrap; }
+  #weeksbar { position: absolute; height: 26px; background: var(--ink); }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="32.2" data-width="1080" data-height="1920">
+  <canvas id="paper" width="540" height="960"></canvas>
+  <div id="panel"></div>
+  <div id="stage"></div>
+  <div id="nice"></div>
+  <div class="bar" id="rule"></div>
+  <div class="bar" id="strike"></div>
+  <div id="weeksbar"></div><div class="bar" id="u1"></div><div class="bar" id="u2"></div><div class="bar" id="wfill"></div>
+  <div id="dot2"></div>
+  <div id="dot"></div>
+  <div id="cut"></div>
+  <svg width="0" height="0" style="position:absolute"><defs id="fx"></defs></svg>
+</div>
+<script>
+(function () {
+  const S = STUDIO, W = 1080;
+  const $ = id => document.getElementById(id);
+  const E = n => S.ease(n);
+  const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const pr = (t, a, b) => cl((t - a) / (b - a));
+  const lerp = (a, b, k) => a + (b - a) * k;
+
+  // ---- lines: [id, text, top, size, in, out, neg, dot] ----
+  const LINES = [
+    ['a1', "Told you’re", 300, 124, 0.12, 2.3],
+    ['a2', 'too', 430, 300, 0.5, 2.36],
+    ['a3', 'young', 690, 300, 0.78, 2.42],
+    ['a4', 'for', 1010, 112, 1.2, 2.48],
+    ['a5', 'perimenopause?', 1118, 112, 1.35, 2.54],
+    ['b1', 'Here’s what', 290, 124, 2.82, 5.2],
+    ['b3', 'guidance', 820, 170, 3.75, 5.26],
+    ['b4', 'actually says', 1000, 124, 4.3, 5.32, 0, 1],
+    ['c1', 'Over', 250, 160, 5.68, 12.72],
+    ['c2', 'with symptoms like', 1030, 64, 6.5, 10.25],
+    ['c3', 'hot flushes and', 1110, 100, 7.35, 10.3],
+    ['c4', 'irregular periods', 1225, 100, 8.4, 10.35],
+    ['c5', 'can be diagnosed', 1030, 100, 10.42, 12.62],
+    ['c6', 'without a', 1135, 150, 10.95, 12.67],
+    ['c7', 'blood test', 1285, 150, 11.55, 12.72, 0, 1],
+    ['d1', 'Between', 250, 160, 13.22, 17.62],
+    ['d2', 'to 45', 1030, 250, 14.15, 15.42],
+    ['d3', 'A blood test', 1030, 130, 15.58, 17.66],
+    ['d4', 'can be', 1158, 130, 15.9, 17.7],
+    ['d5', 'considered', 1286, 130, 16.25, 17.74, 0, 1],
+    ['e1', 'Under', 250, 160, 17.84, 22.32],
+    ['e2', 'Two blood', 1015, 140, 18.92, 22.2],
+    ['e3', 'tests', 1145, 140, 19.25, 22.26],
+    ['e4', '4 to 6 weeks apart', 1376, 64, 20.95, 22.3],
+    ['f1', 'So', 270, 170, 22.66, 26.0, 1],
+    ['f2', '‘Too young’', 470, 170, 23.28, 26.06, 1],
+    ['f3', 'isn’t the end', 760, 124, 24.3, 26.12, 1],
+    ['f4', 'of the', 890, 124, 24.7, 26.18, 1],
+    ['f5', 'conversation', 1020, 124, 25.05, 26.24, 1, 1],
+    ['g1', 'Write down', 290, 146, 26.38, 29.0, 1],
+    ['g2', 'what you’ve', 450, 146, 26.75, 29.06, 1],
+    ['g3', 'noticed', 610, 146, 27.15, 29.12, 1, 1],
+    ['g4', 'And take it', 880, 146, 28.08, 29.18, 1],
+    ['g5', 'with you', 1040, 146, 28.42, 29.24, 1, 1],
+    ['h1', 'Clari', 1010, 260, 29.85, null],
+    ['h2', 'Your perimenopause', 1290, 64, 30.2, null],
+    ['h3', 'symptom diary', 1366, 64, 30.32, null],
+    ['src', 'Source: NICE guideline NG23', 1468, 50, 3.6, 22.4],
+  ];
+  const NUMS = [['n45', '45', 432, 5.86, 12.74], ['n40', '40', 432, 13.36, 22.44]];
+  const stage = $('stage'), fx = $('fx');
+  let fcount = 0;
+  function mkFilter() { const id = 'mb' + (fcount++); fx.insertAdjacentHTML('beforeend', `<filter id="${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0 0"/></filter>`); return { id, g: fx.lastChild.firstChild }; }
+  const L = LINES.map(([id, txt, top, size, tin, tout, neg, dot]) => {
+    const d = document.createElement('div'); d.className = 'ln' + (neg ? ' neg' : ''); d.id = id;
+    d.style.top = top + 'px'; d.style.fontSize = size + 'px';
+    if (id === 'src') { d.style.fontWeight = 800; d.style.letterSpacing = '-0.01em'; }
+    d.innerHTML = `<span class="in">${txt}${dot ? '<span class="dm" id="dm_' + id + '"></span>' : ''}</span>`;
+    stage.appendChild(d);
+    return { el: d, in: d.firstChild, tin, tout, f: mkFilter(), size };
+  });
+  const N = NUMS.map(([id, txt, top, tin, tout]) => {
+    const d = document.createElement('div'); d.className = 'num'; d.id = id; d.textContent = txt; d.style.top = top + 'px';
+    stage.appendChild(d); return { el: d, tin, tout, f: mkFilter() };
+  });
+  // NICE: slam and slice (3 bands + red ghost)
+  const nice = $('nice');
+  nice.innerHTML = [0, 1, 2, 3].map(i => `<div class="slice" style="top:430px;${i === 0 ? 'color:#E63022;mix-blend-mode:multiply' : ''}">NICE</div>`).join('');
+  const bands = [...nice.children];
+  [[0, 100], [0, 34], [34, 66], [66, 100]].forEach(([a, b], i) => { bands[i].style.clipPath = `inset(${a}% -20% ${100 - b}% -20%)`; });
+  const niceF = mkFilter(); nice.style.filter = `url(#${niceF.id})`;
+
+  // paper grain + fibres
+  (function () {
+    const c = $('paper'), g = c.getContext('2d'), R = S.rng(42);
+    g.fillStyle = '#F1EEE6'; g.fillRect(0, 0, 540, 960);
+    const id = g.getImageData(0, 0, 540, 960);
+    for (let i = 0; i < id.data.length; i += 4) { const v = (R() - 0.5) * 16; id.data[i] += v; id.data[i + 1] += v; id.data[i + 2] += v - 1; }
+    g.putImageData(id, 0, 0);
+    g.strokeStyle = 'rgba(120,105,85,0.10)'; g.lineWidth = 0.7;
+    for (let k = 0; k < 160; k++) { const x = R() * 540, y = R() * 960, a = R() * 6.28, l = 6 + R() * 18; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a + 1) * l * 0.5, y + Math.sin(a + 1) * l * 0.5, x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    c.style.width = '1080px'; c.style.height = '1920px';
+  })();
+
+  function setBlur(f, sx, sy) { f.g.setAttribute('stdDeviation', `${sx.toFixed(1)} ${sy.toFixed(1)}`); }
+  function line(o, t) {
+    const a = E('expo.out')(pr(t, o.tin, o.tin + 0.36));
+    const b = o.tout == null ? 0 : E('power4.in')(pr(t, o.tout, o.tout + 0.3));
+    const vis = t >= o.tin && b < 1;
+    o.el.style.display = vis ? 'block' : 'none'; if (!vis) return;
+    o.in.style.transform = `translate(${-1150 * b}px, ${(1 - a) * 112}%) skewX(${18 * b}deg)`;
+    const by = 34 * (1 - pr(t, o.tin, o.tin + 0.24)), bxx = 70 * b;
+    if (by > 0.3 || bxx > 0.3) { setBlur(o.f, bxx, by * (o.size / 150)); o.el.style.filter = `url(#${o.f.id})`; } else o.el.style.filter = 'none';
+  }
+  function numeral(o, t) {
+    const a = E('expo.out')(pr(t, o.tin, o.tin + 0.5)), b = E('power4.in')(pr(t, o.tout, o.tout + 0.36));
+    const vis = t >= o.tin && b < 1; o.el.style.display = vis ? 'block' : 'none'; if (!vis) return;
+    // settle squash on landing
+    const land = t - o.tin - 0.42, sq = land > 0 ? 0.03 * Math.exp(-land * 7) * Math.cos(land * 22) : 0;
+    o.el.style.transform = `translateX(${1200 * (1 - a) - 1400 * b}px) scale(${1 - sq}, ${1 + sq})`;
+    o.el.style.transformOrigin = '100% 100%';
+    const bl = 60 * (1 - pr(t, o.tin, o.tin + 0.34)) + 80 * b;
+    if (bl > 0.3) { setBlur(o.f, bl, 0); o.el.style.filter = `url(#${o.f.id})`; } else o.el.style.filter = 'none';
+  }
+  const anchor = el => { let x = 0, y = 0, e = el; while (e && e.id !== 'root') { x += e.offsetLeft; y += e.offsetTop; e = e.offsetParent; } return { x: x + el.offsetWidth / 2, y: y + el.offsetHeight / 2 }; };
+  // a full stop sits on the baseline: anchor of the .dm span, nudged down
+  const stop = (id, size) => { const p = anchor($('dm_' + id)); return { x: p.x + size * 0.02, y: p.y + size * 0.21, d: size * 0.2 }; };
+
+  // red dot path, keys: [time, getter]
+  const KEYS = [
+    [0.9, () => ({ x: 255, y: 560, d: 250 })],
+    [2.95, () => ({ x: 1080 - 140 - $('b1').offsetWidth - 20, y: 290 + 62, d: 92 })],
+    [4.62, () => stop('b4', 124)],
+    [5.75, () => { const p = anchor($('c1')); return { x: 1080 - 140 - $('c1').offsetWidth - 10, y: 250 + 160 * 0.5, d: 92 }; }],
+    [11.8, () => stop('c7', 150)],
+    [13.3, () => ({ x: 1080 - 140 - $('d1').offsetWidth - 10, y: 250 + 80, d: 92 })],
+    [16.6, () => stop('d5', 130)],
+    [17.9, () => ({ x: 1080 - 140 - $('e1').offsetWidth - 10, y: 250 + 80, d: 92 })],
+    [19.5, () => ({ x: 860, y: 1330, d: 96 })],
+    [22.3, () => ({ x: 1080 - 140 - $('f1').offsetWidth - 20, y: 270 + 85, d: 110 })],
+    [25.4, () => stop('f5', 124)],
+    [27.4, () => stop('g3', 146)],
+    [28.7, () => stop('g5', 146)],
+    [29.45, () => ({ x: 770, y: 640, d: 360 })],
+  ];
+  function dotAt(t) {
+    let cur = KEYS[0][1](), land = -9;
+    for (let i = 1; i < KEYS.length; i++) {
+      const [tk, g] = KEYS[i]; if (t < tk) break;
+      const k = E('power4.inOut')(pr(t, tk, tk + 0.46)), q = g();
+      cur = { x: lerp(cur.x, q.x, k), y: lerp(cur.y, q.y, k), d: lerp(cur.d, q.d, k) }; land = tk + 0.46;
+    }
+    return { ...cur, land };
+  }
+
+  const dot = $('dot'), dot2 = $('dot2'), cut = $('cut'), rule = $('rule'), strike = $('strike'), wb = $('weeksbar'), panel = $('panel');
+  window.__timelines = window.__timelines || {};
+  window.__timelines.main = S.play(function render(t) {
+    // ink panel (field flip) slides in from the right for the closing lines, out to the left before the end card
+    const pin = E('power4.inOut')(pr(t, 22.36, 22.82)), pout = E('power4.inOut')(pr(t, 29.2, 29.66));
+    panel.style.transform = `translateX(${1080 * (1 - pin) - 1080 * pout}px)`;
+    L.forEach(o => line(o, t)); N.forEach(o => numeral(o, t));
+    // NICE slam + slice
+    const na = E('expo.out')(pr(t, 3.3, 3.66)), nb = E('power4.in')(pr(t, 5.22, 5.52));
+    const nvis = t >= 3.3 && nb < 1; nice.style.display = nvis ? 'block' : 'none';
+    if (nvis) {
+      const sh = pr(t, 3.62, 4.25), shear = Math.sin(Math.PI * Math.min(1, sh * 1.6)) * (1 - E('elastic.out(1,0.45)')(pr(t, 3.9, 4.3))) ;
+      const offs = [0, -70, 52, -34];
+      bands.forEach((b, i) => {
+        let x = (1 - na) * 0, y = (1 - na) * 420;
+        if (i === 0) { const g = 1 - E('power3.out')(pr(t, 3.5, 4.3)); x += 12 + 30 * g; y += 9 + 22 * g; b.style.opacity = 1; }
+        else x += offs[i] * cl(shear * 1.4);
+        b.style.transform = `translate(${x - 1150 * nb}px, ${y}px) skewX(${18 * nb}deg)`;
+      });
+      const bl = 34 * (1 - pr(t, 3.3, 3.54)), bx = 70 * nb; setBlur(niceF, bx, bl);
+      // whole word is masked like the lines
+    }
+    // red rule under the numerals
+    const ra = E('power4.inOut')(pr(t, 6.1, 6.56)), rb = E('power4.in')(pr(t, 22.3, 22.62));
+    rule.style.display = t > 6.1 && rb < 1 ? 'block' : 'none';
+    rule.style.left = '0px'; rule.style.top = '962px'; rule.style.height = '22px'; rule.style.width = '940px';
+    rule.style.transform = `translateX(${-960 * (1 - ra) - 1100 * rb}px)`;
+    // strike through 'Too young'
+    const sa = E('expo.out')(pr(t, 23.95, 24.31)), sb = E('power4.in')(pr(t, 26.06, 26.36));
+    strike.style.display = t > 23.95 && sb < 1 ? 'block' : 'none';
+    strike.style.left = '120px'; strike.style.top = (470 + 170 * 0.52) + 'px'; strike.style.height = '34px'; strike.style.width = '840px';
+    strike.style.transform = `translateX(${1000 * (1 - sa) - 1150 * sb}px) rotate(-3deg)`;
+    // red dot
+    const p = dotAt(t); let d = p.d;
+    const lt = t - p.land, sq = lt > 0 ? 0.16 * Math.exp(-lt * 9) * Math.cos(lt * 26) : 0;
+    const ent = E('back.out(1.4)')(pr(t, 0.9, 1.3));
+    const dIn = t < 0.9 ? 0 : 1;
+    dot.style.display = dIn ? 'block' : 'none';
+    const pulse = (a0) => { const q = t - a0; return q > 0 && q < 0.6 ? 0.38 * Math.sin(Math.PI * q / 0.6) : 0; };
+    if (t > 21 && t < 22.3) d *= 1 + pulse(21.75);
+    dot.style.width = dot.style.height = d + 'px';
+    dot.style.transform = `translate(${p.x - d / 2 - (1 - ent) * 700}px, ${p.y - d / 2}px) scale(${1 + sq}, ${1 - sq})`;
+    // second dot + weeks bar (two blood tests, 4 to 6 weeks apart)
+    const s2 = E('power4.inOut')(pr(t, 20.25, 20.85)), s2b = E('power4.in')(pr(t, 22.2, 22.5));
+    const show2 = t > 20.25 && s2b < 1 && p.x > 600;
+    dot2.style.display = wb.style.display = show2 ? 'block' : 'none';
+    const x2 = lerp(860, 230, s2);
+    const d2 = 96 * (1 + pulse(21.35));
+    dot2.style.width = dot2.style.height = d2 + 'px';
+    dot2.style.transform = `translate(${x2 - d2 / 2 - 1150 * s2b}px, ${1330 - d2 / 2}px)`;
+    wb.style.left = (x2 - 1150 * s2b) + 'px'; wb.style.width = Math.max(0, 860 - x2) + 'px'; wb.style.top = (1330 - 13) + 'px';
+    // red underline rules that land on the key phrase
+    [['u1', 'c4', 9.25, 10.35, 1225 + 100 * 0.98], ['u2', 'd2', 14.85, 15.42, 1030 + 250 * 0.96]].forEach(([id, ln, a0, b0, y]) => {
+      const el = $(id), src = $(ln), a = E('power4.inOut')(pr(t, a0, a0 + 0.46)), b = E('power4.in')(pr(t, b0, b0 + 0.3));
+      el.style.display = t > a0 && b < 1 ? 'block' : 'none';
+      const wdt = src.offsetWidth - src.offsetHeight * 0.0 - parseFloat(getComputedStyle(src).paddingLeft);
+      el.style.left = (940 - wdt) + 'px'; el.style.width = wdt + 'px'; el.style.top = y + 'px'; el.style.height = '24px';
+      el.style.transform = `translateX(${(1 - a) * (wdt + 160) - 1150 * b}px)`;
+    });
+    // the weeks bar fills red from the first test to the second
+    const wf = $('wfill'), fa = E('power2.inOut')(pr(t, 21.45, 22.15));
+    wf.style.display = show2 && t > 21.45 ? 'block' : 'none';
+    wf.style.left = (x2 - 1150 * s2b) + 'px'; wf.style.top = (1330 - 13) + 'px'; wf.style.height = '26px'; wf.style.width = Math.max(0, (860 - x2) * fa) + 'px';
+    // crescent carve for the end mark
+    const ck = E('power4.inOut')(pr(t, 29.95, 30.45));
+    cut.style.display = t > 29.9 ? 'block' : 'none';
+    const cd = 300; cut.style.width = cut.style.height = cd + 'px';
+    cut.style.transform = `translate(${lerp(1180, 770 + 98, ck) - cd / 2}px, ${lerp(300, 640 - 70, ck) - cd / 2}px)`;
+  }, { loop: false });
+})();
+</script>
+</body>
+</html>

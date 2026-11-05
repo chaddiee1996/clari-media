@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Gothic&family=Archivo+Black&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  :root { --y: #FFD400; --ink: #111111; --paper: #FFFFFF; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--y); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--y); color: var(--ink); }
+  .sc { position: absolute; inset: 0; display: none; }
+  .sc.y { background: var(--y); color: var(--ink); }
+  .sc.k { background: var(--ink); color: var(--y); }
+  .sc.p { background: var(--paper); color: var(--ink); }
+  .el { position: absolute; white-space: nowrap; will-change: transform; }
+  .g { font-family: 'League Gothic', sans-serif; text-transform: uppercase; letter-spacing: 0.01em; line-height: 0.85; }
+  .a { font-family: 'Archivo Black', sans-serif; line-height: 1.02; letter-spacing: -0.005em; }
+  .card { background: var(--paper); color: var(--ink); padding: 26px 40px 30px; }
+  .kcard { background: var(--ink); color: var(--y); padding: 30px 40px 34px; }
+  .ycard { background: var(--y); color: var(--ink); padding: 26px 40px 30px; }
+  .badge { border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; white-space: normal; }
+  .lt { display: inline-block; will-change: transform; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="23.6" data-width="1080" data-height="1920">
+  <!-- 0: intro -->
+  <div class="sc y" id="s0" data-t="0" data-e="2.5">
+    <div class="el g" id="i1" style="left:70px; top:250px; font-size:250px;" data-in="0.1" data-from="left" data-rot="-3">Things I</div>
+    <div class="el g" id="i2" style="left:20px; top:470px; font-size:700px;" data-in="0.5" data-from="bottom" data-zip="1">Lost</div>
+    <div class="el a card" id="i3" style="left:330px; top:1150px; font-size:104px;" data-in="1.05" data-from="right" data-rot="-5">this week</div>
+    <div class="el a" id="i4" style="left:80px; top:1410px; font-size:60px;" data-in="1.6" data-from="left">a short list</div>
+  </div>
+  <!-- 1: colander, top right -->
+  <div class="sc y" id="s1" data-t="2.5" data-e="5.0">
+    <div class="el a" style="left:-90px; top:560px; font-size:1050px; line-height:1; color:#FFFFFF;" data-in="2.5" data-from="left">1</div>
+    <div class="el a" style="right:140px; top:330px; font-size:84px; text-align:right;" data-in="2.6" data-from="top">The word for</div>
+    <div class="el g" id="col" style="right:140px; top:440px; font-size:300px;" data-in="3.0" data-zip="1" data-from="top">Colander</div>
+    <div class="el a badge kcard" style="left:430px; top:820px; width:420px; height:420px; font-size:64px; padding:40px;" data-in="4.0" data-from="right" data-rot="9">the spaghetti thing</div>
+  </div>
+  <!-- 2: car keys, centre on ink -->
+  <div class="sc k" id="s2" data-t="5.0" data-e="7.5">
+    <div class="el g" style="left:0; width:1080px; text-align:center; top:300px; font-size:330px;" data-in="5.0" data-from="top">The car</div>
+    <div class="el g" id="keys" style="left:0; width:1080px; text-align:center; top:560px; font-size:720px;" data-in="5.4" data-zip="1" data-from="bottom">Keys</div>
+    <div class="el a card" style="left:250px; top:1210px; font-size:96px;" data-in="6.2" data-from="right" data-rot="-7">in the fridge</div>
+  </div>
+  <!-- 3: why I came upstairs, bottom left -->
+  <div class="sc y" id="s3" data-t="7.5" data-e="10.0">
+    <div class="el g" style="left:520px; top:120px; font-size:1100px; color:#FFFFFF;" data-in="7.5" data-from="right" data-rot="12">?</div>
+    <div class="el" style="left:70px; top:680px; transform-origin:0 100%;" data-in="7.6" data-from="left" data-rot="-4">
+      <div class="g" style="font-size:300px;">Why I</div>
+      <div class="g" style="font-size:430px;">came</div>
+      <div class="g" id="ups" style="font-size:300px;">upstairs</div>
+    </div>
+    <div class="el a kcard" style="left:90px; top:450px; font-size:64px;" data-in="9.25" data-from="left" data-rot="-6">still no idea</div>
+  </div>
+  <!-- 4: friend's name, top left on ink -->
+  <div class="sc k" id="s4" data-t="10.0" data-e="12.5">
+    <div class="el" style="left:70px; top:250px;" data-in="10.0" data-from="top" data-rot="3">
+      <div class="g" style="font-size:250px;">My friend&rsquo;s</div>
+      <div class="g" id="name" style="font-size:540px;">Name</div>
+    </div>
+    <div class="el a card" style="left:330px; top:1180px; font-size:84px; line-height:1.08;" data-in="11.2" data-from="bottom" data-rot="6">known her<br/>20 years</div>
+  </div>
+  <!-- 5: train of thought, centre, leaves left -->
+  <div class="sc y" id="s5" data-t="12.5" data-e="14.8">
+    <div class="el a" style="left:0; width:1080px; text-align:center; top:420px; font-size:84px;" data-in="12.5" data-from="top">and</div>
+    <div class="el g" id="train1" style="left:0; width:1080px; text-align:center; top:580px; font-size:300px;" data-in="12.7" data-from="right">My train</div>
+    <div class="el g" id="train2" style="left:0; width:1080px; text-align:center; top:850px; font-size:300px;" data-in="12.95" data-from="right">of thought</div>
+    <div class="el a kcard" style="left:360px; top:1210px; font-size:80px;" data-in="14.15" data-from="bottom" data-rot="-4">it left</div>
+  </div>
+  <!-- 6: the turn, on paper -->
+  <div class="sc p" id="s6" data-t="14.8" data-e="17.5">
+    <div class="el g" style="left:0; width:1080px; text-align:center; top:270px; font-size:200px;" data-in="14.85" data-from="left">Problems with</div>
+    <div class="el g" style="left:0; width:1080px; text-align:center; top:450px; font-size:200px;" data-in="15.1" data-from="right">memory and</div>
+    <div class="el g" style="left:0; width:1080px; text-align:center; top:630px; font-size:178px;" data-in="15.35" data-from="left">concentration</div>
+    <div class="el a kcard" style="left:110px; top:880px; width:860px; white-space:normal; text-align:center; font-size:72px; line-height:1.1;" data-in="16.0" data-from="bottom" data-rot="-2">are on the NHS list of perimenopause symptoms.</div>
+    <div class="el a" style="left:0; width:1080px; text-align:center; top:1360px; font-size:48px; line-height:1.12;" data-in="16.3" data-from="bottom">Source: Cambridge University<br/>Hospitals NHS</div>
+  </div>
+  <!-- 7: it's called brain fog -->
+  <div class="sc y" id="s7" data-t="17.5" data-e="19.8">
+    <div class="el a card" style="left:240px; top:300px; font-size:96px;" data-in="17.5" data-from="left" data-rot="-4">It&rsquo;s called</div>
+    <div class="el g" id="brain" style="left:0; width:1080px; text-align:center; top:540px; font-size:500px;" data-in="17.85" data-zip="1" data-from="top">Brain</div>
+    <div class="el g" id="fog" style="left:0; width:1080px; text-align:center; top:960px; font-size:520px;" data-in="18.2" data-zip="1" data-from="bottom">fog.</div>
+  </div>
+  <!-- 8: CTA, on ink -->
+  <div class="sc k" id="s8" data-t="19.8" data-e="21.8">
+    <div class="el g" style="right:140px; top:300px; font-size:200px;" data-in="19.8" data-from="right">Send this to</div>
+    <div class="el g" style="left:70px; top:500px; font-size:200px;" data-in="20.15" data-from="left">the friend who</div>
+    <div class="el g" style="right:140px; top:700px; font-size:200px;" data-in="20.5" data-from="right">finishes your</div>
+    <div class="el g card" style="left:110px; top:960px; font-size:250px; padding:20px 40px 0;" data-in="20.9" data-from="bottom" data-rot="-3">sentences.</div>
+  </div>
+  <!-- 9: end card -->
+  <div class="sc y" id="s9" data-t="21.8" data-e="23.6">
+    <svg class="el" style="left:330px; top:360px;" width="420" height="420" viewBox="0 0 100 100" data-in="21.8" data-from="top" data-rot="-8"><path d="M62 8 A44 44 0 1 0 92 70 A36 36 0 1 1 62 8 Z" fill="#111111"/></svg>
+    <div class="el a" style="left:0; width:1080px; text-align:center; top:860px; font-size:220px; letter-spacing:-0.03em;" data-in="22.1" data-from="bottom">Clari</div>
+    <div class="el a" style="left:0; width:1080px; text-align:center; top:1140px; font-size:58px; line-height:1.15;" data-in="22.4" data-from="bottom">Your perimenopause<br/>symptom diary</div>
+  </div>
+</div>
+<script>
+(function () {
+  const S = STUDIO;
+  const E = n => S.ease(n);
+  const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const pr = (t, a, b) => cl((t - a) / (b - a));
+  const scenes = [...document.querySelectorAll('.sc')].map(sc => ({ sc, t0: +sc.dataset.t, t1: +sc.dataset.e,
+    els: [...sc.querySelectorAll('[data-in]')].map(el => {
+      const o = { el, tin: +el.dataset.in, from: el.dataset.from || 'bottom', rot: +(el.dataset.rot || 0), zip: !!el.dataset.zip, base: el.style.transform || '' };
+      if (o.zip) { // split into letters
+        const txt = el.textContent; el.textContent = '';
+        o.letters = [...txt].map(ch => { const s = document.createElement('span'); s.className = 'lt'; s.textContent = ch === ' ' ? ' ' : ch; el.appendChild(s); return s; });
+      }
+      return o;
+    }) }));
+  const OFF = { left: [-1400, 0], right: [1400, 0], top: [0, -1500], bottom: [0, 1500] };
+  // train of thought leaves the frame letter by letter
+  ['train1', 'train2'].forEach(id => { const el = document.getElementById(id); const txt = el.textContent; el.textContent = ''; [...txt].forEach(ch => { const s = document.createElement('span'); s.className = 'lt'; s.textContent = ch === ' ' ? ' ' : ch; el.appendChild(s); }); });
+  (function () { const el = document.getElementById('ups'); const txt = el.textContent; el.textContent = ''; [...txt].forEach(ch => { const s = document.createElement('span'); s.className = 'lt'; s.textContent = ch; el.appendChild(s); }); })();
+  const ups = [...document.querySelectorAll('#ups .lt')];
+  const tr = [...document.querySelectorAll('#train1 .lt'), ...document.querySelectorAll('#train2 .lt')];
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines.main = S.play(function render(t) {
+    for (const s of scenes) {
+      const on = t >= s.t0 && t < s.t1; s.sc.style.display = on ? 'block' : 'none'; if (!on) continue;
+      // land jolt: the whole poster drops 18px when something hits, settles in 0.15s
+      let jolt = 0;
+      for (const o of s.els) { const a = t - (o.tin + 0.18); if (a > 0 && a < 0.8) jolt += 16 * (a < 0.05 ? a / 0.05 : Math.exp(-(a - 0.05) * 6)); }
+      s.sc.style.transform = `translateY(${jolt}px)`;
+      for (const o of s.els) {
+        const vis = t >= o.tin; o.el.style.visibility = vis ? 'visible' : 'hidden'; if (!vis) continue;
+        // scale punch on the beat after landing: up in 0.05s, back over 0.4s
+        const pa = t - (o.tin + 0.5), punch = pa > 0 && pa < 0.45 ? (pa < 0.05 ? pa / 0.05 : 1 - E('sine.inOut')((pa - 0.05) / 0.4)) * 0.05 : 0;
+        if (o.zip) {
+          o.el.style.transform = `rotate(${o.rot}deg) scale(${1 + punch})`;
+          o.letters.forEach((l, i) => {
+            const a = E('power4.out')(pr(t, o.tin + i * 0.033, o.tin + i * 0.033 + 0.2));
+            const dy = (i % 2 ? 1 : -1) * 1500 * (o.from === 'bottom' ? -1 : 1);
+            l.style.transform = `translateY(${dy * (1 - a)}px)`;
+          });
+        } else {
+          const a = E('power4.out')(pr(t, o.tin, o.tin + 0.2)), [dx, dy] = OFF[o.from];
+          const settle = o.rot ? o.rot + (1 - a) * o.rot * 2 : 0;
+          o.el.style.transform = `translate(${dx * (1 - a)}px, ${dy * (1 - a)}px) rotate(${settle}deg) scale(${1 + punch})`;
+        }
+      }
+    }
+    // UPSTAIRS climbs like a staircase
+    ups.forEach((l, i) => { const a = E('back.out(1.7)')(pr(t, 8.5 + i * 0.05, 8.5 + i * 0.05 + 0.3)); l.style.transform = `translateY(${-i * 16 * a}px)`; });
+    // the train leaves: letters run off to the left
+    tr.forEach((l, i) => { const a = E('power3.in')(pr(t, 13.6 + i * 0.025, 13.6 + i * 0.025 + 0.42)); l.style.transform = `translateX(${-1500 * a}px)`; });
+  }, { loop: false });
+})();
+</script>
+</body>
+</html>

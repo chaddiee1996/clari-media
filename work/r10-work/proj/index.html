@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  /* R10 "Menopause and work"  look: graphite UI, cards stacked centred, one big headline per beat */
+  :root { --ground: #0E0F12; --panel: #17181C; --panel2: #1D1F24; --line: #2E3138; --text: #F2F3F5; --accent: #3DD68C; --dot: rgba(160,165,175,0.16); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ground);
+    font-family: 'Manrope', sans-serif; color: var(--text); font-weight: 800; }
+  #dots { position: absolute; left: -200px; top: -200px; width: 1480px; height: 2320px;
+    background-image: radial-gradient(circle, var(--dot) 2px, transparent 2.4px); background-size: 40px 40px; }
+  #stage { position: absolute; inset: 0; perspective: 2400px; perspective-origin: 540px 1100px; }
+  .card { position: absolute; left: 130px; width: 820px; border-radius: 28px; background: var(--panel); border: 2px solid var(--line);
+    box-shadow: 0 50px 120px rgba(0,0,0,0.6); transform-origin: 50% 0; overflow: hidden; }
+  .row { position: absolute; left: 48px; right: 48px; }
+  .chip { display: inline-block; padding: 0 26px; height: 64px; line-height: 64px; border-radius: 32px; font-size: 48px; letter-spacing: -0.01em; }
+  .hmask { position: absolute; left: 100px; width: 880px; text-align: center; overflow: hidden; }
+  .hl { font-size: 128px; line-height: 136px; letter-spacing: -0.035em; will-change: transform; }
+  .big { font-size: 156px; line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .lab { font-size: 62px; line-height: 70px; letter-spacing: -0.02em; }
+  .mask { overflow: hidden; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="25.7" data-width="1080" data-height="1920">
+  <div id="dots"></div>
+  <div id="stage"></div>
+  <div id="heads" style="position:absolute;inset:0;z-index:50"></div>
+</div>
+<script>
+const S = STUDIO, root = S.root, seg = S.seg, mix = S.mix;
+const css = getComputedStyle(document.documentElement), tok = n => css.getPropertyValue(n).trim();
+const GREEN = tok('--accent'), TEXT = tok('--text'), GROUND = tok('--ground'), PANEL2 = tok('--panel2'), LINE = tok('--line');
+const add = (parent, cls, st, html) => { const d = document.createElement('div'); if (cls) d.className = cls; Object.assign(d.style, st || {}); if (html != null) d.innerHTML = html; parent.appendChild(d); return d; };
+const stage = document.getElementById('stage'), heads = document.getElementById('heads');
+
+// ---------- headlines: the spoken phrase, one at a time, out from behind a clean mask edge
+// (wording of the fact lines matches the gov.uk guidance: voluntary now, mandatory from spring 2027 subject to legislation)
+const HEAD = [["Menopause and work.", 0.08, 0], ["This year,", 2.77, 1], ["the government published", 3.59, 1], ["guidance on", 4.51, 1], ["menopause action plans.", 5.5, 1],
+  ["Employers with", 7.48, 2], ["250 or more staff", 8.22, 2], ["can publish one now,", 10.26, 2], ["voluntarily.", 11.32, 2],
+  ["Subject to legislation,", 12.99, 3], ["it's set to be mandatory", 13.64, 3], ["from spring 2027.", 15.07, 3],
+  ["If menopause is", 17.21, 4], ["affecting your work,", 18.31, 4], ["it's okay to ask", 19.47, 4], ["what your workplace", 20.7, 4], ["has in place.", 21.6, 4]];
+const HOT = new Set(["menopause action plans.", "250 or more staff", "from spring 2027.", "it's okay to ask"]);
+const HEND = 22.55;
+HEAD.forEach(h => { const m = add(heads, 'hmask'); const i = add(m, 'hl', { color: HOT.has(h[0]) ? GREEN : TEXT }, h[0]); h.m = m; h.i = i; });
+
+// ---------- cards
+function card(top, h) { const c = add(stage, 'card', { top: top + 'px', height: h + 'px' }); return c; }
+const SVGNS = 'http://www.w3.org/2000/svg';
+function icon(parent, d, x, y, size, col, sw) { const s = document.createElementNS(SVGNS, 'svg'); s.setAttribute('viewBox', '0 0 48 48');
+  Object.assign(s.style, { position: 'absolute', left: x + 'px', top: y + 'px', width: size + 'px', height: size + 'px', overflow: 'visible' });
+  s.innerHTML = `<path d="${d}" fill="none" stroke="${col}" stroke-width="${sw || 4}" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1"/>`; parent.appendChild(s); return s.firstChild; }
+const CTOP = 740;
+// C1: guidance document
+const C1 = card(CTOP, 560);
+{ const tile = add(C1, '', { position: 'absolute', left: '48px', top: '48px', width: '120px', height: '120px', borderRadius: '24px', background: PANEL2, border: `2px solid ${LINE}` });
+  icon(tile, 'M14 6 H30 L38 14 V42 H14 Z M30 6 V14 H38 M20 24 H32 M20 31 H32', 24, 24, 72, TEXT, 3.5);
+  add(C1, 'chip', { position: 'absolute', left: '196px', top: '76px', background: 'rgba(61,214,140,0.14)', color: GREEN }, 'Published 2026');
+  add(C1, 'lab', { position: 'absolute', left: '48px', top: '206px', width: '720px', fontSize: '100px', lineHeight: '104px', letterSpacing: '-0.04em' }, 'Menopause<br>action plans');
+  add(C1, '', { position: 'absolute', left: '48px', right: '48px', top: '436px', height: '2px', background: LINE });
+  add(C1, 'lab', { position: 'absolute', left: '48px', top: '464px', color: TEXT }, 'Guidance for employers'); }
+// C2: 250+ staff, a voluntary plan, toggle switches on
+const C2 = card(CTOP, 600);
+const c2num = add(C2, 'big', { position: 'absolute', left: '48px', top: '56px', color: GREEN }, '0');
+add(C2, 'lab', { position: 'absolute', left: '48px', top: '232px' }, 'staff or more');
+add(C2, '', { position: 'absolute', left: '48px', right: '48px', top: '332px', height: '2px', background: LINE });
+add(C2, 'lab', { position: 'absolute', left: '48px', top: '380px' }, 'Publish a plan');
+const c2sub = add(C2, 'chip', { position: 'absolute', left: '48px', top: '462px', background: 'rgba(61,214,140,0.14)', color: GREEN }, 'Voluntary now');
+const tog = add(C2, '', { position: 'absolute', right: '48px', top: '396px', width: '168px', height: '92px', borderRadius: '46px', background: PANEL2, border: `2px solid ${LINE}` });
+const knob = add(tog, '', { position: 'absolute', left: '8px', top: '8px', width: '72px', height: '72px', borderRadius: '36px', background: TEXT });
+// C3: spring 2027, a track from now to then
+const C3 = card(CTOP, 668);
+add(C3, 'lab', { position: 'absolute', left: '48px', top: '56px' }, 'Expected');
+const c3big = add(C3, 'big', { position: 'absolute', left: '48px', top: '140px', fontSize: '132px' }, 'Spring 2027');
+const track = add(C3, '', { position: 'absolute', left: '48px', right: '48px', top: '330px', height: '16px', borderRadius: '8px', background: PANEL2 });
+const trackFill = add(track, '', { position: 'absolute', left: 0, top: 0, bottom: 0, width: '0%', borderRadius: '8px', background: GREEN });
+add(C3, 'lab', { position: 'absolute', left: '48px', top: '374px' }, 'Now');
+add(C3, 'lab', { position: 'absolute', right: '48px', top: '374px', textAlign: 'right' }, '2027');
+const c3pill = add(C3, '', { position: 'absolute', left: '48px', top: '462px' });
+add(c3pill, 'chip', { background: GREEN, color: GROUND, height: '76px', lineHeight: '76px', fontSize: '56px', borderRadius: '38px' }, 'Mandatory');
+add(c3pill, 'lab', { marginTop: '14px' }, 'subject to legislation');
+// C4: ask what's in place: a message, a green button, a check
+const C4 = card(CTOP, 600);
+add(C4, 'lab', { position: 'absolute', left: '48px', top: '48px', color: GREEN }, 'To: HR / your manager');
+add(C4, '', { position: 'absolute', left: '48px', right: '48px', top: '140px', height: '2px', background: LINE });
+const msg = add(C4, 'lab', { position: 'absolute', left: '48px', top: '176px', width: '724px', fontSize: '66px', lineHeight: '78px', letterSpacing: '-0.025em' }, '');
+const MSG = 'What do we have in place for menopause?';
+const caret = add(C4, '', { position: 'absolute', width: '6px', height: '66px', background: GREEN });
+const btn = add(C4, '', { position: 'absolute', right: '48px', top: '460px', width: '220px', height: '92px', borderRadius: '20px', background: GREEN, overflow: 'hidden' });
+const btnL = add(btn, 'lab', { position: 'absolute', left: 0, top: '13px', width: '220px', textAlign: 'center', color: GROUND }, 'Ask');
+const btnC = icon(btn, 'M12 25 L21 34 L37 15', 70, 6, 80, GROUND, 6);
+// cursor
+const cur = document.createElementNS(SVGNS, 'svg'); cur.setAttribute('viewBox', '0 0 44 52');
+Object.assign(cur.style, { position: 'absolute', left: 0, top: 0, width: '66px', height: '78px', overflow: 'visible' });
+cur.innerHTML = `<path d="M4 3 L4 41 L14 32 L21 47 L28 44 L21 29 L35 29 Z" fill="${GREEN}" stroke="${GROUND}" stroke-width="2.5" stroke-linejoin="round"/>`;
+root.appendChild(cur);
+const ring = add(root, '', { position: 'absolute', width: '120px', height: '120px', borderRadius: '60px', border: `4px solid ${GREEN}` });
+
+// C0: an empty skeleton card that glides in while the title is spoken, waiting to be filled
+const C0 = card(CTOP, 560);
+[[48, 56, 120, 120, 24], [196, 84, 300, 40, 20], [48, 230, 560, 64, 32], [48, 316, 420, 64, 32], [48, 470, 360, 40, 20]].forEach(([x, y, w, h, r]) =>
+  add(C0, '', { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', borderRadius: r + 'px', background: 'rgba(242,243,245,0.2)' }));
+const CARDS = [{ el: C0, tin: 0.25, h: 560 }, { el: C1, tin: 2.85, h: 520 }, { el: C2, tin: 7.45, h: 560 }, { el: C3, tin: 12.95, h: 560 }, { el: C4, tin: 17.15, h: 560 }];
+
+// source + end card
+const src = add(root, 'mask', { position: 'absolute', left: '140px', width: '800px', top: '1460px', height: '64px', textAlign: 'center' });
+const srcI = add(src, 'lab', { fontSize: '48px', lineHeight: '64px', color: TEXT }, 'Source: UK Government, gov.uk');
+const END = add(root, '', { position: 'absolute', left: 0, top: 0, width: '1080px', height: '1920px' });
+const tile = add(END, '', { position: 'absolute', left: '440px', top: '560px', width: '200px', height: '200px', borderRadius: '46px', background: GREEN });
+tile.innerHTML = `<svg viewBox="-100 -100 200 200" width="200" height="200"><path d="M 8 -60 A 60 60 0 1 0 58 26 A 48 48 0 1 1 8 -60 Z" fill="${GROUND}"/></svg>`;
+const eName = add(END, 'mask', { position: 'absolute', left: 0, width: '1080px', top: '800px', height: '200px', textAlign: 'center' });
+const eNameI = add(eName, 'big', { fontSize: '176px', lineHeight: '200px' }, 'Clari');
+const eL = ['Send this to her.', 'Free on App Store', 'and Google Play'].map((t, k) => { const m = add(END, 'mask', { position: 'absolute', left: '140px', width: '800px', top: (1040 + k * 76 + (k ? 40 : 0)) + 'px', height: '76px', textAlign: 'center' });
+  const i = add(m, 'lab', { fontSize: k ? '58px' : '70px', lineHeight: '76px', color: k ? TEXT : GREEN }, t); return i; });
+
+window.__timelines["main"] = S.play(function render(t) {
+  const endP = seg(t, 22.6, 0.6, 'power3.in');
+  // dot grid glides at an even speed
+  document.getElementById('dots').style.transform = `translate(${(-t * 6) % 40}px, ${(-t * 14) % 40}px)`;
+
+  // headlines
+  HEAD.forEach((h, i) => {
+    const nx = HEAD[i + 1]; const tEnd = nx ? nx[1] - 0.34 : HEND;
+    const pin = seg(t, h[1] - 0.1, 0.6, 'expo.out'), pout = seg(t, tEnd, 0.22, 'power3.in');
+    const vis = pin > 0.001 && pout < 0.999;
+    h.m.style.visibility = vis ? 'visible' : 'hidden';
+    if (!vis) return;
+    const hh = h.i.offsetHeight; h.m.style.height = (hh + 8) + 'px'; h.m.style.top = (480 - hh / 2) + 'px';
+    h.i.style.transform = `translateY(${((1 - pin) * 104 - pout * 104).toFixed(2)}%)`;
+  });
+
+  // card stack: the newest card lands flat in front; the older one tips back and rises behind it
+  CARDS.forEach((C, i) => {
+    const nxt = CARDS[i + 1], nn = CARDS[i + 2];
+    const pin = seg(t, C.tin, 0.9, 'expo.out');
+    const back = nxt ? seg(t, nxt.tin, 0.9, 'power3.inOut') : 0;
+    const gone = nn ? seg(t, nn.tin, 0.7, 'power3.inOut') : 0;
+    const vis = pin > 0.001 && gone < 0.999 && endP < 0.999 && !(nxt && endP > 0);
+    C.el.style.visibility = vis ? 'visible' : 'hidden';
+    if (!vis) return;
+    // the camera glides over the stack at an even speed while a card is up
+    const glide = i === 0 ? 300 - 420 * Math.min(1, Math.max(0, (t - C.tin) / 2.6)) : 110 - 220 * Math.min(1, Math.max(0, (t - C.tin) / 5.0));
+    const y = (1 - pin) * 900 - back * 60 - gone * 60 + glide * (1 - back);
+    const rx = (1 - pin) * 26 + back * 14 + 7 * (1 - Math.min(1, Math.max(0, (t - C.tin) / 5.0))) * (1 - back);
+    const sc = 1 - back * 0.08 - gone * 0.06;
+    C.el.style.transform = `translateY(${y}px) rotateX(${rx}deg) scale(${sc})`;
+    C.el.style.filter = `brightness(${1 - back * 0.45})`;
+    C.el.style.opacity = (1 - gone) * (1 - endP);
+    C.el.style.zIndex = 10 + i;
+  });
+  // C2: count to 250, then the toggle switches on
+  { const c = seg(t, 8.15, 2.0, 'power1.inOut'); c2num.textContent = Math.round(250 * c) + (c >= 1 ? '+' : '');
+    const k = seg(t, 10.3, 0.45, 'power3.inOut'); knob.style.transform = `translateX(${k * 76}px)`;
+    tog.style.background = k > 0.5 ? GREEN : PANEL2; knob.style.background = k > 0.5 ? GROUND : TEXT; c2sub.style.opacity = 0.0 + seg(t, 10.45, 0.4, 'power3.out'); }
+  // C3: the track fills from now to 2027, the pill lands
+  { trackFill.style.width = (100 * seg(t, 13.7, 1.5, 'power2.inOut')) + '%';
+    const p = seg(t, 15.0, 0.5, 'expo.out'); c3pill.style.opacity = p; c3pill.style.transform = `translateY(${(1 - p) * 30}px)`; }
+  // C4: the question types, the cursor glides to the green button and clicks, label slides out, check draws
+  { const n = Math.round(MSG.length * seg(t, 18.0, 1.6, 'none'));
+    msg.textContent = MSG.slice(0, n);
+    // caret sits after the last character
+    const r = document.createRange(); let cx = 48, cy = 186;
+    if (msg.firstChild && n > 0) { r.setStart(msg.firstChild, n - 1); r.setEnd(msg.firstChild, n); const b = r.getBoundingClientRect(), cb = C4.getBoundingClientRect(); cx = (b.right - cb.left) / (cb.width / 820) + 4; cy = (b.top - cb.top) / (cb.height / 600) + 6; }
+    caret.style.left = cx + 'px'; caret.style.top = cy + 'px';
+    caret.style.opacity = t < 19.9 ? (Math.floor(t * 2.5) % 2 === 0 || t < 19.6 ? 1 : 0) : 0;
+    const click = 20.75;
+    const mv = seg(t, 19.6, 1.05, 'power3.inOut');
+    const br = btn.getBoundingClientRect(), bx = br.left + br.width / 2 - 30, by = br.top + br.height / 2;   // button centre on screen (card resting)
+    const x = mix(1100, bx, mv), y = mix(1700, by, mv);
+    const press = seg(t, click, 0.08, 'power2.out') - seg(t, click + 0.08, 0.14, 'power2.out');
+    const cv = t > 19.5 && t < 22.5;
+    cur.style.visibility = cv ? 'visible' : 'hidden';
+    cur.style.transform = `translate(${x - 6}px, ${y - 4}px) scale(${1 - 0.12 * press})`;
+    const rg = seg(t, click, 0.5, 'power2.out');
+    ring.style.visibility = t > click && rg < 1 ? 'visible' : 'hidden';
+    ring.style.transform = `translate(${bx - 60}px, ${by - 60}px) scale(${0.4 + 0.9 * rg})`; ring.style.opacity = 1 - rg;
+    btn.style.transform = `scale(${1 - 0.06 * press})`;
+    const sl = seg(t, click + 0.1, 0.35, 'power3.in'); btnL.style.transform = `translateY(${sl * -110}%)`;
+    btnC.style.strokeDashoffset = 1 - seg(t, click + 0.3, 0.4, 'power2.out'); }
+
+  // source line under the stack while facts are up
+  { const p = seg(t, 3.2, 0.6, 'expo.out') - seg(t, 16.6, 0.3, 'power3.in') + seg(t, 23.6, 0.6, 'expo.out');
+    src.style.visibility = p > 0.001 ? 'visible' : 'hidden'; srcI.style.transform = `translateY(${(1 - Math.min(1, p)) * 104}%)`; }
+
+  // end card
+  { const m = seg(t, 23.15, 0.7, 'expo.out');
+    tile.style.opacity = Math.min(1, m * 1.5); tile.style.transform = `translateY(${(1 - m) * 160}px) rotateX(${(1 - m) * 30}deg)`;
+    const pn = seg(t, 23.3, 0.6, 'expo.out'); eNameI.style.transform = `translateY(${(1 - pn) * 104}%)`; eName.style.visibility = pn > 0 ? 'visible' : 'hidden';
+    eL.forEach((e, k) => { const p = seg(t, 23.55 + k * 0.12, 0.6, 'expo.out'); e.style.transform = `translateY(${(1 - p) * 104}%)`; e.parentNode.style.visibility = p > 0 ? 'visible' : 'hidden'; }); }
+}, { loop: false });
+</script>
+</body>
+</html>

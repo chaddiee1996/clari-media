@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  /* R7 "Self Care Week"  look: paper cut, bottom-centred words under layered cut-paper scenes */
+  :root { --cream: #F2E8D5; --sand: #E3CBA8; --sage: #9CB49A; --dsage: #5E7F6A; --teal: #2F5D62;
+          --ink: #2B2B2B; --accent: #D98C7A; --night: #23474B; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--cream); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--cream);
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; color: var(--ink); }
+  .cam { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 540px 760px; }
+  .mov { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  .mov svg { position: absolute; left: 0; top: 0; overflow: visible; }
+  #ground { position: absolute; inset: 0; }
+  .line { position: absolute; left: 0; width: 1080px; text-align: center; white-space: pre; line-height: 1; letter-spacing: -0.02em; }
+  .ch { display: inline-block; transform-origin: 50% 70%; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+  <div id="ground"></div>
+</div>
+<script>
+const S = STUDIO, root = S.root, D = 20, NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
+const css = getComputedStyle(document.documentElement);
+const C = {}; ['cream', 'sand', 'sage', 'dsage', 'teal', 'ink', 'accent', 'night'].forEach(k => C[k] = css.getPropertyValue('--' + k).trim());
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mixHex = (a, b, p) => { const A = rgb(a), B = rgb(b); return 'rgb(' + A.map((v, i) => Math.round(v + (B[i] - v) * p)).join(',') + ')'; };
+const INK = rgb(C.ink).join(',');
+const seg = S.seg;
+
+// ---------- paper grain (seeded, tileable)
+const G = 512, gcv = document.createElement('canvas'); gcv.width = gcv.height = G;
+{ const g = gcv.getContext('2d'), img = g.createImageData(G, G), gr = S.rng(11);
+  const waves = []; for (let k = 0; k < 7; k++) waves.push([1 + Math.floor(gr() * 4), 1 + Math.floor(gr() * 4), gr() * TAU, 0.4 + gr() * 0.6]);
+  for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+    let m = 0; for (const [kx, ky, ph, a] of waves) m += a * Math.sin(TAU * (kx * x / G + (ky * y / G) * (kx % 2 ? 1 : -1)) + ph);
+    const v = 128 + (gr() - 0.5) * 64 + m * 3.5, i = (y * G + x) * 4; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  g.putImageData(img, 0, 0); g.lineCap = 'round';
+  for (let f = 0; f < 70; f++) { const x = gr() * G, y = gr() * G, a = gr() * TAU, l = 6 + gr() * 18;
+    g.strokeStyle = gr() < 0.6 ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.18)'; g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); } }
+const GRAIN = gcv.toDataURL('image/png');
+Object.assign(document.getElementById('ground').style, { backgroundColor: C.cream,
+  backgroundImage: `radial-gradient(ellipse 80% 60% at 50% 40%, rgba(${INK},0) 55%, rgba(${INK},0.10) 100%), url(${GRAIN})`, backgroundBlendMode: 'normal, soft-light' });
+{ const defs = document.createElementNS(NS, 'svg'); defs.setAttribute('width', 0); defs.setAttribute('height', 0); defs.style.position = 'absolute';
+  defs.innerHTML = `<defs><pattern id="grain" patternUnits="userSpaceOnUse" width="${G}" height="${G}"><image href="${GRAIN}" width="${G}" height="${G}"/></pattern></defs>`; root.appendChild(defs); }
+
+// ---------- hand-cut shapes: short scissor runs with a little wobble
+let seedN = 100;
+const toD = (pts, R) => 'M' + pts.map(([x, y]) => (x + (R() - 0.5) * 1.4).toFixed(1) + ' ' + (y + (R() - 0.5) * 1.4).toFixed(1)).join('L') + 'Z';
+const bbox = (pts) => { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); const x0 = Math.min(...xs) - 12, y0 = Math.min(...ys) - 12; return [x0, y0, Math.max(...xs) - x0 + 24, Math.max(...ys) - y0 + 24]; };
+function shape(pts) { const R = S.rng(seedN++); return { d: toD(pts, R), box: bbox(pts) }; }
+function circPts(cx, cy, rx, ry, a0, a1, step) { const n = Math.max(8, Math.ceil(Math.abs(a1 - a0) * Math.max(rx, ry) / (step || 12))), pts = [];
+  for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; pts.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]); } return pts; }
+const disc = (cx, cy, r, ry) => shape(circPts(cx, cy, r, ry || r, 0, TAU * (1 - 1e-3)));
+const poly = pts => { const out = []; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 14);
+  for (let k = 0; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); } return shape(out); };
+const rect = (x, y, w, h) => poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]]);
+function rrect(x, y, w, h, r) { const p = [];
+  p.push(...circPts(x + w - r, y + r, r, r, -Math.PI / 2, 0)); p.push(...circPts(x + w - r, y + h - r, r, r, 0, Math.PI / 2));
+  p.push(...circPts(x + r, y + h - r, r, r, Math.PI / 2, Math.PI)); p.push(...circPts(x + r, y + r, r, r, Math.PI, 1.5 * Math.PI)); return shape(p); }
+function crescent(cx, cy, R, dx, dy, r) {   // outer disc minus an offset disc, from the two circle intersections
+  const d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d, a = (R * R - r * r + d * d) / (2 * d), h = Math.sqrt(Math.max(0, R * R - a * a));
+  const I1 = [a * ux - h * uy, a * uy + h * ux], I2 = [a * ux + h * uy, a * uy - h * ux];
+  const norm = v => { while (v < 0) v += TAU; while (v >= TAU) v -= TAU; return v; };
+  let o1 = Math.atan2(I1[1], I1[0]), o2 = Math.atan2(I2[1], I2[0]); const pa = Math.atan2(uy, ux);
+  let sweep = norm(o2 - o1); if (norm(pa - o1) < sweep) sweep = sweep - TAU;
+  const out = circPts(cx, cy, R, R, o1, o1 + sweep, 8);
+  let i2 = Math.atan2(I2[1] - dy, I2[0] - dx), i1 = Math.atan2(I1[1] - dy, I1[0] - dx); const ta = Math.atan2(-uy, -ux);
+  let sw2 = norm(i1 - i2); if (norm(ta - i2) > sw2) sw2 = sw2 - TAU;
+  const inn = circPts(cx + dx, cy + dy, r, r, i2, i2 + sw2, 8);
+  return shape(out.concat(inn)); }
+function hills(y0, amp, wl, ph, yb) { yb = yb || 1250; const pts = []; for (let x = -200; x <= 1280; x += 14) pts.push([x, y0 - amp * (0.5 + 0.5 * Math.sin(TAU * x / wl + ph)) - amp * 0.25 * Math.sin(TAU * x / (wl * 0.43) + ph * 2)]);
+  pts.push([1280, yb], [-200, yb]); return shape(pts); }
+function wavyStrip(x, y0, y1, w, amp, ph) { const L = [], Rr = []; for (let y = y0; y <= y1; y += 12) { const o = amp * Math.sin((y - y0) / 70 + ph) * (y - y0) / (y1 - y0 + 1); L.push([x + o - w / 2 * (1 - 0.5 * (y - y0) / (y1 - y0)), y]); Rr.push([x + o + w / 2 * (1 - 0.5 * (y - y0) / (y1 - y0)), y]); }
+  return shape(L.reverse().concat(Rr)); }
+function breeze(x0, y, len, ph) { const T = [], B = []; for (let i = 0; i <= 30; i++) { const u = i / 30, x = x0 + u * len, yy = y + 26 * Math.sin(u * 5 + ph), w = 2 + 13 * Math.sin(Math.PI * u); T.push([x, yy - w]); B.push([x, yy + w]); }
+  return shape(T.concat(B.reverse())); }
+function ring(cx, cy, R, r, a0, a1) { return shape(circPts(cx, cy, R, R, a0, a1, 10).concat(circPts(cx, cy, r, r, a1, a0, 10))); }
+function star(cx, cy, r) { const p = []; for (let i = 0; i < 8; i++) { const a = -Math.PI / 2 + i * Math.PI / 4, rr = i % 2 ? r * 0.32 : r; p.push([cx + rr * Math.cos(a), cy + rr * Math.sin(a)]); } return poly(p); }
+
+// ---------- a sheet: camera wrapper (parallax) > motion wrapper (lift, shadow) > svg
+let uid = 0;
+function sheet(shp, color, depth, origin, extra) {
+  const id = 'cp' + (uid++), cam = document.createElement('div'), mov = document.createElement('div');
+  cam.className = 'cam'; mov.className = 'mov'; cam.appendChild(mov); root.appendChild(cam);
+  const rim = mixHex(color, '#FFFFFF', 0.42), [bx, by, bw, bh] = shp.box;
+  mov.innerHTML = `<svg width="1080" height="1920" viewBox="0 0 1080 1920"><defs><clipPath id="${id}"><path d="${shp.d}"/></clipPath></defs>
+    <g clip-path="url(#${id})"><path d="${shp.d}" fill="${rim}"/><path d="${shp.d}" fill="${color}" transform="translate(0.8 2.6)"/>${extra || ''}
+    <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="url(#grain)" opacity="0.6" style="mix-blend-mode:soft-light"/></g></svg>`;
+  mov.style.transformOrigin = (origin ? origin[0] + 'px ' + origin[1] + 'px' : '540px 760px');
+  return { cam, mov, depth };
+}
+const shadow = L => `drop-shadow(${(3 + 16 * L).toFixed(2)}px ${(5 + 30 * L).toFixed(2)}px ${(6 + 34 * L).toFixed(2)}px rgba(${INK},${(0.34 - 0.13 * L).toFixed(3)}))` +
+  ` drop-shadow(0.8px 1.6px 1.4px rgba(${INK},${(0.32 * (1 - L)).toFixed(3)}))`;
+
+// ---------- scenes: each item = [shape, colour, depth, from, delay, sway]
+// from: 'up' rises from below, 'down' drops from above, 'l' / 'r' slides in, 'pop' set down in place
+const BEATS = [
+  { t0: 0.0, t1: 3.15, words: [['Self Care Week', 112, null], ['16 to 22 November', 78, 'teal']] },
+  { t0: 3.15, t1: 5.7, words: [['An early night.', 108]] },
+  { t0: 5.7, t1: 8.25, words: [['A cool bedroom.', 108]] },
+  { t0: 8.25, t1: 10.8, words: [['A walk', 108], ['in daylight.', 108]] },
+  { t0: 10.8, t1: 13.35, words: [['Saying no', 108], ['to one thing.', 108]] },
+  { t0: 13.35, t1: 16.0, words: [['Writing down', 108], ['how you feel today.', 84]] },
+  { t0: 16.0, t1: 21, words: [['Small things count.', 94], ['Save this for the week.', 70, 'teal']] },
+];
+const SC = [];
+const steamD = [];
+// 0 tea
+SC.push([
+  [disc(540, 740, 470), C.sand, 0.2, 'up', 0],
+  [hills(1150, 40, 900, 1), C.sage, 0.45, 'up', 0.08],
+  [shape(circPts(540, 1068, 300, 52, 0, TAU * 0.999)), C.dsage, 0.6, 'pop', 0.22],
+  [ring(712, 930, 92, 50, -1.3, 1.3), C.teal, 0.7, 'r', 0.3],
+  [shape([...circPts(540, 760, 210, 30, Math.PI, 0)].concat([[730, 820], [700, 980], [640, 1050], [440, 1050], [380, 980], [350, 820]])), C.teal, 0.72, 'up', 0.28],
+  [shape(circPts(540, 762, 196, 24, 0, TAU * 0.999)), mixHex(C.sand, C.ink, 0.35), 0.73, 'pop', 0.5],
+  [rect(588, 800, 56, 72), C.accent, 0.8, 'down', 0.62, 'tag'],
+  [wavyStrip(470, 420, 700, 34, 40, 0), C.cream, 0.85, 'up', 0.75, 'steam'],
+  [wavyStrip(560, 380, 690, 34, -46, 1.4), C.cream, 0.86, 'up', 0.85, 'steam'],
+  [wavyStrip(640, 450, 700, 30, 36, 2.6), C.cream, 0.84, 'up', 0.95, 'steam'],
+]);
+// 1 early night
+const stars1 = [[230, 420, 26], [820, 360, 34], [690, 520, 18], [310, 640, 16], [900, 700, 20], [180, 860, 18], [470, 330, 14]];
+SC.push([
+  [rrect(70, 240, 940, 1000, 60), C.night, 0.2, 'down', 0],
+  [crescent(640, 600, 170, -80, -50, 150), C.cream, 0.5, 'down', 0.2, 'bob'],
+  ...stars1.map(([x, y, r], i) => [star(x, y, r), C.sand, 0.55, 'pop', 0.3 + i * 0.04, 'twinkle']),
+  [hills(1060, 90, 760, 0.4), C.teal, 0.7, 'up', 0.35],
+  [hills(1170, 70, 520, 2.1), C.dsage, 0.85, 'up', 0.45],
+]);
+// 2 cool bedroom: an open window, curtains breathing, the air moving
+SC.push([
+  [rect(180, 300, 720, 860), C.sand, 0.25, 'up', 0],
+  [rect(240, 360, 600, 740), mixHex(C.sage, C.cream, 0.45), 0.35, 'pop', 0.12],
+  [hills(1100, 110, 700, 1.3), C.sage, 0.45, 'up', 0.2, null, [240, 360, 600, 740]],
+  [rect(240, 714, 600, 24), C.sand, 0.55, 'pop', 0.3],
+  [rect(528, 360, 24, 740), C.sand, 0.55, 'pop', 0.32],
+  [wavyStrip(330, 700, 700, 1, 0, 0), C.cream, 0.6, 'pop', 9],
+  [shape([[150, 260], [420, 260], [380, 600], [330, 900], [300, 1200], [150, 1200]]), C.dsage, 0.8, 'l', 0.4, 'curtL'],
+  [shape([[930, 260], [660, 260], [700, 600], [750, 900], [780, 1200], [930, 1200]]), C.dsage, 0.82, 'r', 0.45, 'curtR'],
+  [rect(130, 240, 820, 40), C.teal, 0.9, 'down', 0.5],
+  [breeze(300, 560, 420, 0), C.cream, 0.88, 'l', 0.7, 'breeze'],
+  [breeze(380, 840, 380, 1.7), C.cream, 0.88, 'l', 0.8, 'breeze'],
+  [breeze(260, 1000, 300, 3.1), C.cream, 0.88, 'l', 0.9, 'breeze'],
+]);
+// 3 a walk in daylight
+SC.push([
+  [disc(540, 790, 450), C.sand, 0.2, 'up', 0],
+  [disc(760, 520, 110), C.accent, 0.4, 'up', 0.12, 'sun'],
+  [hills(860, 120, 820, 0.2), C.sage, 0.5, 'up', 0.2],
+  [hills(1000, 90, 600, 2.4), C.dsage, 0.65, 'up', 0.28],
+  [shape([[530, 1240], [630, 1240], [600, 1180], [560, 1080], [600, 990], [660, 930], [640, 930], [570, 990], [520, 1080], [500, 1180]]), C.cream, 0.75, 'pop', 0.42],
+  [hills(1160, 60, 460, 4.1), C.teal, 0.85, 'up', 0.36],
+  [shape([[250, 990], [300, 780], [350, 990]]), C.teal, 0.8, 'up', 0.5, 'tree'],
+  [shape([[780, 940], [820, 780], [860, 940]]), C.teal, 0.78, 'up', 0.56, 'tree'],
+]);
+// 4 saying no to one thing: a stack of plans, one card lifts away and leaves room
+SC.push([
+  [disc(540, 760, 470), C.sage, 0.2, 'up', 0],
+  [rrect(250, 520, 560, 400, 28), C.cream, 0.5, 'pop', 0.12, 'c1', null, 'lines'],
+  [rrect(240, 480, 560, 400, 28), C.sand, 0.55, 'pop', 0.2, 'c2', null, 'lines'],
+  [rrect(260, 440, 560, 400, 28), C.cream, 0.6, 'pop', 0.28, 'c3', null, 'lines'],
+  [rrect(250, 400, 560, 400, 28), C.accent, 0.7, 'pop', 0.36, 'away', null, 'lines'],
+]);
+// 5 writing down how you feel: a notebook, a pencil writing
+SC.push([
+  [rrect(110, 330, 860, 820, 36), C.teal, 0.2, 'up', 0],
+  [poly([[150, 380], [535, 400], [535, 1100], [150, 1080]]), C.cream, 0.4, 'l', 0.12, null, null, 'ruled'],
+  [poly([[545, 400], [930, 380], [930, 1080], [545, 1100]]), C.cream, 0.42, 'r', 0.16, null, null, 'ruledR'],
+  [rect(533, 396, 14, 706), C.sand, 0.5, 'pop', 0.25],
+  [shape([[0, 0], [380, 0], [380, 44], [0, 44]].map(([x, y]) => [x + 520, y + 760])), C.dsage, 0.9, 'r', 0.35, 'pencil'],
+  [shape([[0, 0], [40, 22], [0, 44]].map(([x, y]) => [x + 900, y + 760])), C.sand, 0.91, 'r', 0.35, 'pencil'],
+  [rect(470, 760, 50, 44), C.accent, 0.91, 'r', 0.35, 'pencil'],
+]);
+// 6 end: hills and a rising sun, and the mark
+SC.push([
+  [disc(540, 900, 150), C.accent, 0.35, 'up', 0.15, 'sunrise'],
+  [hills(960, 80, 700, 1.0), C.sage, 0.5, 'up', 0.22],
+  [hills(1080, 70, 520, 3.0), C.dsage, 0.65, 'up', 0.3],
+  [hills(1190, 50, 420, 5.0), C.teal, 0.8, 'up', 0.38],
+]);
+// extra decorations: ruled lines for paper, skeleton lines on cards, a scribble written by the pencil
+function decor(kind, pts) {
+  if (kind === 'lines') return `<g opacity="0.55">${[0, 1, 2].map(i => `<rect x="${pts.box[0] + 70}" y="${pts.box[1] + 110 + i * 80}" width="${[330, 260, 300][i]}" height="18" rx="9" fill="${C.ink}"/>`).join('')}</g>`;
+  if (kind === 'ruled' || kind === 'ruledR') return `<g opacity="0.35">${Array.from({ length: 9 }, (_, i) => `<rect x="${kind === 'ruled' ? 190 : 585}" y="${480 + i * 66}" width="310" height="5" fill="${C.teal}"/>`).join('')}</g>`;
+  return '';
+}
+const SHEETS = SC.map((items, bi) => items.map(([shp, col, dep, from, dly, mode, clip, deco]) => {
+  const extra = decor(deco, shp);
+  const sh = sheet(shp, col, dep, mode === 'pencil' ? [700, 782] : [shp.box[0] + shp.box[2] / 2, shp.box[1] + shp.box[3] / 2], extra);
+  if (clip) sh.mov.style.clipPath = `inset(${clip[1]}px ${1080 - clip[0] - clip[2]}px ${1920 - clip[1] - clip[3]}px ${clip[0]}px)`;
+  return Object.assign(sh, { from, dly, mode, bi, k: 0 });
+}));
+SHEETS.forEach(list => list.forEach((s, i) => s.k = i));
+// the scribble the pencil writes (a real path, drawn on)
+const scrib = document.createElementNS(NS, 'svg'); scrib.setAttribute('width', 1080); scrib.setAttribute('height', 1920);
+Object.assign(scrib.style, { position: 'absolute', left: 0, top: 0 });
+const scribD = (() => { let d = 'M600,560'; for (let i = 1; i <= 40; i++) { const x = 600 + i * 7.5, y = 560 + Math.sin(i * 0.9) * 22 - (i % 7 === 0 ? 30 : 0); d += ` L${x.toFixed(1)},${y.toFixed(1)}`; } d += ' M600,640'; for (let i = 1; i <= 34; i++) { const x = 600 + i * 7.5, y = 640 + Math.sin(i * 1.1 + 1) * 20; d += ` L${x.toFixed(1)},${y.toFixed(1)}`; } return d; })();
+scrib.innerHTML = `<path d="${scribD}" fill="none" stroke="${C.ink}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1"/>`;
+const scribP = scrib.firstChild;
+// insert the scribble after the right page of beat 5
+SHEETS[5][2].cam.after(scrib);
+
+// ---------- words: paper letters landing, bottom centred
+const lr = S.rng(77);
+const WORDS = BEATS.map((B, bi) => B.words.map(([txt, size, col], li) => {
+  const el = document.createElement('div'); el.className = 'line';
+  Object.assign(el.style, { fontSize: size + 'px', color: col ? C[col] : C.ink, width: '800px', left: '140px' });
+  const chars = [...txt].map(c => { const s = document.createElement('span'); s.className = 'ch'; s.textContent = c; el.appendChild(s);
+    return { s, rot: (lr() - 0.5) * 18, dx: (lr() - 0.5) * 40, dy: -30 - lr() * 50, space: c === ' ' }; });
+  root.appendChild(el); return { el, chars, size, li };
+}));
+// moon mark for the end (cut paper too)
+const markBox = sheet(rrect(440, 0, 200, 200, 44), C.teal, 0.95, [540, 100]);
+const markMoon = sheet(crescent(540, 100, 64, 30, -24, 54), C.cream, 0.96, [540, 100]);
+const nameEl = document.createElement('div'); nameEl.className = 'line';
+Object.assign(nameEl.style, { fontSize: '150px', color: C.teal, width: '800px', left: '140px' });
+const nameChars = [...'Clari'].map(c => { const s = document.createElement('span'); s.className = 'ch'; s.textContent = c; nameEl.appendChild(s); return { s, rot: (lr() - 0.5) * 18, dx: (lr() - 0.5) * 40, dy: -30 - lr() * 50 }; });
+root.appendChild(nameEl);
+
+const FROM = { up: [0, 1300], down: [0, -1300], l: [-1300, 0], r: [1300, 0], pop: [0, 0] };
+function letters(chars, t, t0, t1, st) {
+  let k = 0;
+  chars.forEach(c => {
+    if (c.space) return;
+    const ti = t0 + k * st, to = t1 + k * st * 0.6; k++;
+    const pIn = seg(t, ti, 0.6, 'back.out(1.2)'), a = seg(t, ti, 0.14, 'power1.out');
+    const Lin = 1 - seg(t, ti + 0.12, 0.5, 'power2.inOut');
+    const Lout = seg(t, to, 0.18, 'power2.out'), q = seg(t, to + 0.05, 0.36, 'power2.in');
+    const L = t < to ? Lin : Lout;
+    const sc = 1 + 0.3 * (1 - pIn) + 0.3 * q + 0.03 * L;
+    const x = c.dx * (1 - pIn) - c.dx * q, y = c.dy * (1 - pIn) + c.dy * 1.2 * q, rot = c.rot * (1 - pIn) - c.rot * q;
+    c.s.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${rot.toFixed(2)}deg) scale(${sc.toFixed(4)})`;
+    c.s.style.opacity = (t < to ? a : 1 - seg(t, to + 0.25, 0.15, 'power1.in')).toFixed(3);
+    c.s.style.textShadow = `${(2 + 12 * L).toFixed(2)}px ${(3 + 22 * L).toFixed(2)}px ${(4 + 22 * L).toFixed(2)}px rgba(${INK},${(0.26 - 0.1 * L).toFixed(3)}), 0.6px 1.2px 1px rgba(${INK},${(0.3 * (1 - L)).toFixed(3)})`;
+  });
+}
+
+window.__timelines["main"] = S.play(function render(t) {
+  const camX = 10 * Math.sin(TAU * t / D), camY = 6 * Math.sin(TAU * t / D + 1);
+  const place = (sh, x, y, sc, rot, L, extra) => {
+    const d = sh.depth, push = 1 + 0.02 * d * (0.5 - 0.5 * Math.cos(TAU * t / D));
+    sh.cam.style.transform = `translate(${(camX * d).toFixed(2)}px, ${(camY * d).toFixed(2)}px) scale(${push.toFixed(5)})`;
+    sh.mov.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${(rot || 0).toFixed(3)}deg) scale(${sc.toFixed(4)})`;
+    sh.mov.style.filter = shadow(Math.max(0, Math.min(1.2, L)));
+  };
+  SHEETS.forEach((list, bi) => {
+    const B = BEATS[bi], n = list.length;
+    list.forEach((sh, i) => {
+      if (sh.dly > 5) { sh.cam.style.visibility = 'hidden'; return; }
+      const tin = B.t0 + 0.05 + sh.dly, tout = B.t1 - 0.5 + (n - 1 - i) * 0.035;  // land far to near, lift off near to far
+      const p = seg(t, tin, 0.62, 'back.out(1.2)'), L1 = 1 - seg(t, tin + 0.18, 0.55, 'power2.inOut');
+      const lq = seg(t, tout, 0.16, 'power2.out'), q = seg(t, tout + 0.08, 0.42, 'power2.in');
+      const vis = p > 0.001 && q < 0.999 && bi < 7;
+      sh.cam.style.visibility = vis ? 'visible' : 'hidden';
+      if (!vis) return;
+      const f = FROM[sh.from];
+      let x = f[0] * (1 - p), y = f[1] * (1 - p), rot = 0, sc = 1 + 0.04 * (t < tout ? L1 : lq), L = t < tout ? L1 : lq;
+      if (sh.from === 'pop') { sc += 0.06 * (1 - p); }
+      // leaving: lift, then go back the way it came (or up if it popped in)
+      const g = sh.from === 'pop' ? [0, -1400] : f;
+      x += g[0] * q * 0.9; y += g[1] * q * 0.9;
+      const lt = t - tin;
+      if (sh.mode === 'steam') { rot = 3 * Math.sin(t * 2.2 + i); y += -14 * Math.sin(t * 1.6 + i); }
+      if (sh.mode === 'bob') { y += 10 * Math.sin(t * 2); rot = 3 * Math.sin(t * 1.3); }
+      if (sh.mode === 'twinkle') { sc *= 1 + 0.12 * Math.sin(t * 5 + i * 1.7); }
+      if (sh.mode === 'curtL') { rot = -2.2 * Math.sin(t * 2.3) - 1.5; x += -18 * (0.5 + 0.5 * Math.sin(t * 2.3)); }
+      if (sh.mode === 'curtR') { rot = 2.2 * Math.sin(t * 2.3 + 0.5) + 1.5; x += 18 * (0.5 + 0.5 * Math.sin(t * 2.3 + 0.5)); }
+      if (sh.mode === 'breeze') { x += 160 * ((lt * 0.35) % 1) - 60; }
+      if (sh.mode === 'sun') { y += -40 * seg(t, B.t0 + 0.3, 2.0, 'sine.inOut'); rot = t * 6; }
+      if (sh.mode === 'sunrise') { y += 90 - 120 * seg(t, B.t0 + 0.2, 3.0, 'sine.inOut'); }
+      if (sh.mode === 'tree') { rot = 1.5 * Math.sin(t * 2 + i); }
+      if (sh.mode === 'tag') { rot = 6 * Math.sin(t * 2.4); }
+      if (sh.mode && sh.mode[0] === 'c' && sh.mode.length === 2) { rot = [-3, 2.5, -1.5][+sh.mode[1] - 1]; }
+      if (sh.mode === 'away') { const a = seg(t, B.t0 + 0.95, 0.8, 'power2.in'); x += 1300 * a; y += -380 * a; rot = 2 + 24 * a; L = Math.max(L, seg(t, B.t0 + 0.8, 0.2)); }
+      if (sh.mode === 'pencil') { const w = seg(t, B.t0 + 0.75, 1.3, 'none'); x += -260 + 300 * w + 12 * Math.sin(t * 22); y += -220 + (w < 0.55 ? 0 : 80) + 10 * Math.sin(t * 17); rot = -28; }
+      place(sh, x, y, sc, rot, L);
+    });
+  });
+  // pencil scribble
+  { const B = BEATS[5]; const w = seg(t, B.t0 + 0.8, 1.35, 'none'), gone = seg(t, B.t1 - 0.45, 0.4, 'power2.in');
+    scribP.style.strokeDashoffset = 1 - w; scrib.style.opacity = 1 - gone; scrib.style.visibility = w > 0 ? 'visible' : 'hidden'; }
+  // words: bottom centred block, last line sits on y 1500
+  WORDS.forEach((lines, bi) => {
+    const B = BEATS[bi];
+    const total = lines.reduce((s, L) => s + L.size * 1.08, 0);
+    let y = (bi === 6 ? 1470 : 1500) - total;
+    lines.forEach((L, li) => {
+      L.el.style.top = y + 'px'; y += L.size * 1.08;
+      letters(L.chars, t, B.t0 + 0.35 + li * 0.32, bi === 6 ? 99 : B.t1 - 0.62, 0.035);
+    });
+  });
+  // end: mark and name, as paper
+  { const t0 = 16.5; const p = seg(t, t0, 0.62, 'back.out(1.2)'), L = 1 - seg(t, t0 + 0.18, 0.55, 'power2.inOut');
+    [markBox, markMoon].forEach((sh, k) => { sh.cam.style.visibility = p > 0 ? 'visible' : 'hidden';
+      sh.cam.style.transform = `translate(0px, 300px)`; sh.cam.style.transformOrigin = '540px 100px';
+      sh.mov.style.transform = `translate(0px, ${(-700 * (1 - p)).toFixed(1)}px) scale(${1 + 0.05 * L}) rotate(${(1 - p) * -12}deg)`; sh.mov.style.filter = shadow(L); });
+    nameEl.style.top = '530px'; nameEl.style.visibility = 'visible';
+    letters(nameChars, t, 16.8, 99, 0.05); }
+}, { loop: false });
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+ "title": "Your GP, in 3 steps",
+ "format": "9:16",
+ "seconds": 29.0,
+ "shots": [
+  {
+   "time": "0.0-4.1",
+   "graphic": "GP card with stopwatch sweeping fast; A GP appointment goes fast. Here's how to make it count.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "4.1-11.7",
+   "graphic": "Packet runs the wire to card 1 Book: GPs land, best one ringed and ticked; longer slot stretches",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "11.7-17.3",
+   "graphic": "Card 2 Record: how often dots fill, how strong bars grow",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "17.3-23.5",
+   "graphic": "Card 3 Say it: voice bars, Say it plainly, quote types into a blue bubble",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "23.5-29.0",
+   "graphic": "Save this for the day you book. Recap chips 1 2 3 with light sweep, Clari card",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #160A1E; }
+  #root { position: relative; width: 1080px; height: 1920px; background: #160A1E; }
+  #cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+  /* font warm-up so the face is loaded before the first sample */
+  #warm { position: absolute; left: -2000px; top: 0; font: 800 60px 'Bricolage Grotesque'; font-stretch: 75%; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+  <canvas id="cv" class="clip" width="1080" height="1920" data-start="0" data-duration="20" data-track-index="0"></canvas>
+  <div id="warm">Christmas drinks Clari</div>
+</div>
+<script>
+// ============================================================
+// Clari R11 "One more glass?"  particle-field look, 9:16, 20 s, text only + music (90 bpm, beat 0.667 s).
+// One canvas, 9,000 warm amber points on a deep plum night. Every point is a pure function of t.
+// Beats: 0 smoke | 0.9 two glasses condense | 2.667 clink | 3.33 "Christmas drinks."
+//        6.0 hot flushes fact | 10.67 worth noticing | 13.33 log it | 16.0 end card (moon + Clari + CTA)
+// Words condense out of the points, then the solid type resolves under them; they lift away like bubbles.
+// ============================================================
+(function () {
+  const W = 1080, H = 1920, DUR = 20, N = 9000, TAU = Math.PI * 2;
+  const GROUND = ['#2B1238', '#160A1E', '#0B0510'];
+  const AMBER = [255, 190, 112];       // points
+  const ORCHID = [231, 160, 255];      // the one accent, 5% of points
+  const CREAM = '#FFF1E5', HOT = '#FFB85C';
+  const FONT = (px) => `condensed 800 ${px}px "Bricolage Grotesque"`;
+
+  // ---------- seeded random + noise ----------
+  function mulberry32(a) { return function () { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const rng = mulberry32(1111);
+  const perm = new Uint8Array(512);
+  (function () { const p = new Uint8Array(256); for (let i = 0; i < 256; i++) p[i] = i; for (let i = 255; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); const t = p[i]; p[i] = p[j]; p[j] = t; } for (let i = 0; i < 512; i++) perm[i] = p[i & 255]; })();
+  const grad3 = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+  function noise2(x, y) { // 2D value-gradient noise, -1..1
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const f = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+    const g = (ix, iy, dx, dy) => { const h = grad3[perm[(ix & 255) + perm[iy & 255]] & 7]; return h[0] * dx + h[1] * dy; };
+    const u = f(xf), v = f(yf);
+    const a = g(xi, yi, xf, yf), b = g(xi + 1, yi, xf - 1, yf), c = g(xi, yi + 1, xf, yf - 1), d = g(xi + 1, yi + 1, xf - 1, yf - 1);
+    return (a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v) * 1.4;
+  }
+  const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
+  const io2 = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+  const io3 = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+  const out3 = (x) => 1 - Math.pow(1 - x, 3);
+  const in2 = (x) => x * x;
+  const seg = (t, a, d, e) => { const p = clamp((t - a) / d, 0, 1); return e ? e(p) : p; };
+
+  // ---------- per-particle constants ----------
+  const R1 = new Float32Array(N), R2 = new Float32Array(N), R3 = new Float32Array(N);
+  const ACC = new Uint8Array(N);
+  const SX = new Float32Array(N), SY = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    R1[i] = rng(); R2[i] = rng(); R3[i] = rng();
+    ACC[i] = rng() < 0.05 ? 1 : 0;
+    const a = rng() * TAU, rr = Math.pow(rng(), 0.7);
+    SX[i] = 540 + Math.cos(a) * rr * 620; SY[i] = 900 + Math.sin(a) * rr * 900;
+  }
+
+  // ---------- scenes ----------
+  // each scene: start time A, and per particle a target (x,y) and a weight (1 = word, ~0.3 = dust)
+  const BEAT = 60 / 90;
+  const SCENES = [
+    { A: 0 },                                  // 0 smoke
+    { A: 0.9, glass: true },                   // 1 two glasses
+    { A: 5 * BEAT, text: [                     // 2  (3.33)
+      { s: 'Christmas', px: 190, c: CREAM }, { s: 'drinks.', px: 190, c: HOT } ], cy: 860 },
+    { A: 9 * BEAT, text: [                     // 3  (6.0)
+      { s: 'For some women,', px: 92, c: HOT, gap: 34 },
+      { s: 'alcohol can', px: 150, c: CREAM }, { s: 'trigger hot', px: 150, c: CREAM }, { s: 'flushes.', px: 150, c: CREAM } ],
+      cy: 840, source: 'Source: NHS / Alcohol Change UK' },
+    { A: 16 * BEAT, text: [                    // 4  (10.67)
+      { s: 'Worth noticing', px: 140, c: CREAM }, { s: 'if it does', px: 140, c: CREAM }, { s: 'for you.', px: 140, c: HOT } ], cy: 860 },
+    { A: 20 * BEAT, text: [                    // 5  (13.33)
+      { s: 'Log it.', px: 200, c: HOT, gap: 20 }, { s: 'See your own', px: 140, c: CREAM }, { s: 'pattern.', px: 140, c: CREAM } ], cy: 860 },
+    { A: 24 * BEAT, end: true },               // 6  (16.0)
+  ];
+  const NS = SCENES.length;
+  const TX = SCENES.map(() => new Float32Array(N)), TY = SCENES.map(() => new Float32Array(N)), TWt = SCENES.map(() => new Float32Array(N));
+  const DLY = SCENES.map(() => new Float32Array(N));
+  const D_MOVE = 1.0;
+
+  // offscreen canvas for sampling type
+  const off = document.createElement('canvas'); off.width = W; off.height = H;
+  const ox = off.getContext('2d', { willReadFrequently: true });
+
+  function fitPx(s, px, maxW) { ox.font = FONT(px); const w = ox.measureText(s).width; return w > maxW ? Math.floor(px * maxW / w) : px; }
+  // lay out a block of centred lines around cy; returns line boxes with baseline y
+  function layout(lines, cy) {
+    const L = lines.map(l => { const px = fitPx(l.s, l.px, 800); return Object.assign({}, l, { px, lh: px * 0.98 + (l.gap || 0) }); });
+    const tot = L.reduce((a, l) => a + l.lh, 0) - (L[L.length - 1].gap || 0);
+    let y = cy - tot / 2;
+    for (const l of L) { l.base = y + l.px * 0.78; y += l.lh; }
+    return L;
+  }
+  const MOONC = {};
+  function crescentPath(c, x, y, r) { // brand crescent: disc minus offset disc, cut on a small canvas
+    const col = c.fillStyle, key = col + r;
+    if (!MOONC[key]) { const m = document.createElement('canvas'); m.width = m.height = Math.ceil(r * 2 + 4); const g = m.getContext('2d');
+      g.fillStyle = col; g.beginPath(); g.arc(r + 2, r + 2, r, 0, TAU); g.fill();
+      g.globalCompositeOperation = 'destination-out'; g.beginPath(); g.arc(r + 2 + r * 0.52, r + 2 - r * 0.36, r * 0.8, 0, TAU); g.fill(); MOONC[key] = m; }
+    c.drawImage(MOONC[key], x - r - 2, y - r - 2);
+  }
+  const END = { moonY: 600, moonR: 96, clariY: 860, clariPx: 170, cta: [{ s: 'Save this for', px: 112, c: CREAM }, { s: 'party season.', px: 112, c: HOT }], ctaCy: 1150 };
+
+  function drawSceneInk(c, sc, alphaFor) {
+    c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    if (sc.text) {
+      for (const l of sc.L) { c.font = FONT(l.px); c.fillStyle = alphaFor ? alphaFor(l) : l.c; c.fillText(l.s, 540, l.base); }
+    }
+    if (sc.end) {
+      c.fillStyle = alphaFor ? alphaFor({ c: HOT }) : HOT; crescentPath(c, 540, END.moonY, END.moonR);
+      c.font = FONT(END.clariPx); c.fillStyle = alphaFor ? alphaFor({ c: CREAM }) : CREAM; c.fillText('Clari', 540, END.clariY + END.clariPx * 0.36);
+      for (const l of sc.ctaL) { c.font = FONT(l.px); c.fillStyle = alphaFor ? alphaFor(l) : l.c; c.fillText(l.s, 540, l.base); }
+    }
+  }
+
+  // glass shape in local coords (rim centre at 0,0, y down), returns sample points [x,y,w]
+  const GL = []; // [x, y, kind] kind 0 outline, 1 wine, 2 stem/base
+  (function () {
+    const r = mulberry32(77);
+    const bowlH = 290, rimW = 128;
+    const half = (v) => rimW * Math.pow(Math.sin(Math.PI * 0.5 + v * Math.PI * 0.5), 0.85) * (1 - 0.12 * v); // v 0 rim .. 1 bottom
+    for (let k = 0; k < 900; k++) { // bowl outline both sides
+      const v = r(), side = r() < 0.5 ? -1 : 1, hw = half(v) * 0.98 + 6 * (1 - v);
+      GL.push([side * hw + (r() - 0.5) * 6, v * bowlH + (r() - 0.5) * 6, 0]);
+    }
+    for (let k = 0; k < 300; k++) { const a = r() * TAU; GL.push([Math.cos(a) * rimW, Math.sin(a) * 16 + (r() - 0.5) * 4, 0]); } // rim ellipse
+    for (let k = 0; k < 900; k++) { // wine below 0.42
+      const v = 0.42 + 0.58 * Math.pow(r(), 0.8), hw = half(v) * 0.92;
+      GL.push([(r() * 2 - 1) * hw, v * bowlH, 1]);
+    }
+    for (let k = 0; k < 240; k++) { const a = r() * TAU; GL.push([Math.cos(a) * half(0.42) * 0.92, 0.42 * bowlH + Math.sin(a) * 12, 1]); } // wine surface
+    for (let k = 0; k < 260; k++) GL.push([(r() - 0.5) * 12, bowlH + r() * 210, 2]);   // stem
+    for (let k = 0; k < 300; k++) { const a = r() * TAU, rr = Math.sqrt(r()); GL.push([Math.cos(a) * 98 * rr, bowlH + 214 + Math.sin(a) * 16 * rr, 2]); } // base
+  })();
+  function glassXform(t, side) { // returns [cx, cy, angle] for a glass; side -1 left, +1 right
+    const clink = 4 * BEAT; // 2.667
+    const pre = seg(t, 2.05, clink - 2.05, in2);            // swing in
+    const after = t > clink ? Math.exp(-(t - clink) * 5) * Math.sin((t - clink) * 26) : 0;
+    const back = seg(t, clink, 0.5, out3);
+    const gap = 250 - 98 * pre + 34 * back - 10 * after;
+    const ang = side * (-0.05 - 0.2 * pre + 0.12 * back + 0.05 * after);
+    return [540 + side * gap, 640 + 8 * Math.sin(t * 2.1 + side), ang];
+  }
+
+  let built = false;
+  function build() {
+    const r = mulberry32(2024);
+    for (let k = 0; k < NS; k++) {
+      const sc = SCENES[k], tx = TX[k], ty = TY[k], tw = TWt[k];
+      let pts = [];
+      if (sc.text || sc.end) {
+        ox.clearRect(0, 0, W, H);
+        if (sc.text) sc.L = layout(sc.text, sc.cy);
+        if (sc.end) sc.ctaL = layout(END.cta, END.ctaCy);
+        drawSceneInk(ox, sc, () => '#fff');
+        const img = ox.getImageData(0, 0, W, H).data;
+        const cand = [];
+        for (let y = 0; y < H; y += 3) for (let x = 0; x < W; x += 3) if (img[(y * W + x) * 4 + 3] > 140) cand.push([x, y]);
+        for (let j = cand.length - 1; j > 0; j--) { const q = Math.floor(r() * (j + 1)); const tmp = cand[j]; cand[j] = cand[q]; cand[q] = tmp; }
+        const M = Math.min(Math.floor(N * 0.78), cand.length * 2);
+        for (let j = 0; j < M; j++) { const c = cand[j % cand.length]; pts.push([c[0] + (r() - 0.5) * 3, c[1] + (r() - 0.5) * 3, 1]); }
+      } else if (sc.glass) {
+        // two glasses: point index decides side; local coords stored, transformed at draw time
+        for (let j = 0; j < N; j++) {
+          if (j < GL.length * 2 && j < N * 0.82) { const g = GL[j % GL.length]; pts.push([g[0], g[1], 1, j < GL.length ? -1 : 1, g[2]]); }
+          else break;
+        }
+      }
+      // the rest become rising dust (bubbles)
+      while (pts.length < N) pts.push([r() * W, r() * H * 1.25 + 120, 0.22]);
+      if (k === 0) { for (let i = 0; i < N; i++) { tx[i] = SX[i]; ty[i] = SY[i]; tw[i] = 0.5; } continue; }
+      // assign: sort particles by their previous target, and targets by the same key, so the flow is coherent
+      const key = (x, y) => y * 0.55 + x;
+      const prevIdx = Array.from({ length: N }, (_, i) => i).sort((a, b) => key(TX[k - 1][a], TY[k - 1][a]) - key(TX[k - 1][b], TY[k - 1][b]));
+      const ord = pts.map((p, j) => j);
+      const sx = (p) => sc.glass && p.length > 3 ? 540 + p[3] * 250 + p[0] : p[0];
+      const sy = (p) => sc.glass && p.length > 3 ? 640 + p[1] : p[1];
+      ord.sort((a, b) => key(sx(pts[a]), sy(pts[a])) - key(sx(pts[b]), sy(pts[b])));
+      if (sc.glass) sc.side = new Int8Array(N), sc.kind = new Uint8Array(N);
+      for (let n = 0; n < N; n++) {
+        const i = prevIdx[n], p = pts[ord[n]];
+        tx[i] = p[0]; ty[i] = p[1]; tw[i] = p[2];
+        if (sc.glass) { sc.side[i] = p.length > 3 ? p[3] : 0; sc.kind[i] = p.length > 3 ? p[4] : 9; }
+        // stagger: words fill top to bottom, left to right
+        DLY[k][i] = 0.42 * clamp((sy(p) - 300) / 1300, 0, 1) + 0.12 * R2[i];
+      }
+    }
+    built = true;
+  }
+
+  // ---------- positions ----------
+  let PX = 0, PY = 0, PW = 0;
+  function smoke(i, t) {
+    const bx = SX[i], by = SY[i];
+    const n1 = noise2(bx * 0.0024 + t * 0.12, by * 0.0024 - t * 0.08);
+    const n2 = noise2(bx * 0.0024 + 13.1, by * 0.0024 + 4.2 + t * 0.1);
+    PX = bx + 210 * n1 + 40 * noise2(bx * 0.01, t * 0.5);
+    PY = by + 210 * n2 - 40 * t;
+    PW = 0.55;
+  }
+  function dust(i, k, t) {
+    const bx = TX[k][i], by = TY[k][i];
+    const rise = (30 + 40 * R3[i]) * t;
+    PX = bx + 26 * Math.sin(t * (0.6 + R1[i]) + R2[i] * 9);
+    PY = by - rise;
+    PW = TWt[k][i];
+  }
+  function target(i, k, t) {
+    const sc = SCENES[k];
+    if (k === 0) { smoke(i, t); return; }
+    const w = TWt[k][i];
+    if (sc.glass && sc.side[i] !== 0) {
+      const [cx, cy, a] = glassXform(t, sc.side[i]);
+      const lx = TX[k][i], ly = TY[k][i] - 250; // rotate around the bowl centre-ish
+      const ca = Math.cos(a), sa = Math.sin(a);
+      // wine sloshes after the clink
+      let wy = 0;
+      if (sc.kind[i] === 1 && t > 4 * BEAT) wy = 10 * Math.exp(-(t - 4 * BEAT) * 2.5) * Math.sin((t - 4 * BEAT) * 9 + lx * 0.03);
+      PX = cx + lx * ca - (ly + wy) * sa; PY = cy + 250 + lx * sa + (ly + wy) * ca;
+      PW = sc.kind[i] === 1 ? 1.15 : 0.95;
+      return;
+    }
+    if (w < 0.5) { dust(i, k, t); return; }
+    // word points: tiny breathing so the letters feel alive
+    PX = TX[k][i] + 1.6 * noise2(i * 0.31, t * 0.9);
+    PY = TY[k][i] + 1.6 * noise2(i * 0.31 + 7.7, t * 0.9);
+    PW = w;
+  }
+  function pos(i, t) {
+    // which scene is this particle in?
+    let k = 0;
+    for (let s = NS - 1; s >= 1; s--) if (t >= SCENES[s].A + DLY[s][i]) { k = s; break; }
+    const st = k > 0 ? SCENES[k].A + DLY[k][i] : 0;
+    const p = k > 0 ? (t - st) / D_MOVE : 1;
+    if (p >= 1) { target(i, k, t); return; }
+    target(i, k - 1, t); const ax = PX, ay = PY, aw = PW;
+    target(i, k, t);
+    const e = io3(p);
+    let x = ax + (PX - ax) * e, y = ay + (PY - ay) * e;
+    const s = Math.sin(Math.PI * e);
+    x += s * 95 * noise2(x * 0.004 + k * 3.1, y * 0.004);
+    y += s * (95 * noise2(x * 0.004 + 17.3, y * 0.004 + k) - 110 * (0.5 + R1[i])); // lift like a bubble
+    PX = x; PY = y; PW = aw + (PW - aw) * e;
+  }
+
+  // solid type alpha for a scene: resolves once the points have landed, leaves as they lift
+  function solidA(k, t) {
+    const sc = SCENES[k]; if (!sc.text && !sc.end) return 0;
+    const a0 = sc.A + 0.95, inA = seg(t, a0, 0.4, out3);
+    const nx = k + 1 < NS ? SCENES[k + 1].A : 1e9;
+    return inA * (1 - seg(t, nx - 0.02, 0.22, in2));
+  }
+
+  // ---------- sprites, buffers ----------
+  function sprite(rgb) {
+    const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d');
+    const g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+    g.addColorStop(0, `rgba(${rgb},1)`); g.addColorStop(0.35, `rgba(${rgb},0.85)`); g.addColorStop(0.7, `rgba(${rgb},0.16)`); g.addColorStop(1, `rgba(${rgb},0)`);
+    x.fillStyle = g; x.fillRect(0, 0, 32, 32); return c;
+  }
+  const SPA = sprite(AMBER.join(',')), SPO = sprite(ORCHID.join(',')), SPW = sprite('255,236,210');
+  const cv = document.getElementById('cv'), out = cv.getContext('2d');
+  const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const PL = mk(W, H), ctx = PL.getContext('2d');
+  const B1 = mk(540, 960), B2 = mk(270, 480), B3 = mk(135, 240), B4 = mk(68, 120);
+  const b1 = B1.getContext('2d'), b2 = B2.getContext('2d'), b3 = B3.getContext('2d'), b4 = B4.getContext('2d');
+  const TXT = mk(W, H), tctx = TXT.getContext('2d');
+  const bg = out.createRadialGradient(540, 820, 0, 540, 900, 1250);
+  bg.addColorStop(0, GROUND[0]); bg.addColorStop(0.5, GROUND[1]); bg.addColorStop(1, GROUND[2]);
+  const GRAIN = [];
+  (function () { const gr = mulberry32(911); for (let k = 0; k < 4; k++) { const c = mk(256, 256), x = c.getContext('2d'), im = x.createImageData(256, 256); for (let j = 0; j < im.data.length; j += 4) { const v = Math.floor(gr() * 255); im.data[j] = im.data[j + 1] = im.data[j + 2] = v; im.data[j + 3] = 255; } x.putImageData(im, 0, 0); GRAIN.push(out.createPattern(c, 'repeat')); } })();
+  // sparks for the clink
+  const SPK = []; (function () { const r = mulberry32(5); for (let j = 0; j < 160; j++) SPK.push([r() * TAU, 80 + r() * 320, 0.5 + r() * 0.8, r() < 0.3]); })();
+
+  function draw(t) {
+    if (!built) { if (document.fonts && !document.fonts.check(FONT(100), 'Clari')) { /* fonts not in yet */ } build(); }
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    // camera: slow push in over the whole piece, a touch more on the end card
+    const zoom = 1 + 0.03 * (t / DUR) + 0.04 * io3(seg(t, 16.6, 3.4));
+    const camY = 6 * Math.sin(t * 0.35);
+    // how much the points dim under resolved type (so the solid letters read crisp)
+    const dimUnder = [];
+    for (let k = 0; k < NS; k++) dimUnder.push(1 - 0.72 * solidA(k, t));
+    const WSUB = [1, 0.45, 0.2];
+    for (let s = WSUB.length - 1; s >= 0; s--) {
+      const tt = t - s / 70, wk = WSUB[s];
+      for (let i = 0; i < N; i++) {
+        let fade = 1;
+        if (tt < 0.5) fade = clamp((tt + 0.35 - R1[i] * 0.5) / 0.5, 0, 1);
+        if (fade <= 0) continue;
+        pos(i, tt);
+        const sx = 540 + (PX - 540) * zoom, sy = 900 + (PY - 900) * zoom + camY;
+        if (sx < -20 || sx > W + 20 || sy < -20 || sy > H + 20) continue;
+        // depth from a seeded value: near points bigger and brighter
+        const depth = 0.65 + 0.7 * R3[i];
+        let k = 0; for (let q = NS - 1; q >= 1; q--) if (tt >= SCENES[q].A + DLY[q][i] + D_MOVE * 0.8) { k = q; break; }
+        const word = PW > 0.5;
+        let al = (word ? 0.34 : 0.12 + 0.06 * depth) * PW * depth * fade * wk * (word ? dimUnder[k] : 1);
+        const acc = ACC[i];
+        if (acc) al *= 1.5;
+        ctx.globalAlpha = al > 1 ? 1 : al;
+        const sz = (acc ? 5.2 : 4.2) * depth * (word ? 1 : 1.25);
+        ctx.drawImage(acc ? SPO : SPA, sx - sz / 2, sy - sz / 2, sz, sz);
+      }
+    }
+    // clink sparks
+    const ck = 4 * BEAT;
+    if (t > ck - 0.02 && t < ck + 1.4) {
+      const [lx, ly, la] = glassXform(t, -1); const [rx, ry, ra] = glassXform(t, 1);
+      const px = 540, py = 640 + 250 - 250 * 1.0 + 2;
+      for (const s of SPK) {
+        const dt = t - ck; if (dt < 0) continue;
+        const d = s[1] * (1 - Math.exp(-dt * 4)) * s[2], a = s[0];
+        const x = 540 + Math.cos(a) * d, y = 652 + Math.sin(a) * d * 0.8 + 60 * dt * dt;
+        ctx.globalAlpha = clamp(1 - dt / (0.7 + 0.6 * s[2]), 0, 1) * 0.9;
+        const sz = s[3] ? 7 : 5;
+        ctx.drawImage(s[3] ? SPO : SPW, x - sz / 2, y - sz / 2, sz, sz);
+      }
+    }
+    // compose
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+    b1.globalCompositeOperation = 'copy'; b1.drawImage(PL, 0, 0, 540, 960);
+    b2.globalCompositeOperation = 'copy'; b2.drawImage(B1, 0, 0, 270, 480);
+    b3.globalCompositeOperation = 'copy'; b3.drawImage(B2, 0, 0, 135, 240);
+    b4.globalCompositeOperation = 'copy'; b4.drawImage(B3, 0, 0, 68, 120);
+    out.globalCompositeOperation = 'source-over'; out.globalAlpha = 1;
+    out.fillStyle = bg; out.fillRect(0, 0, W, H);
+    out.globalCompositeOperation = 'lighter';
+    out.drawImage(PL, 0, 0);
+    out.imageSmoothingQuality = 'high';
+    out.globalAlpha = 0.55; out.drawImage(B3, 0, 0, W, H);
+    out.globalAlpha = 0.6; out.drawImage(B4, 0, 0, W, H);
+    out.globalCompositeOperation = 'source-over'; out.globalAlpha = 1;
+    // solid type, resolved under the points
+    for (let k = 1; k < NS; k++) {
+      const a = solidA(k, t); if (a <= 0.001) continue;
+      const sc = SCENES[k];
+      out.save();
+      out.translate(540, 900 + camY); out.scale(zoom, zoom); out.translate(-540, -900);
+      // a soft dark bed behind the letters keeps contrast against bright points
+      out.globalAlpha = a;
+      out.shadowColor = 'rgba(10,4,14,0.55)'; out.shadowBlur = 24;
+      // letters rise 14 px as they resolve
+      const rise = 14 * (1 - seg(t, sc.A + 0.95, 0.4, out3));
+      out.translate(0, rise);
+      drawSceneInk(out, sc);
+      out.shadowBlur = 0;
+      // a warm flush passes up through the words once they have landed (purposeful hold motion)
+      const fp = seg(t, sc.A + 1.2, 1.7, io2);
+      if (fp > 0 && fp < 1) {
+        tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.globalCompositeOperation = 'source-over'; tctx.clearRect(0, 0, W, H);
+        drawSceneInk(tctx, sc, () => '#fff');
+        tctx.globalCompositeOperation = 'source-in';
+        const y0 = 1500 - fp * 1100, g = tctx.createLinearGradient(0, y0 - 420, 0, y0 + 420);
+        g.addColorStop(0, 'rgba(255,150,70,0)'); g.addColorStop(0.5, 'rgba(255,150,70,1)'); g.addColorStop(1, 'rgba(255,150,70,0)');
+        tctx.fillStyle = g; tctx.fillRect(0, 0, W, H);
+        out.globalAlpha = a * 0.9; out.drawImage(TXT, 0, 0); out.globalAlpha = a;
+      }
+      if (sc.source) {
+        const sa = seg(t, sc.A + 1.6, 0.5, out3) * (1 - seg(t, SCENES[k + 1].A - 0.02, 0.22, in2));
+        out.globalAlpha = sa; out.font = `condensed 700 50px "Bricolage Grotesque"`; out.fillStyle = '#F3D9C4';
+        out.fillText(sc.source, 540, sc.L[sc.L.length - 1].base + 120);
+      }
+      out.restore();
+    }
+    out.globalCompositeOperation = 'overlay'; out.globalAlpha = 0.07;
+    out.fillStyle = GRAIN[Math.floor(t * 30 + 0.001) % 4]; out.fillRect(0, 0, W, H);
+    out.globalCompositeOperation = 'source-over'; out.globalAlpha = 1;
+  }
+
+  const p = { t: 0 };
+  const tl = gsap.timeline({ paused: true });
+  tl.to(p, { t: DUR, duration: DUR, ease: 'none', onUpdate: () => draw(p.t) }, 0);
+  window.__timelines = window.__timelines || {};
+  window.__timelines['main'] = tl;
+  draw(0);
+  if (document.fonts) document.fonts.ready.then(() => { built = false; draw(p.t); });
+})();
+</script>
+</body>
+</html>

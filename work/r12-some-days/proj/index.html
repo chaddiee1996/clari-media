@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,700..900&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #F4EFE6; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #F4EFE6; }
+  #cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+  #warm { position: absolute; left: -3000px; top: 0; font: 900 60px 'Literata'; }
+  #warm b { font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="19" data-width="1080" data-height="1920">
+  <canvas id="cv" class="clip" width="1080" height="1920" data-start="0" data-duration="19" data-track-index="0"></canvas>
+  <div id="warm">Some days <b>Source</b></div>
+</div>
+<script>
+/*
+ * Clari R12 "Some days". ink-line look, 9:16, 19 s, text only + music (66 bpm, beat 0.909 s).
+ * One sumi line that never lifts, drawn on twos:
+ *   0.2-3.6  the line draws a woman's profile, rises out of her hair into a storm cloud, strikes a bolt
+ *   1.4      "Some days / it's rage." top right
+ *   5.2      the bolt softens into falling drops; "rage." becomes "tears."
+ *   7.8-9.0  the whole line is pulled into a knot;  9.0-10.2 the knot untangles into one calm line
+ *   9.8      "Mood changes are / on the NHS list." centre, source under the line
+ *  12.8      "You're not / imagining it."
+ *  15.0-16.2 the line closes into an enso; 16.4 a plum moon seal stamps inside it; "Clari"
+ */
+(function () {
+  'use strict';
+  const PAPER = '#F4EFE6', INK = '#1C1C1C', PLUM = '#5B2A86';
+  const DUR = 19, W = 1080, H = 1920, N = 1500;
+  const SERIF = (wt, px) => `${wt} ${px}px "Literata"`;
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const mkc = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+  const ink = mkc(), ictx = ink.getContext('2d');
+  const txt = mkc(), tctx = txt.getContext('2d');
+
+  // ---------- math ----------
+  const EZ = {}; const ez = n => EZ[n] || (EZ[n] = gsap.parseEase(n));
+  const clamp = (x, a, b) => x < a ? a : x > b ? b : x;
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const sstep = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+  const seg = (t, a, d, e) => { const p = clamp((t - a) / d, 0, 1); return e ? ez(e)(p) : p; };
+  function hash(i) { i = i | 0; i = Math.imul(i ^ (i >>> 16), 0x45d9f3b); i = Math.imul(i ^ (i >>> 16), 0x45d9f3b); i ^= i >>> 16; return (i >>> 0) / 4294967296; }
+  function vn(x, seed) { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return lerp(hash(i * 7919 + seed * 104729), hash((i + 1) * 7919 + seed * 104729), u); }
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // centripetal Catmull-Rom through [x,y,w] control points, resampled to N points by arc length
+  function crPath(ctrl, sub) {
+    const n = ctrl.length, pts = [];
+    const get = i => { if (i < 0) return ctrl[0].map((v, k) => 2 * v - ctrl[1][k]); if (i >= n) return ctrl[n - 1].map((v, k) => 2 * v - ctrl[n - 2][k]); return ctrl[i]; };
+    const dd = (a, b) => Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]) + 1e-4, 0.5);
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+      const t0 = 0, t1 = dd(p0, p1), t2 = t1 + dd(p1, p2), t3 = t2 + dd(p2, p3);
+      for (let s = 0; s < sub; s++) {
+        const t = t1 + (t2 - t1) * s / sub, q = [];
+        for (let c = 0; c < 2; c++) {
+          const A1 = (t1 - t) / (t1 - t0) * p0[c] + (t - t0) / (t1 - t0) * p1[c];
+          const A2 = (t2 - t) / (t2 - t1) * p1[c] + (t - t1) / (t2 - t1) * p2[c];
+          const A3 = (t3 - t) / (t3 - t2) * p2[c] + (t - t2) / (t3 - t2) * p3[c];
+          const B1 = (t2 - t) / (t2 - t0) * A1 + (t - t0) / (t2 - t0) * A2;
+          const B2 = (t3 - t) / (t3 - t1) * A2 + (t - t1) / (t3 - t1) * A3;
+          q.push((t2 - t) / (t2 - t1) * B1 + (t - t1) / (t2 - t1) * B2);
+        }
+        const k = s / sub, ks = k * k * (3 - 2 * k); q.push(lerp(p1[2], p2[2], ks)); pts.push(q);
+      }
+    }
+    pts.push(ctrl[n - 1].slice());
+    return resample(pts);
+  }
+  function resample(pts) {
+    const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const L = cum[cum.length - 1], X = new Float32Array(N), Y = new Float32Array(N), Wd = new Float32Array(N);
+    let j = 0;
+    for (let i = 0; i < N; i++) {
+      const s = L * i / (N - 1); while (j < pts.length - 2 && cum[j + 1] < s) j++;
+      const k = (s - cum[j]) / Math.max(1e-6, cum[j + 1] - cum[j]);
+      X[i] = lerp(pts[j][0], pts[j + 1][0], k); Y[i] = lerp(pts[j][1], pts[j + 1][1], k); Wd[i] = lerp(pts[j][2], pts[j + 1][2], k);
+    }
+    return { X, Y, Wd, L };
+  }
+  function fnPath(f, M) { const pts = []; for (let i = 0; i <= M; i++) pts.push(f(i / M)); return resample(pts); }
+
+  // ---------- the shapes (all the same line, N points each) ----------
+  const STORM_CTRL = [
+    [30, 1590, 5], [100, 1555, 9], [190, 1490, 11], [330, 1445, 15], [430, 1405, 17], [470, 1345, 15],      // shoulder to throat
+    [474, 1265, 12], [486, 1205, 11], [528, 1170, 10], [566, 1152, 10], [578, 1124, 9],                      // throat, chin
+    [562, 1100, 7], [580, 1082, 9], [562, 1068, 6], [584, 1050, 9], [570, 1028, 7],                          // lips
+    [612, 996, 11], [588, 948, 9], [566, 906, 8], [572, 862, 10], [558, 800, 12],                            // nose, brow, forehead
+    [506, 738, 14], [420, 706, 16], [326, 722, 18], [262, 792, 20], [236, 890, 21], [250, 1000, 19],        // crown, back of head
+    [300, 1086, 16], [232, 1064, 12], [184, 966, 11], [186, 830, 10], [246, 700, 10], [360, 628, 9],         // hair flows back up behind her
+    [500, 612, 8], [600, 650, 8], [640, 700, 9],                                                             // and arcs over into the cloud
+    [628, 790, 12], [672, 742, 13], [740, 700, 14], [820, 708, 14], [880, 752, 13], [920, 820, 12],          // cloud bumps
+    [880, 878, 11], [800, 890, 10], [730, 886, 10],                                                          // cloud base
+    [770, 900, 11], [771, 902, 11], [718, 984, 12], [719, 985, 12], [792, 984, 12], [793, 986, 12], [736, 1086, 8], [744, 1104, 1.5]                         // bolt
+  ];
+  const STORM = crPath(STORM_CTRL, 26);
+  // which point the bolt starts at (last 6 control points)
+  let BOLT0 = N - 1; { // find the point nearest (730,886)
+    let best = 1e9; for (let i = Math.floor(N * 0.7); i < N; i++) { const d = Math.hypot(STORM.X[i] - 730, STORM.Y[i] - 886); if (d < best) { best = d; BOLT0 = i; } } }
+  // tears: same line, the bolt becomes a slow drip with three ink beads
+  const TEARS = { X: STORM.X.slice(), Y: STORM.Y.slice(), Wd: STORM.Wd.slice() };
+  for (let i = BOLT0; i < N; i++) {
+    const u = (i - BOLT0) / (N - 1 - BOLT0);
+    TEARS.X[i] = 760 + 26 * Math.sin(u * Math.PI * 5) * (1 - u * 0.4);
+    TEARS.Y[i] = 888 + 300 * u;
+    let w = 10 - 4 * u;
+    for (const c of [0.32, 0.62, 0.95]) w += 15 * Math.exp(-Math.pow((u - c) / 0.035, 2));
+    TEARS.Wd[i] = w;
+  }
+  const KNOT = fnPath(u => {
+    const a = u * Math.PI * 2;
+    const r = 1 - 0.15 * Math.sin(5 * a);
+    return [540 + 230 * Math.sin(3 * a + 0.4) * r + 40 * Math.sin(7 * a), 1210 + 170 * Math.sin(4 * a) * r + 30 * Math.cos(5 * a), 14 + 6 * Math.sin(a * 6) - (u < 0.03 ? (0.03 - u) * 200 : 0) - (u > 0.97 ? (u - 0.97) * 200 : 0)];
+  }, 900);
+  const CALM = fnPath(u => [80 + 920 * u, 1250 + 16 * Math.sin(u * Math.PI * 3) - 6 * u, 4 + 20 * Math.sin(Math.PI * Math.pow(u, 0.8))], 400);
+  const EC = [540, 860], ER = 255, TH0 = 125 * Math.PI / 180, SPAN = 335 * Math.PI / 180;
+  const ENSO = fnPath(u => { const a = TH0 + SPAN * u; const r = ER * (1 + 0.02 * Math.sin(a * 3)); return [EC[0] + r * Math.cos(a), EC[1] + r * Math.sin(a), u < 0.12 ? 12 + 190 * u : 30 * (1 - u) + 6 + 4 * Math.sin(u * 9)]; }, 500);
+
+  // ---------- timing ----------
+  const DRAW0 = 0.0, DRAW1 = 3.5;
+  const TEAR0 = 5.0, KNOT0 = 7.8, CALM0 = 9.0, ENSO0 = 15.0, SEAL_T = 16.4;
+  // pen-time along the storm: slower on tight curves
+  const PCUM = new Float32Array(N); (function () { let acc = 0; for (let j = 1; j < N; j++) { let turn = 0; if (j > 1 && j < N - 1) { const a1 = Math.atan2(STORM.Y[j] - STORM.Y[j - 1], STORM.X[j] - STORM.X[j - 1]), a2 = Math.atan2(STORM.Y[j + 1] - STORM.Y[j], STORM.X[j + 1] - STORM.X[j]); let d = Math.abs(a2 - a1); if (d > Math.PI) d = 2 * Math.PI - d; turn = d; } acc += 1 + 14 * Math.min(turn, 0.5); PCUM[j] = acc; } for (let j = 0; j < N; j++) PCUM[j] /= acc; })();
+
+  const S = { x: new Float32Array(N), y: new Float32Array(N), w: new Float32Array(N), d: new Float32Array(N) };
+  function blend(A, B, e, amp, seed) {
+    const s = Math.sin(Math.PI * e) * amp;
+    for (let i = 0; i < N; i++) {
+      let x = lerp(A.X[i], B.X[i], e), y = lerp(A.Y[i], B.Y[i], e);
+      if (s > 0.5) { x += s * (vn(i * 0.012 + seed, 3) - 0.5) * 2; y += s * (vn(i * 0.012 + seed, 5) - 0.5) * 2; }
+      S.x[i] = x; S.y[i] = y; S.w[i] = lerp(A.Wd[i], B.Wd[i], e);
+      S.d[i] = Math.sin(Math.PI * e) * 0.5; // fast moves dry the brush
+    }
+  }
+  function state(t) {
+    if (t < TEAR0) { blend(STORM, STORM, 0, 0, 0); for (let i = 0; i < N; i++) S.d[i] = 0.1 * vn(i * 0.02, 8); return; }
+    if (t < KNOT0) { blend(STORM, TEARS, seg(t, TEAR0, 0.9, 'power2.inOut'), 30, 2); // drops slide down slowly
+      const k = seg(t, TEAR0 + 0.9, KNOT0 - TEAR0 - 0.9, 'sine.inOut');
+      for (let i = BOLT0; i < N; i++) S.y[i] += 26 * k * ((i - BOLT0) / (N - BOLT0)); return; }
+    if (t < CALM0) { blend(TEARS, KNOT, seg(t, KNOT0, CALM0 - KNOT0, 'power3.inOut'), 160, 4); return; }
+    if (t < ENSO0) { blend(KNOT, CALM, seg(t, CALM0, 1.2, 'power2.inOut'), 120, 6);
+      const br = sstep(CALM0 + 1.2, CALM0 + 2, t); for (let i = 0; i < N; i++) S.y[i] += br * 10 * Math.sin(i * 0.008 - t * 1.6); return; }
+    blend(CALM, ENSO, seg(t, ENSO0, 1.3, 'power3.inOut'), 40, 8);
+  }
+
+  // ---------- paper ----------
+  const paper = mkc();
+  const grainTile = document.createElement('canvas'); grainTile.width = grainTile.height = 512;
+  (function buildPaper() {
+    const p = paper.getContext('2d'), rnd = mulberry(1912);
+    p.fillStyle = PAPER; p.fillRect(0, 0, W, H);
+    const mw = Math.ceil(W / 10), mh = Math.ceil(H / 10), m = document.createElement('canvas'); m.width = mw; m.height = mh;
+    const mc = m.getContext('2d'), id = mc.createImageData(mw, mh);
+    for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {
+      let n = 0, a = 1, f = 0.045, tot = 0;
+      for (let o = 0; o < 4; o++) { const X = x * f, Y = y * f, xi = Math.floor(X), yi = Math.floor(Y), fx = X - xi, fy = Y - yi; const h = (i, j) => hash(i * 92821 + j * 68917 + o * 1013); const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy); n += a * lerp(lerp(h(xi, yi), h(xi + 1, yi), ux), lerp(h(xi, yi + 1), h(xi + 1, yi + 1), ux), uy); tot += a; a *= 0.5; f *= 2.1; }
+      n /= tot; const k = (y * mw + x) * 4, v = n - 0.5;
+      if (v < 0) { id.data[k] = 150; id.data[k + 1] = 120; id.data[k + 2] = 80; id.data[k + 3] = Math.min(255, -v * 150); }
+      else { id.data[k] = 255; id.data[k + 1] = 252; id.data[k + 2] = 244; id.data[k + 3] = Math.min(255, v * 140); }
+    }
+    mc.putImageData(id, 0, 0); p.imageSmoothingQuality = 'high'; p.globalAlpha = 0.24; p.drawImage(m, 0, 0, W, H); p.globalAlpha = 1;
+    for (let i = 0; i < 6000; i++) {
+      const x = rnd() * W, y = rnd() * H, L = 6 + rnd() * (rnd() < 0.1 ? 120 : 36), a = rnd() * Math.PI * 2, bend = (rnd() - 0.5) * 16;
+      p.strokeStyle = rnd() < 0.7 ? `rgba(140,112,74,${0.05 + rnd() * 0.07})` : `rgba(255,253,246,${0.25 + rnd() * 0.3})`;
+      p.lineWidth = 0.5 + rnd() * 1.1; p.beginPath(); p.moveTo(x, y);
+      p.quadraticCurveTo(x + Math.cos(a) * L / 2 - Math.sin(a) * bend, y + Math.sin(a) * L / 2 + Math.cos(a) * bend, x + Math.cos(a) * L, y + Math.sin(a) * L); p.stroke();
+    }
+    const g = grainTile.getContext('2d'), gd = g.createImageData(512, 512);
+    for (let i = 0; i < 512 * 512; i++) { const r = rnd(), k = i * 4; if (r < 0.5) { gd.data[k] = 70; gd.data[k + 1] = 55; gd.data[k + 2] = 38; gd.data[k + 3] = (0.5 - r) * 46; } else { gd.data[k] = 255; gd.data[k + 1] = 251; gd.data[k + 2] = 242; gd.data[k + 3] = (r - 0.5) * 52; } }
+    g.putImageData(gd, 0, 0);
+  })();
+  const grainPat = ctx.createPattern(grainTile, 'repeat');
+
+  // ---------- ink drawing ----------
+  const TONES = ['#101010', '#171716', '#1f1e1d', '#292726', '#353230', '#43403c'];
+  function strokeLine(c, lo, hi, wf) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    let runW = -1, runK = -1;
+    for (let i = lo; i < hi; i++) {
+      const w = Math.max(1.2, (S.w[i] + S.w[i + 1]) * 0.5 * wf);
+      const kk = clamp(Math.floor((0.15 + 0.4 * vn(i * 0.011, 21) + 0.5 * S.d[i] - 0.25 * clamp((w - 8) / 14, 0, 1)) * 6), 0, 5);
+      if (runW < 0 || Math.abs(w - runW) > 0.4 || kk !== runK) {
+        if (runW >= 0) { c.lineWidth = runW; c.stroke(); }
+        c.strokeStyle = TONES[kk]; c.beginPath(); c.moveTo(S.x[i], S.y[i]); runW = w; runK = kk;
+      }
+      c.lineTo(S.x[i + 1], S.y[i + 1]);
+    }
+    if (runW >= 0) { c.lineWidth = runW; c.stroke(); }
+  }
+  function feathers(c, lo, hi) {
+    c.lineCap = 'round'; c.strokeStyle = INK; c.lineWidth = 0.8; c.globalAlpha = 0.5; c.beginPath();
+    for (let i = lo + 1; i < hi; i += 2) {
+      const w = S.w[i]; if (w < 7) continue; if (hash(i * 3 + 1) > 0.3) continue;
+      let tx = S.x[i + 1] - S.x[i - 1], ty = S.y[i + 1] - S.y[i - 1]; const L = Math.hypot(tx, ty) || 1; tx /= L; ty /= L;
+      const side = hash(i * 7 + 2) < 0.5 ? -1 : 1, nx = -ty * side, ny = tx * side, len = 2 + hash(i * 5 + 3) * 6;
+      const bx = S.x[i] + nx * w * 0.46, by = S.y[i] + ny * w * 0.46; c.moveTo(bx, by); c.lineTo(bx + nx * len, by + ny * len);
+    }
+    c.stroke(); c.globalAlpha = 1;
+  }
+  function dryCuts(c, lo, hi) { // flying white where the brush moved fast
+    c.globalCompositeOperation = 'destination-out'; c.lineCap = 'round'; c.strokeStyle = '#000';
+    for (let b = 0; b < 9; b++) {
+      const off = (b / 8 - 0.5) * 0.85; let open = false;
+      for (let i = lo; i < hi; i++) {
+        const d = S.d[i] + 0.12; const nz = vn(i * 0.02 + b * 31.7, 9);
+        const cut = S.w[i] > 6 && nz < d * 0.5 - 0.02;
+        if (!cut) { if (open) { c.stroke(); open = false; } continue; }
+        let nx = -(S.y[i + 1] - S.y[i]), ny = S.x[i + 1] - S.x[i]; const L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+        if (!open) { c.lineWidth = Math.max(0.8, S.w[i] * 0.07); c.beginPath(); c.moveTo(S.x[i] + nx * off * S.w[i], S.y[i] + ny * off * S.w[i]); open = true; }
+        c.lineTo(S.x[i + 1] + nx * off * S.w[i], S.y[i + 1] + ny * off * S.w[i]);
+      }
+      if (open) c.stroke();
+    }
+    c.globalCompositeOperation = 'source-over';
+  }
+  function blot(c, x, y, r, a) { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(28,28,28,${a})`); g.addColorStop(0.55, `rgba(28,28,28,${a * 0.45})`); g.addColorStop(1, 'rgba(28,28,28,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); }
+
+  // ---------- words ----------
+  // each block: lines, align, anchor x, top baseline, size, in/out times; words soak in left to right like wet ink
+  function fit(lines, px, maxW) { tctx.font = SERIF(900, px); let m = 0; for (const l of lines) m = Math.max(m, tctx.measureText(l).width); return m > maxW ? Math.floor(px * maxW / m) : px; }
+  const BLOCKS = [
+    { lines: ['Some days', "it's"], align: 'right', x: 940, y: 400, px: 150, t0: 1.4, t1: 7.9 },
+    { lines: ['rage.'], align: 'right', x: 940, y: 400 + 150 * 1.02 * 2, px: 150, t0: 2.5, t1: 5.15, same: true },
+    { lines: ['tears.'], align: 'right', x: 940, y: 400 + 150 * 1.02 * 2, px: 150, t0: 5.45, t1: 7.9, same: true },
+    { lines: ['Mood changes', 'are on the', 'NHS list.'], align: 'center', x: 540, y: 820, px: 140, t0: 9.8, t1: 12.6 },
+    { lines: ["You're not", 'imagining it.'], align: 'center', x: 540, y: 900, px: 150, t0: 13.1, t1: 15.15 },
+  ];
+  // "it's" sits after "Some days" on line two, with rage/tears on line three: re-flow so line 2 reads "it's rage."
+  BLOCKS[0].lines = ['Some days', "it's"];
+  function drawBlock(b, t) {
+    const inK = seg(t, b.t0, 0.9, 'power2.out'), outK = seg(t, b.t1, 0.45, 'power2.in');
+    if (inK <= 0 || outK >= 1) return;
+    const px = b.fit || (b.fit = fit(b.lines, b.px, 800));
+    tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.globalCompositeOperation = 'source-over'; tctx.clearRect(0, 0, W, H);
+    tctx.font = SERIF(900, px); tctx.textAlign = b.align; tctx.fillStyle = INK; tctx.textBaseline = 'alphabetic';
+    let minX = 1e9, maxX = -1e9;
+    b.lines.forEach((l, i) => { tctx.fillText(l, b.x, b.y + i * px * 1.02); const w = tctx.measureText(l).width; const x0 = b.align === 'right' ? b.x - w : b.align === 'center' ? b.x - w / 2 : b.x; minX = Math.min(minX, x0); maxX = Math.max(maxX, x0 + w); });
+    // wet-ink wipe, left to right
+    tctx.globalCompositeOperation = 'destination-in';
+    const span = maxX - minX + 240, xe = minX - 120 + span * inK;
+    const g = tctx.createLinearGradient(xe - 120, 0, xe + 1, 0); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    tctx.fillStyle = g; tctx.fillRect(0, 0, W, H);
+    tctx.globalCompositeOperation = 'source-over';
+    const a = 1 - outK;
+    // soft bleed, then the body
+    ctx.globalAlpha = 0.18 * a; ctx.filter = `blur(${3 + 6 * (1 - inK)}px)`; ctx.drawImage(txt, 0, 0);
+    ctx.filter = inK < 1 ? `blur(${2.5 * (1 - inK)}px)` : 'none'; ctx.globalAlpha = 0.97 * a; ctx.drawImage(txt, 0, outK * -10); ctx.filter = 'none'; ctx.globalAlpha = 1;
+  }
+  function drawSource(t) {
+    const k = seg(t, 10.5, 0.7, 'power2.out') * (1 - seg(t, 12.6, 0.45, 'power2.in')); if (k <= 0) return;
+    ctx.globalAlpha = k; ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.font = SERIF(700, 50);
+    ctx.fillText('Source: Cambridge University', 540, 1370); ctx.fillText('Hospitals NHS', 540, 1430); ctx.globalAlpha = 1;
+  }
+
+  // ---------- moon seal ----------
+  const seal = document.createElement('canvas'); seal.width = seal.height = 260;
+  (function () {
+    const s = seal.getContext('2d'), rnd = mulberry(77); s.translate(130, 130);
+    s.fillStyle = PLUM; s.beginPath(); s.arc(0, 0, 92, 0, Math.PI * 2); s.fill();
+    s.globalCompositeOperation = 'destination-out'; s.beginPath(); s.arc(46, -34, 80, 0, Math.PI * 2); s.fill();
+    for (let i = 0; i < 360; i++) { const x = (rnd() - 0.5) * 190, y = (rnd() - 0.5) * 190, r = rnd() < 0.9 ? rnd() * 1.4 : 1 + rnd() * 2.4; s.globalAlpha = 0.35 + rnd() * 0.5; s.beginPath(); s.arc(x, y, r, 0, Math.PI * 2); s.fill(); }
+  })();
+
+  function draw(tr) {
+    const fr = Math.round(tr * 30), tq = Math.floor(fr / 2) / 15; // the line is drawn on twos
+    state(tq);
+    const seed = Math.floor(fr / 2);
+    for (let i = 0; i < N; i++) { // boil
+      S.x[i] += (vn(i * 0.04 + seed * 13.1, 1) - 0.5) * 3.2; S.y[i] += (vn(i * 0.04 + seed * 17.7, 2) - 0.5) * 3.2;
+      S.w[i] *= (0.94 + 0.12 * vn(i * 0.03 + seed * 7.3, 4));
+    }
+    // draw-on
+    let hiF = N - 1;
+    if (tq < DRAW1) { const p = ez('sine.inOut')(clamp((tq - DRAW0) / (DRAW1 - DRAW0), 0, 1)); let j = 0; while (j < N - 1 && PCUM[j + 1] < p) j++; hiF = j + clamp((p - PCUM[j]) / Math.max(1e-6, PCUM[j + 1] - PCUM[j]), 0, 1); }
+    const hi = Math.floor(hiF);
+    // camera: a slow drift, one gentle push on the enso
+    const sc = 1 + 0.025 * Math.sin(tr * 0.22) * 0 + 0.05 * seg(tr, ENSO0, 3.5, 'sine.inOut');
+    const dx = 6 * Math.sin(tr * 0.37), dy = 5 * Math.sin(tr * 0.29 + 1.1);
+    const cx = tr > ENSO0 ? lerp(540, EC[0], 1) : 540, cy = lerp(960, EC[1] + 140, seg(tr, ENSO0, 3.5, 'sine.inOut'));
+    const M = new DOMMatrix([sc, 0, 0, sc, 540 - sc * cx + dx, 960 - sc * cy + dy + (cy - 960)]);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+    ctx.setTransform(M); ctx.drawImage(paper, 0, 0);
+    // ink layer
+    ictx.setTransform(1, 0, 0, 1, 0, 0); ictx.clearRect(0, 0, W, H); ictx.setTransform(M);
+    let hx = S.x[hi], hy = S.y[hi];
+    if (hi < N - 1) { const k = hiF - hi; hx = lerp(S.x[hi], S.x[hi + 1], k); hy = lerp(S.y[hi], S.y[hi + 1], k); S.x[hi + 1] = hx; S.y[hi + 1] = hy; }
+    const top = Math.min(hi + 1, N - 1);
+    if (top > 0) {
+      strokeLine(ictx, 0, top, 1); feathers(ictx, 0, top);
+      if (hi < N - 1) { ictx.fillStyle = INK; ictx.beginPath(); ictx.arc(hx, hy, Math.max(3, S.w[hi] * 0.7), 0, Math.PI * 2); ictx.fill(); }
+      dryCuts(ictx, 0, top);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 0.09; ctx.filter = 'blur(14px)'; ctx.drawImage(ink, 0, 0);
+    ctx.globalAlpha = 0.22; ctx.filter = 'blur(3px)'; ctx.drawImage(ink, 0, 0);
+    ctx.filter = 'none'; ctx.globalAlpha = 0.96; ctx.drawImage(ink, 0, 0); ctx.globalAlpha = 1;
+    ctx.setTransform(M);
+    if (top > 0) { blot(ctx, S.x[0], S.y[0], S.w[0] * 1.6 + 6, 0.2); blot(ctx, hx, hy, S.w[hi] * 1.5 + 6, hi < N - 1 ? 0.3 : 0.14); }
+    // words (in screen space, not moved by the camera, for crisp type)
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    // line two "it's rage." sits on one line: draw "it's" right-aligned next to the swapping word
+    for (const b of BLOCKS) drawBlockFlow(b, tr);
+    drawSource(tr);
+    // seal + wordmark
+    if (tr > SEAL_T - 0.2) {
+      ctx.setTransform(M);
+      const k = clamp((tr - (SEAL_T - 0.2)) / 0.2, 0, 1), kin = ez('power2.in')(k);
+      const settle = tr > SEAL_T ? 1 - 0.015 * Math.exp(-(tr - SEAL_T) * 9) * Math.sin((tr - SEAL_T) * 30) : 1;
+      const s2 = lerp(1.25, 1, kin) * settle;
+      ctx.save(); ctx.translate(EC[0] - 10, EC[1] + 8); ctx.rotate(-0.06); ctx.scale(s2, s2); ctx.globalAlpha = kin; ctx.globalCompositeOperation = 'multiply';
+      ctx.drawImage(seal, -130, -130); ctx.restore(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+      const wk = seg(tr, SEAL_T + 0.25, 0.8, 'power2.out');
+      if (wk > 0) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.clearRect(0, 0, W, H); tctx.font = SERIF(900, 170); tctx.textAlign = 'center'; tctx.fillStyle = INK;
+        const ys = cy + sc * (EC[1] + ER + 210 - cy) + dy;
+        tctx.fillText('Clari', 540, ys);
+        tctx.globalCompositeOperation = 'destination-in'; const xe = 300 + 600 * wk; const g = tctx.createLinearGradient(xe - 140, 0, xe, 0); g.addColorStop(0, '#000'); g.addColorStop(1, 'rgba(0,0,0,0)'); tctx.fillStyle = g; tctx.fillRect(0, 0, W, H); tctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 0.2; ctx.filter = 'blur(4px)'; ctx.drawImage(txt, 0, 0); ctx.filter = 'none'; ctx.globalAlpha = 1; ctx.drawImage(txt, 0, 0);
+        ctx.globalAlpha = seg(tr, SEAL_T + 0.8, 0.6, 'power2.out'); ctx.font = SERIF(700, 58); ctx.textAlign = 'center'; ctx.fillStyle = PLUM;
+        ctx.fillText('Your symptom diary', 540, ys + 100); ctx.globalAlpha = 1;
+      }
+    }
+    // grain + light
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = grainPat; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'multiply';
+    const vg = ctx.createRadialGradient(540, 900, 600, 540, 960, 1300); vg.addColorStop(0, 'rgba(255,255,255,0)'); vg.addColorStop(1, 'rgba(214,196,168,0.25)');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // line 1 "Some days", line 2 "it's rage." / "it's tears." : the last word swaps on its own
+  function drawBlockFlow(b, t) {
+    if (b.same) return;
+    if (b === BLOCKS[0]) {
+      drawBlock({ lines: ['Some days'], align: 'right', x: 940, y: 400, px: 150, t0: 1.4, t1: 7.9 }, t);
+      const px = 150; tctx.font = SERIF(900, px);
+      const wR = tctx.measureText(' rage.').width, wT = tctx.measureText(' tears.').width;
+      const swap = seg(t, 5.0, 0.6, 'power2.inOut'), wNow = lerp(wR, wT, swap);
+      drawBlock({ lines: ["it's"], align: 'right', x: 940 - wNow, y: 400 + px * 1.04, px, t0: 2.2, t1: 7.9 }, t);
+      drawBlock({ lines: ['rage.'], align: 'right', x: 940, y: 400 + px * 1.04, px, t0: 2.6, t1: 5.0 }, t);
+      drawBlock({ lines: ['tears.'], align: 'right', x: 940, y: 400 + px * 1.04, px, t0: 5.35, t1: 7.9 }, t);
+      return;
+    }
+    drawBlock(b, t);
+  }
+
+  const p = { t: 0 };
+  const tl = gsap.timeline({ paused: true });
+  tl.to(p, { t: DUR, duration: DUR, ease: 'none', onUpdate: () => draw(p.t) }, 0);
+  window.__timelines = window.__timelines || {};
+  window.__timelines['main'] = tl;
+  draw(0);
+  if (document.fonts) document.fonts.ready.then(() => { BLOCKS.forEach(b => b.fit = 0); draw(p.t); });
+})();
+</script>

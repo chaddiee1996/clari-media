@@ -1,0 +1,56 @@
+{
+ "title": "R12 Some days",
+ "format": "9:16",
+ "seconds": 19,
+ "shots": [
+  {
+   "time": "0.0-3.5",
+   "graphic": "one ink line draws a woman's profile, her hair arcs into a storm cloud, a bolt strikes",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "1.4-5.0",
+   "graphic": "\"Some days / it's rage.\" top right",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "5.0-7.8",
+   "graphic": "the bolt softens into drops; rage becomes tears",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "7.8-9.0",
+   "graphic": "the line is pulled into a knot",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "9.0-12.6",
+   "graphic": "the knot untangles into one calm line; Mood changes are on the NHS list, source",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "13.1-15.2",
+   "graphic": "You're not imagining it.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "15.0-19.0",
+   "graphic": "the line closes into an enso, plum moon seal stamps inside, Clari",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

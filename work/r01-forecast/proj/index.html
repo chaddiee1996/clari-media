@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  :root { --white: #FFFFFF; --sun: #FFC94A; --plum: #5B2A86; --cream: #FFF1E5; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0B1530; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; font-family: 'Inter', sans-serif; color: var(--white); }
+  #cv { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  #ui { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  .t { position: absolute; left: 0; top: 0; text-align: center; white-space: normal; will-change: transform, opacity, filter;
+       text-shadow: 0 3px 28px rgba(0, 10, 30, 0.28); }
+  .lab { font-size: 62px; font-weight: 700; letter-spacing: -0.012em; line-height: 1.1; }
+  .head { font-size: 124px; font-weight: 800; letter-spacing: -0.035em; line-height: 0.98; }
+  .tip { font-size: 112px; font-weight: 800; letter-spacing: -0.032em; line-height: 1.0; }
+  .src { font-size: 50px; font-weight: 700; letter-spacing: -0.01em; }
+  #rollwrap { position: absolute; overflow: hidden; height: 236px; }
+  #roll { font-size: 236px; font-weight: 800; letter-spacing: -0.05em; line-height: 236px; text-align: center; font-variant-numeric: tabular-nums; }
+  #roll div { height: 236px; }
+  svg.ic { position: absolute; overflow: visible; }
+  svg.ic * { fill: none; stroke: #FFFFFF; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
+  .dots { position: absolute; display: flex; gap: 22px; justify-content: center; }
+  .dots i { display: block; width: 22px; height: 22px; border-radius: 11px; background: #FFFFFF; }
+  #word { font-size: 168px; font-weight: 900; letter-spacing: -0.045em; line-height: 1; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="21" data-width="1080" data-height="1920">
+  <canvas id="cv" width="1080" height="1920"></canvas>
+  <div id="ui">
+    <div class="t lab" id="lab1">Your bedroom, tonight</div>
+    <div id="rollwrap"><div id="roll"><div>10pm</div><div>12am</div><div>2am</div><div>3am</div></div></div>
+    <div class="t head" id="h1">Hot spells likely around 3am.</div>
+    <div class="t lab" id="s1">Feels like: summer</div>
+    <div class="t head" id="h2">Night sweats possible.</div>
+    <div class="t lab" id="s2">Humidity: high</div>
+    <div class="t lab" id="lab2">Forecast tips</div>
+    <div class="t tip" id="tp0">Keep the bedroom cool</div>
+    <div class="t tip" id="tp1">Wear light cotton</div>
+    <div class="t tip" id="tp2">Layers you can take off</div>
+    <div class="t tip" id="tp3">Cold water by the bed</div>
+    <div class="t tip" id="tp4" style="font-size:100px">Less alcohol, caffeine and spicy food</div>
+    <svg class="ic" id="ic0" width="230" height="230" viewBox="0 0 200 200"><g id="flake"></g></svg>
+    <svg class="ic" id="ic1" width="230" height="230" viewBox="0 0 200 200"><g id="shirt"><path d="M72 32 L38 48 L14 88 L46 104 L56 90 L56 178 L144 178 L144 90 L154 104 L186 88 L162 48 L128 32 Q100 58 72 32 Z"/></g></svg>
+    <svg class="ic" id="ic2" width="230" height="230" viewBox="0 0 200 200"><path d="M22 132 L100 172 L178 132"/><path d="M22 104 L100 144 L178 104"/><path id="toplayer" d="M100 34 L178 74 L100 114 L22 74 Z"/></svg>
+    <svg class="ic" id="ic3" width="230" height="230" viewBox="0 0 200 200"><defs><clipPath id="gl"><path d="M56 30 L144 30 L132 182 L68 182 Z"/></clipPath></defs>
+      <rect id="water" x="40" y="100" width="120" height="100" clip-path="url(#gl)" style="fill:#FFFFFF;stroke:none;opacity:0.9"/>
+      <rect id="ice" x="84" y="70" width="34" height="34" rx="6" style="fill:#1A2D5A;stroke:#FFFFFF;stroke-width:9"/>
+      <path d="M56 30 L144 30 L132 182 L68 182 Z"/></svg>
+    <svg class="ic" id="ic4" width="560" height="200" viewBox="0 0 560 200">
+      <g id="i4a"><path d="M62 24 L128 24 Q134 92 95 102 Q56 92 62 24 Z"/><path d="M95 102 L95 166 M66 172 L124 172"/></g>
+      <g id="i4b"><path d="M220 72 L308 72 L300 172 L228 172 Z"/><path d="M308 92 Q346 92 342 124 Q338 150 304 146"/><path d="M246 52 Q238 38 248 26 M276 52 Q268 38 278 26"/></g>
+      <g id="i4c"><path d="M444 80 C 426 146, 466 182, 524 186 C 494 166, 480 132, 490 82 Z"/><path d="M436 82 Q467 64 498 82"/><path d="M467 70 Q468 44 492 32"/></g>
+    </svg>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="t src" id="src">Source: NHS</div>
+    <div class="t head" id="h3" style="font-size:146px">Save this for tonight.</div>
+    <div class="t" id="word">Clari</div>
+    <div class="t lab" id="tag">Your perimenopause<br/>symptom diary</div>
+  </div>
+</div>
+<script>
+(function () {
+  const S = STUDIO, W = 1080, H = 1920;
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const E = n => S.ease(n);
+  const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const pr = (t, a, b) => cl((t - a) / (b - a));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const mixc = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const rgb = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const spring = p => { if (p <= 0) return 0; if (p >= 1) return 1; const z = 6.5, wd = 8.2; return 1 - Math.exp(-z * p) * (Math.cos(wd * p) + (z / wd) * Math.sin(wd * p)); };
+  const R = S.rng(7031);
+
+  // snowflake icon
+  (function () {
+    let d = '';
+    for (let k = 0; k < 3; k++) {
+      const a = k * Math.PI / 3, c = Math.cos(a), s = Math.sin(a);
+      d += `M${100 - 82 * c} ${100 - 82 * s} L${100 + 82 * c} ${100 + 82 * s} `;
+      for (const sg of [-1, 1]) for (const r of [52]) {
+        const bx = 100 + sg * r * c, by = 100 + sg * r * s;
+        for (const q of [-1, 1]) { const b = a + q * 0.7 + (sg < 0 ? Math.PI : 0); d += `M${bx} ${by} L${bx + 26 * Math.cos(b)} ${by + 26 * Math.sin(b)} `; }
+      }
+    }
+    $('flake').innerHTML = `<path d="${d}"/>`;
+  })();
+
+  // palettes: sky top, sky mid, sky bottom, widget top, widget bottom
+  const P = (a, b, c, d, e) => [hex(a), hex(b), hex(c), hex(d), hex(e)];
+  const NIGHT = P('#081129', '#101F46', '#1E3263', '#22397A', '#0B1530');
+  const WARM = P('#0C122C', '#22214F', '#4A2F5E', '#5A3A78', '#2A1A3E');
+  const NIGHT2 = P('#091330', '#14254F', '#26386C', '#253F82', '#0D1838');
+  const DAWN = P('#182858', '#34508F', '#F3C48A', '#3B63B4', '#2A4688');
+  const pal = t => {
+    let p = NIGHT;
+    for (const [a, b, q] of [[2.7, 3.8, WARM], [5.4, 6.6, NIGHT2], [16.4, 19.2, DAWN]]) {
+      const k = E('power2.inOut')(pr(t, a, b)); if (k <= 0) break; p = p.map((c, i) => mixc(c, q[i], k));
+    }
+    return p;
+  };
+
+  // widget shapes
+  const SQ = { w: 860, h: 860, r: 132 }, TL = { w: 880, h: 1200, r: 112 }, TP = { w: 900, h: 1250, r: 104 }, SQ2 = { w: 880, h: 820, r: 140 }, IC = { w: 330, h: 330, r: 86 };
+  const morphs = [[3.4, TL], [7.8, TP], [16.6, SQ2], [18.6, IC]];
+  function box(t) {
+    let b = { ...SQ };
+    for (const [t0, q] of morphs) {
+      const kw = spring((t - t0) / 1.25), kh = spring((t - t0 - 0.06) / 1.25), kr = spring((t - t0 - 0.03) / 1.25);
+      b = { w: lerp(b.w, q.w, kw), h: lerp(b.h, q.h, kh), r: lerp(b.r, q.r, kr) };
+    }
+    // small breath on each tip change
+    for (const tt of TIPT.slice(1)) { const a = t - tt; if (a > 0 && a < 1.2) { b.h += 26 * Math.exp(-a * 5) * Math.sin(a * 13); b.w -= 14 * Math.exp(-a * 5) * Math.sin(a * 13); } }
+    const ent = E('expo.out')(pr(t, 0.05, 1.15));
+    const s = 0.9 + 0.1 * ent;
+    let cyv = 880 + 60 * (1 - ent) + Math.sin(t * 1.25) * 4 * ent;
+    if (t > 18.6) cyv = lerp(cyv, 720, E('power3.inOut')(pr(t, 18.6, 19.6)));
+    const w = b.w * s, h = b.h * s, r = Math.min(b.r * s, w / 2, h / 2);
+    return { x0: 540 - w / 2, y0: cyv - h / 2, w, h, r, cx: 540, cy: cyv, a: E('power3.out')(pr(t, 0.05, 0.5)) };
+  }
+  const TIPT = [8.35, 10.05, 11.75, 13.45, 15.15];
+
+  // seeded scene data
+  const stars = Array.from({ length: 140 }, () => ({ x: R() * W, y: R() * H * 0.9, r: 0.8 + R() * 2.2, ph: R() * 6.28, sp: 0.6 + R() * 1.4 }));
+  const wstars = Array.from({ length: 34 }, () => ({ u: R(), v: R() * 0.55, r: 1 + R() * 2.2, ph: R() * 6.28 }));
+  const blobs = Array.from({ length: 8 }, () => ({ x: R() * 1400 - 160, y: 200 + R() * 1600, r: 260 + R() * 340, sp: 6 + R() * 12 }));
+  const drops = Array.from({ length: 16 }, () => ({ u: 0.06 + R() * 0.88, v: R() * 0.5, r: 7 + R() * 11, sp: 60 + R() * 160, d: R() * 0.8 }));
+  const grain = document.createElement('canvas'); grain.width = 540; grain.height = 960;
+  (function () { const g = grain.getContext('2d'), id = g.createImageData(540, 960); for (let i = 0; i < id.data.length; i += 4) { const v = R() * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; } g.putImageData(id, 0, 0); })();
+
+  function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  const oc = document.createElement('canvas'); oc.width = oc.height = 600; const ox = oc.getContext('2d');
+  function crescent(x, y, r, col, cut, off) {
+    ox.clearRect(0, 0, 600, 600); ox.globalCompositeOperation = 'source-over'; ox.fillStyle = col; ox.beginPath(); ox.arc(300, 300, 200, 0, 7); ox.fill();
+    ox.globalCompositeOperation = 'destination-out'; ox.beginPath(); ox.arc(300 + 200 * off, 300 - 200 * off * 0.62, 200 * 0.86, 0, 7); ox.fill();
+    ctx.drawImage(oc, x - r * 1.5, y - r * 1.5, r * 3, r * 3);
+  }
+
+  // text helpers
+  function show(el, t, tin, tout, x, y, w) {
+    const a = E('expo.out')(pr(t, tin, tin + 0.7)), b = tout ? E('power2.in')(pr(t, tout, tout + 0.3)) : 0;
+    const op = a * (1 - b);
+    el.style.opacity = op; el.style.display = op <= 0.001 ? 'none' : 'block';
+    if (w) el.style.width = w + 'px';
+    el.style.transform = `translate(${x}px, ${y + 46 * (1 - a) - 30 * b}px)`;
+    el.style.filter = `blur(${12 * (1 - a) + 8 * b}px)`;
+  }
+  function place(el, t, tin, tout, x, y, sc) {
+    const a = tin == null ? 1 : spring(pr(t, tin, tin + 1.0)), b = tout ? E('power2.in')(pr(t, tout, tout + 0.3)) : 0;
+    const op = cl(a * 3) * (1 - b); el.style.opacity = op; el.style.display = op <= 0.001 ? 'none' : 'block';
+    const s = (0.72 + 0.28 * a) * (sc || 1) * (1 - 0.15 * b);
+    el.style.transform = `translate(${x}px, ${y - 30 * b}px) scale(${s})`;
+  }
+
+  const lab1 = $('lab1'), rollwrap = $('rollwrap'), roll = $('roll');
+  window.__timelines = window.__timelines || {};
+  window.__timelines.main = S.play(function render(t) {
+    const p = pal(t), bx = box(t);
+    // ---------- sky ----------
+    let g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, rgb(p[0])); g.addColorStop(0.55, rgb(p[1])); g.addColorStop(1, rgb(p[2]));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    for (const b of blobs) { const x = ((b.x + t * b.sp) % 1500) - 200; const rg = ctx.createRadialGradient(x, b.y, 0, x, b.y, b.r); rg.addColorStop(0, rgb(p[3], 0.22)); rg.addColorStop(1, rgb(p[3], 0)); ctx.fillStyle = rg; ctx.fillRect(x - b.r, b.y - b.r, b.r * 2, b.r * 2); }
+    const starA = 1 - E('power2.inOut')(pr(t, 17, 19.5)) * 0.85;
+    for (const s of stars) { const tw = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph)); ctx.fillStyle = `rgba(255,255,255,${tw * 0.7 * starA})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill(); }
+    // dawn glow at the horizon (sun accent, end only)
+    const dg = E('power2.inOut')(pr(t, 16.8, 19.6));
+    if (dg > 0) { const rg = ctx.createRadialGradient(540, 2050, 0, 540, 2050, 1100); rg.addColorStop(0, `rgba(255,201,74,${0.55 * dg})`); rg.addColorStop(1, 'rgba(255,201,74,0)'); ctx.fillStyle = rg; ctx.fillRect(0, 900, W, 1020); }
+
+    // ---------- widget ----------
+    const { x0, y0, w, h, r } = bx; ctx.globalAlpha = bx.a;
+    // shadows
+    ctx.save(); ctx.shadowColor = 'rgba(2,6,20,0.55)'; ctx.shadowBlur = 120; ctx.shadowOffsetY = 60; rr(x0, y0, w, h, r); ctx.fillStyle = rgb(p[4]); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.shadowColor = 'rgba(2,6,20,0.5)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10; rr(x0, y0, w, h, r); ctx.fillStyle = rgb(p[4]); ctx.fill(); ctx.restore();
+    ctx.save(); rr(x0, y0, w, h, r); ctx.clip();
+    const endK = E('power3.inOut')(pr(t, 18.55, 19.4));
+    g = ctx.createLinearGradient(0, y0, 0, y0 + h);
+    g.addColorStop(0, rgb(mixc(p[3], hex('#6E36A0'), endK))); g.addColorStop(1, rgb(mixc(p[4], hex('#48206C'), endK)));
+    ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h);
+    // stars inside
+    for (const s of wstars) { const tw = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 1.7 + s.ph)); ctx.fillStyle = `rgba(255,255,255,${tw * 0.8 * (1 - endK)})`; ctx.beginPath(); ctx.arc(x0 + s.u * w, y0 + s.v * h, s.r, 0, 7); ctx.fill(); }
+    // moon / 3am sun
+    const sunK = E('power2.inOut')(pr(t, 2.75, 3.5)) * (1 - E('power2.inOut')(pr(t, 5.5, 6.3)));
+    const tipsOn = pr(t, 7.7, 8.1), moonAway = Math.max(tipsOn * (1 - pr(t, 16.5, 17.2)), endK);
+    let mx = bx.cx, my = y0 + h * 0.42, mr = 118;
+    if (t > 3.3) { const k = E('power3.inOut')(pr(t, 3.3, 4.3)); my = lerp(y0 + h * 0.42, y0 + 300, k); mr = lerp(118, 96, k); mx = lerp(bx.cx, bx.cx, k); }
+    if (t > 16.4) { const k = E('power3.inOut')(pr(t, 16.6, 17.6)); my = lerp(my, y0 + 150, k); mx = lerp(mx, bx.cx + 300, k); mr = lerp(mr, 62, k); }
+    my += 520 * E('power3.in')(moonAway) * (t < 12 ? 1 : 1);
+    if (moonAway < 0.99) {
+      ctx.globalAlpha = bx.a * (1 - moonAway);
+      // glow
+      const gc = mixc([200, 214, 255], [255, 201, 74], sunK);
+      let rg = ctx.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * (3.2 + sunK * 1.6)); rg.addColorStop(0, rgb(gc, 0.32 + 0.3 * sunK)); rg.addColorStop(1, rgb(gc, 0)); ctx.fillStyle = rg; ctx.fillRect(mx - mr * 5, my - mr * 5, mr * 10, mr * 10);
+      if (sunK > 0) { // rays
+        ctx.save(); ctx.translate(mx, my); ctx.rotate(t * 0.25); ctx.strokeStyle = `rgba(255,214,110,${sunK})`; ctx.lineWidth = 14; ctx.lineCap = 'round';
+        for (let k = 0; k < 10; k++) { ctx.rotate(Math.PI / 5); ctx.beginPath(); ctx.moveTo(0, mr * 1.25); ctx.lineTo(0, mr * (1.25 + 0.42 * sunK)); ctx.stroke(); } ctx.restore();
+      }
+      // moon crescent fading into a full warm disc
+      ctx.save(); ctx.globalAlpha = bx.a * (1 - moonAway) * (1 - sunK);
+      crescent(mx, my, mr, '#F1F3FA', 0, 0.52); ctx.restore();
+      if (sunK > 0) { ctx.save(); ctx.globalAlpha = bx.a * sunK * (1 - moonAway); rg = ctx.createRadialGradient(mx - mr * 0.3, my - mr * 0.3, 0, mx, my, mr); rg.addColorStop(0, '#FFF6D2'); rg.addColorStop(0.55, '#FFDC72'); rg.addColorStop(1, '#FFC94A'); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(mx, my, mr, 0, 7); ctx.fill(); ctx.restore(); }
+      ctx.globalAlpha = bx.a;
+    }
+    // drops on the glass (night sweats)
+    const dk = pr(t, 5.6, 6.0) * (1 - pr(t, 7.7, 8.2));
+    if (dk > 0) for (const d of drops) {
+      const life = t - 5.6 - d.d; if (life < 0) continue;
+      const yy = y0 + (d.v + life * d.sp / h * (life > 0.3 ? 1 : 0.2)) * h, xx = x0 + d.u * w + Math.sin(life * 3 + d.u * 9) * 4;
+      if (yy > y0 + h) continue;
+      ctx.globalAlpha = bx.a * dk * 0.9;
+      ctx.fillStyle = 'rgba(210,225,255,0.10)'; ctx.fillRect(xx - d.r * 0.3, y0 + d.v * h, d.r * 0.7, Math.max(0, yy - (y0 + d.v * h)));
+      ctx.fillStyle = 'rgba(225,236,255,0.55)'; ctx.beginPath(); ctx.ellipse(xx, yy, d.r * 0.8, d.r, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(xx - d.r * 0.3, yy - d.r * 0.35, d.r * 0.25, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = bx.a;
+    // hills, rim lit
+    const rim = mixc([170, 190, 255], [255, 201, 74], Math.max(sunK, 0.7 * E('power2.inOut')(pr(t, 16.8, 18.5))));
+    const hills = [[0.86, 34, 0.6, hex('#16265A')], [0.9, 26, 1.7, hex('#0F1B44')], [0.94, 20, 3.1, hex('#091230')]];
+    for (const [v, amp, ph, col] of hills) {
+      ctx.beginPath(); ctx.moveTo(x0, y0 + h);
+      for (let k = 0; k <= 40; k++) { const u = k / 40; ctx.lineTo(x0 + u * w, y0 + h * v - amp * Math.sin(u * 5.2 + ph) - amp * 0.6 * Math.sin(u * 11 + ph * 2)); }
+      ctx.lineTo(x0 + w, y0 + h); ctx.closePath(); ctx.fillStyle = rgb(mixc(col, hex('#3A1A58'), endK), 1 - endK); ctx.fill();
+      ctx.strokeStyle = rgb(rim, 0.35 * (1 - endK)); ctx.lineWidth = 3; ctx.stroke();
+    }
+    // top sheen
+    g = ctx.createLinearGradient(0, y0, 0, y0 + h * 0.45); g.addColorStop(0, 'rgba(255,255,255,0.14)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h * 0.45);
+    // clari crescent on the end icon
+    if (endK > 0) { ctx.globalAlpha = bx.a * E('power3.out')(pr(t, 19.0, 19.6)); crescent(bx.cx - 8, bx.cy + 6, bx.w * 0.3, '#FFF1E5', 0, 0.5); ctx.globalAlpha = bx.a; }
+    ctx.restore();
+    // lit top edge
+    ctx.save(); rr(x0 + 1.5, y0 + 1.5, w - 3, h - 3, r); g = ctx.createLinearGradient(0, y0, 0, y0 + h * 0.3); g.addColorStop(0, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); ctx.strokeStyle = g; ctx.lineWidth = 3; ctx.stroke(); ctx.restore();
+    ctx.globalAlpha = 1;
+    // vignette + grain
+    let vg = ctx.createRadialGradient(540, 900, 600, 540, 900, 1300); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,10,0.35)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 0.045; ctx.globalCompositeOperation = 'overlay'; ctx.drawImage(grain, 0, 0, W, H); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+
+    // ---------- text ----------
+    const IW = w - 120, IX = x0 + 60;
+    show(lab1, t, 0.55, 7.55, IX, y0 + 74, IW);
+    // hour roll
+    const rk = [1.3, 1.95, 2.6].reduce((s, a) => s + E('power3.inOut')(pr(t, a, a + 0.42)), 0);
+    roll.style.transform = `translateY(${-rk * 236}px)`;
+    const ra = E('expo.out')(pr(t, 0.75, 1.45)), rb = E('power2.in')(pr(t, 3.3, 3.6));
+    rollwrap.style.opacity = ra * (1 - rb); rollwrap.style.width = w + 'px';
+    rollwrap.style.transform = `translate(${x0}px, ${y0 + h - 330 + 46 * (1 - ra) - 30 * rb}px)`;
+    rollwrap.style.filter = `blur(${12 * (1 - ra) + 8 * rb}px)`;
+    roll.style.color = rgb(mixc([255, 255, 255], [255, 236, 190], sunK));
+    show($('h1'), t, 3.75, 5.45, IX - 20, y0 + 430, IW + 40);
+    show($('s1'), t, 4.45, 5.4, IX, y0 + h - 250, IW);
+    show($('h2'), t, 5.85, 7.55, IX - 20, y0 + 540, IW + 40);
+    show($('s2'), t, 6.55, 7.5, IX, y0 + h - 250, IW);
+    show($('lab2'), t, 8.0, 16.4, IX, y0 + 74, IW);
+    // tips
+    const ends = [9.85, 11.55, 13.25, 14.95, 16.35];
+    for (let i = 0; i < 5; i++) {
+      show($('tp' + i), t, TIPT[i] + 0.12, ends[i], IX - 10, y0 + 560, IW + 20);
+      const ic = $('ic' + i), iw = i === 4 ? 560 : 230;
+      place(ic, t, TIPT[i], ends[i], bx.cx - iw / 2, y0 + 220 + (i === 4 ? 20 : 0));
+    }
+    // icon life during holds
+    $('flake').setAttribute('transform', `rotate(${E('power2.inOut')(pr(t, 8.6, 9.8)) * 60} 100 100)`);
+    $('shirt').setAttribute('transform', `rotate(${Math.sin((t - 10) * 3.2) * 6 * pr(t, 10.3, 10.6)} 100 30)`);
+    $('toplayer').setAttribute('transform', `translate(0 ${-48 * E('back.out(1.6)')(pr(t, 12.4, 13.0))})`);
+    $('water').setAttribute('y', 172 - 88 * E('power2.inOut')(pr(t, 13.8, 14.6)));
+    $('ice').setAttribute('transform', `translate(0 ${-40 + 66 * E('bounce.out')(pr(t, 14.3, 14.9))}) rotate(${12 + 20 * pr(t, 14.3, 14.9)} 101 87)`);
+    ['i4a', 'i4b', 'i4c'].forEach((id, k) => { const a = spring(pr(t, 15.25 + k * 0.28, 16.1 + k * 0.28)); $(id).style.opacity = cl(a * 3); $(id).setAttribute('transform', `translate(0 ${40 * (1 - a)})`); });
+    // page dots
+    const dots = $('dots'); const da = E('expo.out')(pr(t, 8.2, 8.9)) * (1 - E('power2.in')(pr(t, 16.35, 16.65)));
+    dots.style.opacity = da; dots.style.width = w + 'px'; dots.style.transform = `translate(${x0}px, ${y0 + h - 250}px)`;
+    const act = TIPT.reduce((s, a) => s + (t >= a ? 1 : 0), 0) - 1;
+    [...dots.children].forEach((d, i) => { d.style.opacity = i === act ? 1 : 0.42; d.style.width = (i === act ? 58 : 22) + 'px'; });
+    show($('src'), t, 8.4, 16.4, IX, y0 + h - 170, IW);
+    show($('h3'), t, 16.95, 18.45, x0 + 40, y0 + 270, w - 80);
+    show($('word'), t, 19.15, null, 0, 960, W);
+    show($('tag'), t, 19.45, null, 0, 1170, W);
+  }, { loop: false });
+})();
+</script>
+</body>
+</html>

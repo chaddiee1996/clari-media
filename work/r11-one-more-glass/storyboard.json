@@ -1,0 +1,56 @@
+{
+ "title": "R11 One more glass?",
+ "format": "9:16",
+ "seconds": 20,
+ "shots": [
+  {
+   "time": "0.0-0.9",
+   "graphic": "smoke of 9,000 amber points",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "0.9-3.3",
+   "graphic": "points condense into two wine glasses that clink on the beat (2.667), sparks",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "3.3-6.0",
+   "graphic": "points lift like bubbles and form \"Christmas drinks.\"; solid type resolves; a warm flush passes up the words",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "6.0-10.7",
+   "graphic": "hot flushes fact, line by line, source under it",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "10.7-13.3",
+   "graphic": "Worth noticing if it does for you.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "13.3-16.0",
+   "graphic": "Log it. See your own pattern.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "16.0-20.0",
+   "graphic": "end card: crescent moon, Clari, Save this for party season; slow push in",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

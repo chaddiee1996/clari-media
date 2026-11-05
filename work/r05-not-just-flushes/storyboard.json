@@ -1,0 +1,49 @@
+{
+ "title": "It's not just hot flushes",
+ "format": "9:16",
+ "seconds": 25.5,
+ "shots": [
+  {
+   "time": "0.0-3.8",
+   "graphic": "HOT FLUSHES. over a pink halftone sun; That's the one everyone knows.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "3.8-13.6",
+   "graphic": "And the rest: justified stack stamps one symptom per beat, pink band follows the newest word, ends on UTIS",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "13.6-16.4",
+   "graphic": "ALL ON THE NHS LIST. with stepping blue stripes, source",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "16.4-19.9",
+   "graphic": "And they can start YEARS before your periods stop. pink circle, source",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "19.9-22.3",
+   "graphic": "SEND THIS TO HER. over stepping pink rings",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "22.3-25.5",
+   "graphic": "Overprinted crescent, Clari, Your perimenopause symptom diary",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

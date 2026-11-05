@@ -1,0 +1,49 @@
+{
+ "title": "R15 Am I in perimenopause?",
+ "format": "9:16",
+ "seconds": 25.4,
+ "shots": [
+  {
+   "time": "0.0-2.5",
+   "graphic": "Am I in / perimenopause? (red ?)",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "2.5-8.1",
+   "graphic": "The signs people miss: five signs swap in a row mask every two beats, numbered, progress blocks",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "8.1-15.8",
+   "graphic": "45 to 55 / 51 counts up / 1 in 100, source",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "15.8-19.3",
+   "graphic": "Symptoms can start years before your periods stop.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "19.3-22.4",
+   "graphic": "Only your GP can tell you. A record of your symptoms helps.",
+   "asset": {
+    "kind": "code"
+   }
+  },
+  {
+   "time": "22.4-25.4",
+   "graphic": "end card: moon tile slides up, Clari",
+   "asset": {
+    "kind": "code"
+   }
+  }
+ ]
+}

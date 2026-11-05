@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<style>
+  :root { --ground: #FFFFFF; --ink: #14213D; --g1: #5B6478; --g3: #C9CED9; --g4: #E4E7EE; --g5: #F4F6FA; --border: #E3E6ED; --track: #CDD2DC; --tint: #EAF2FE; --blue: #2B7EF9; --plum: #5B2A86; --cream: #FFF1E5; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ground); font-family: 'Switzer', sans-serif; color: var(--ink); perspective: 2400px; }
+  #world { position: absolute; left: 0; top: 0; width: 1080px; height: 9000px; transform-origin: 0 0; }
+  #grid { position: absolute; left: -3000px; top: -2000px; width: 7080px; height: 11000px;
+    background-image: radial-gradient(circle, rgb(226,226,232) 3px, transparent 3.5px); background-size: 38px 38px; }
+  #pool { position: absolute; width: 1400px; height: 1400px; border-radius: 50%; background: radial-gradient(circle, rgba(43,126,249,0.13), rgba(43,126,249,0) 62%); }
+  svg#wires { position: absolute; left: 0; top: 0; overflow: visible; }
+  .card { position: absolute; left: 110px; width: 860px; background: #FFFFFF; border: 2px solid var(--border); border-radius: 36px;
+    box-shadow: 0 2px 4px rgba(20,33,61,0.05), 0 18px 40px rgba(20,33,61,0.09), 0 50px 90px rgba(20,33,61,0.08); }
+  .chip { position: absolute; left: 355px; top: -75px; width: 150px; height: 150px; border-radius: 50%; background: var(--blue); color: #fff;
+    font-weight: 800; font-size: 100px; line-height: 150px; text-align: center; letter-spacing: -0.04em; box-shadow: 0 12px 30px rgba(43,126,249,0.35); }
+  .lab { position: absolute; left: 0; width: 100%; text-align: center; font-weight: 800; font-size: 150px; letter-spacing: -0.045em; line-height: 1; }
+  .cap { position: absolute; left: 90px; width: 900px; text-align: center; font-weight: 800; font-size: 92px; letter-spacing: -0.035em; line-height: 1.02; }
+  .small { font-weight: 700; font-size: 54px; letter-spacing: -0.02em; }
+  .ring { position: absolute; border-radius: 40px; border: 6px solid var(--blue); pointer-events: none; }
+  .bubble { position: absolute; left: 110px; width: 860px; background: var(--blue); color: #fff; border-radius: 44px; padding: 44px 50px 50px; text-align: center;
+    font-weight: 800; font-size: 80px; letter-spacing: -0.03em; line-height: 1.04; }
+  .bubble:before { content: ''; position: absolute; left: 400px; top: -36px; border: 30px solid transparent; border-bottom: 36px solid var(--blue); border-top: 0; }
+  #head { position: absolute; left: 90px; width: 900px; top: 250px; text-align: center; font-weight: 800; font-size: 136px; letter-spacing: -0.045em; line-height: 0.98; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="29" data-width="1080" data-height="1920">
+  <div id="world">
+    <div id="grid"></div>
+    <div id="pool"></div>
+    <svg id="wires" width="1080" height="9000"></svg>
+
+    <!-- C0: intro -->
+    <div class="card" id="c0" style="top:520px; height:560px;">
+      <svg id="watch" style="position:absolute; left:320px; top:60px;" width="220" height="250" viewBox="0 0 220 250">
+        <rect x="92" y="4" width="36" height="22" rx="8" fill="#14213D"/>
+        <circle cx="110" cy="140" r="96" fill="none" stroke="#E4E7EE" stroke-width="22"/>
+        <circle id="warc" cx="110" cy="140" r="96" fill="none" stroke="#2B7EF9" stroke-width="22" stroke-linecap="round" transform="rotate(-90 110 140)" stroke-dasharray="603" stroke-dashoffset="603"/>
+        <line id="whand" x1="110" y1="140" x2="110" y2="78" stroke="#14213D" stroke-width="14" stroke-linecap="round"/>
+        <circle cx="110" cy="140" r="13" fill="#14213D"/>
+      </svg>
+      <div class="lab" style="top:350px;">GP</div>
+    </div>
+    <div class="cap" id="k0a" style="top:1150px;">A GP appointment goes fast.</div>
+    <div class="cap" id="k0b" style="top:1150px;">Here&rsquo;s how to make it count.</div>
+
+    <!-- C1: book -->
+    <div class="card" id="c1" style="top:2100px; height:640px;">
+      <div class="chip">1</div>
+      <div class="lab" style="top:110px;">Book</div>
+      <div id="docs" style="position:absolute; left:0; width:860px; top:300px; height:140px;"></div>
+      <div id="slots" style="position:absolute; left:70px; width:720px; top:480px; height:90px;"></div>
+    </div>
+    <div class="cap" id="k1a" style="top:2810px;">When you book, ask which GP is best to see about menopause.</div>
+    <div class="cap" id="k1b" style="top:2810px;">And ask for a longer slot, if you can.</div>
+
+    <!-- C2: record -->
+    <div class="card" id="c2" style="top:3750px; height:660px;">
+      <div class="chip">2</div>
+      <div class="lab" style="top:110px;">Record</div>
+      <div class="small" style="position:absolute; left:60px; width:360px; top:290px; text-align:center;">How often</div>
+      <div class="small" style="position:absolute; left:440px; width:360px; top:290px; text-align:center;">How strong</div>
+      <div id="rows" style="position:absolute; left:0; top:380px; width:860px;"></div>
+    </div>
+    <div class="cap" id="k2a" style="top:4480px;">Bring a record.</div>
+    <div class="cap" id="k2b" style="top:4480px;">Each symptom. How often, and how strong.</div>
+
+    <!-- C3: say it -->
+    <div class="card" id="c3" style="top:5420px; height:520px;">
+      <div class="chip">3</div>
+      <div class="lab" style="top:110px;">Say it</div>
+      <svg id="waves" style="position:absolute; left:230px; top:300px;" width="400" height="170" viewBox="0 0 400 170"></svg>
+    </div>
+    <div class="cap" id="k3a" style="top:6010px;">Say it plainly.</div>
+    <div class="bubble" id="q1" style="top:6180px;"><span id="qt"></span></div>
+
+    <!-- C4: Clari -->
+    <div class="cap" id="k4" style="top:7200px; font-size:124px; line-height:0.98;">Save this for the day you book.</div>
+    <div id="recap" style="position:absolute; left:90px; width:900px; top:7500px; height:120px;"></div>
+    <div class="card" id="c4" style="top:7680px; height:560px;">
+      <svg style="position:absolute; left:340px; top:60px;" width="180" height="180" viewBox="0 0 100 100">
+        <rect width="100" height="100" rx="26" fill="#5B2A86"/>
+        <path d="M58 20 A31 31 0 1 0 80 64 A25 25 0 1 1 58 20 Z" fill="#FFF1E5"/>
+      </svg>
+      <div class="lab" style="top:250px; font-size:170px;">Clari</div>
+      <div class="small" style="position:absolute; left:0; width:860px; top:420px; text-align:center; font-size:58px; line-height:1.1;">Your perimenopause<br/>symptom diary</div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const S = STUDIO;
+  const $ = id => document.getElementById(id);
+  const E = n => S.ease(n);
+  const cl = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const pr = (t, a, b) => cl((t - a) / (b - a));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // ---- card geometry (world) ----
+  const CARDS = ['c0', 'c1', 'c2', 'c3', 'c4'].map(id => { const el = $(id); return { el, top: parseFloat(el.style.top), h: parseFloat(el.style.height) }; });
+  CARDS.forEach(c => { c.cy = c.top + c.h / 2; });
+
+  // ---- wires: zigzag down the sides with rounded elbows ----
+  const wires = $('wires');
+  const WIRES = [[0, 1, 1], [1, 2, -1], [2, 3, 1], [3, 4, -1]].map(([a, b, side]) => {
+    const y0 = CARDS[a].cy, y1 = CARDS[b].cy, x0 = side > 0 ? 970 : 110, xo = side > 0 ? 1030 : 50, r = 56;
+    const d = `M ${x0} ${y0} L ${xo - side * r} ${y0} Q ${xo} ${y0} ${xo} ${y0 + r} L ${xo} ${y1 - r} Q ${xo} ${y1} ${xo - side * r} ${y1} L ${x0} ${y1}`;
+    const tr = document.createElementNS(NS, 'path'); tr.setAttribute('d', d); tr.setAttribute('fill', 'none'); tr.setAttribute('stroke', '#CDD2DC'); tr.setAttribute('stroke-width', '12'); tr.setAttribute('stroke-linecap', 'round');
+    const lit = document.createElementNS(NS, 'path'); lit.setAttribute('d', d); lit.setAttribute('fill', 'none'); lit.setAttribute('stroke', '#2B7EF9'); lit.setAttribute('stroke-width', '12'); lit.setAttribute('stroke-linecap', 'round');
+    wires.appendChild(tr); wires.appendChild(lit);
+    const len = tr.getTotalLength(); tr.style.strokeDasharray = lit.style.strokeDasharray = len;
+    const pk = []; for (let i = 0; i < 7; i++) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', 22 - i * 2.4); c.setAttribute('fill', '#2B7EF9'); c.setAttribute('opacity', i ? 0.5 - i * 0.065 : 1); wires.appendChild(c); pk.push(c); }
+    return { tr, lit, len, pk };
+  });
+  // [wire, draw start, packet start, packet end]
+  const TRAVEL = [[0, 3.7, 4.1, 4.85], [1, 11.4, 11.75, 12.45], [2, 16.9, 17.3, 18.0], [3, 23.0, 23.45, 24.3]];
+
+  // ---- C1 docs + slots ----
+  const docs = $('docs');
+  docs.innerHTML = [0, 1, 2].map(i => `<div class="doc" style="position:absolute; left:${250 + i * 140}px; top:10px; width:110px; height:110px; border-radius:50%; background:#F4F6FA; border:4px solid #C9CED9;">
+    <svg width="102" height="102" viewBox="0 0 100 100" style="position:absolute;left:0;top:0"><circle cx="50" cy="38" r="16" fill="#8A93A8"/><path d="M20 86 Q50 50 80 86" fill="#8A93A8"/></svg></div>`).join('') +
+    `<div id="pick" class="ring" style="left:375px; top:0px; width:130px; height:130px; border-radius:50%;"></div>
+     <svg id="tick" width="60" height="60" viewBox="0 0 60 60" style="position:absolute; left:460px; top:-10px;"><circle cx="30" cy="30" r="28" fill="#2B7EF9"/><path d="M17 31 L26 40 L43 21" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const docEls = [...docs.querySelectorAll('.doc')];
+  const slots = $('slots');
+  slots.innerHTML = [0, 1, 2, 3].map(i => `<div class="slot" style="position:absolute; top:0; height:84px; border-radius:20px; background:${i === 1 ? '#EAF2FE' : '#F4F6FA'}; border:4px solid ${i === 1 ? '#2B7EF9' : '#E4E7EE'};"></div>`).join('');
+  const slotEls = [...slots.children];
+
+  // ---- C2 rows ----
+  const rows = $('rows'), FREQ = [3, 5, 2], STR = [0.62, 0.9, 0.42];
+  rows.innerHTML = [0, 1, 2].map(r => `<div style="position:absolute; top:${r * 82}px; left:0; width:860px; height:60px;">
+     ${[0, 1, 2, 3, 4].map(i => `<div class="dt" style="position:absolute; left:${95 + i * 62}px; top:6px; width:46px; height:46px; border-radius:50%; background:#E4E7EE;"></div>`).join('')}
+     <div style="position:absolute; left:460px; top:12px; width:320px; height:36px; border-radius:18px; background:#E4E7EE;"></div>
+     <div class="br" style="position:absolute; left:460px; top:12px; width:0px; height:36px; border-radius:18px; background:#2B7EF9;"></div></div>`).join('');
+  const rowEls = [...rows.children].map(r => ({ dots: [...r.querySelectorAll('.dt')], bar: r.querySelector('.br') }));
+
+  // ---- C3 waves ----
+  const waves = $('waves');
+  const bars = Array.from({ length: 13 }, (_, i) => { const b = document.createElementNS(NS, 'rect'); b.setAttribute('x', 8 + i * 30); b.setAttribute('width', 18); b.setAttribute('rx', 9); b.setAttribute('fill', i % 4 === 1 ? '#2B7EF9' : '#14213D'); waves.appendChild(b); return b; });
+
+  // ---- quote typing ----
+  const Q = ['‘I think this could be perimenopause.', ' What are my options?’'];
+  const qt = $('qt');
+
+  // ---- camera keys: [t, cx, cy, s, screenY] ----
+  const cam = c => CARDS[c].cy + 210;
+  const KEYS = [
+    [0, 540, cam(0), 1, 860],
+    [4.1, 540, cam(1) + 20, 1, 860],
+    [11.75, 540, cam(2), 1, 860],
+    [17.3, 540, CARDS[3].cy + 330, 1, 860],
+    [23.5, 540, 7730, 1, 880],
+  ];
+  const DUR = [0, 0.8, 0.75, 0.75, 1.0];
+  function camera(t) {
+    let c = { x: KEYS[0][1], y: KEYS[0][2], s: KEYS[0][3], sy: KEYS[0][4] }, v = 0;
+    for (let i = 1; i < KEYS.length; i++) {
+      const [tk, x, y, s, sy] = KEYS[i]; if (t < tk) break;
+      const ez = i >= 4 ? 'expo.inOut' : 'power3.inOut';
+      const p = pr(t, tk, tk + DUR[i]), k = E(ez)(p);
+      v += Math.sin(Math.PI * p) * (i % 2 ? 1 : -1);
+      c = { x: lerp(c.x, x, k), y: lerp(c.y, y, k), s: lerp(c.s, s, k), sy: lerp(c.sy, sy, k) };
+    }
+    // a slow push while holding keeps the frame alive
+    return { ...c, v };
+  }
+  // ---- text in/out ----
+  // captions: words land in time with the voice
+  document.querySelectorAll('.cap').forEach(el => { el.innerHTML = el.textContent.split(' ').map(w => `<span class="w" style="display:inline-block">${w}</span>`).join(' '); el._w = [...el.querySelectorAll('.w')]; });
+  function txt(el, t, a0, b0, s1) {
+    const b = b0 ? E('power2.in')(pr(t, b0, b0 + 0.25)) : 0;
+    el.style.opacity = (t >= a0 - 0.01 ? 1 : 0) * (1 - b); el.style.transform = `translateY(${-24 * b}px)`;
+    const n = el._w.length, span = Math.max(0.3, (s1 || a0 + 0.6) - a0 - 0.25);
+    el._w.forEach((w, i) => { const ti = a0 + span * i / Math.max(1, n - 1) * 0.92; const a = E('power3.out')(pr(t, ti, ti + 0.35)); w.style.opacity = a; w.style.transform = `translateY(${34 * (1 - a)}px)`; });
+  }
+  function pulse(el, t, t0) {
+    const a = t - t0; let s = 1, sh = 0;
+    if (a > 0 && a < 0.1) s = 1 + 0.025 * (a / 0.1); else if (a >= 0.1 && a < 0.6) s = 1 + 0.025 * (1 - E('back.out(3)')((a - 0.1) / 0.5));
+    if (a > 0 && a < 0.8) sh = 1 - E('power2.out')(a / 0.8);
+    el.style.transform = `scale(${s})`;
+    el.style.boxShadow = `0 2px 4px rgba(20,33,61,0.05), 0 18px 40px rgba(20,33,61,0.09), 0 50px 90px rgba(20,33,61,0.08), 0 0 0 ${10 * sh}px rgba(43,126,249,${0.35 * sh}), 0 30px 80px rgba(43,126,249,${0.35 * sh})`;
+  }
+  const recap = $('recap');
+  recap.innerHTML = [['1', 'Book'], ['2', 'Record'], ['3', 'Say it']].map(([n, w], i) => `<div class="rc" style="position:absolute; left:${i * 306}px; top:0; width:288px; height:112px; border-radius:56px; background:#F4F6FA; border:2px solid #E3E6ED; display:flex; align-items:center; justify-content:center; gap:16px; font-weight:800; font-size:56px; letter-spacing:-0.03em;"><span style="display:inline-block; width:72px; height:72px; border-radius:50%; background:#2B7EF9; color:#fff; text-align:center; line-height:72px; font-size:46px;">${n}</span>${w}</div>`).join('');
+  const RC = [...recap.children];
+  const ARRIVE = [null, 4.85, 12.45, 18.0, 24.3];
+  const world = $('world'), pool = $('pool');
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines.main = S.play(function render(t) {
+    const c = camera(t);
+    const tilt = 6 * Math.tanh(c.v * 1.5);
+    world.style.transform = `translate(${540 - c.x * c.s}px, ${c.sy - c.y * c.s}px) scale(${c.s})`;
+    $('root').style.perspectiveOrigin = `540px ${c.sy}px`;
+    world.style.transform += ` rotateX(${tilt}deg)`;
+    // light pool follows the active card
+    let act = 0; for (let i = 1; i < 5; i++) if (t >= (ARRIVE[i] || 0) - 0.6) act = i;
+    pool.style.transform = `translate(${540 - 700}px, ${CARDS[act].cy - 700}px)`;
+    // card land at the start
+    const c0a = E('power3.out')(pr(t, 0.05, 0.6));
+    CARDS[0].el.style.opacity = c0a * (1 - pr(t, 23.4, 23.8)); CARDS[0].el.style.transform = `translateY(${60 * (1 - c0a)}px) scale(${0.9 + 0.1 * c0a})`;
+    for (let i = 1; i < 5; i++) pulse(CARDS[i].el, t, ARRIVE[i]);
+    // stopwatch: the arc sweeps fast, twice
+    const sw = (t * 0.9) % 1, wk = pr(t, 0.4, 4.0) > 0 ? 1 : 0;
+    $('warc').setAttribute('stroke-dashoffset', 603 * (1 - (t > 0.4 ? sw : 0)));
+    $('whand').setAttribute('transform', `rotate(${t > 0.4 ? sw * 360 : 0} 110 140)`);
+    // wires and packets
+    TRAVEL.forEach(([w, d0, p0, p1]) => {
+      const W = WIRES[w];
+      W.tr.style.strokeDashoffset = W.len * (1 - E('power2.inOut')(pr(t, d0, d0 + 0.6)));
+      W.lit.style.strokeDashoffset = W.len * (1 - E('power2.inOut')(pr(t, p0, p1)));
+      const k = E('power2.inOut')(pr(t, p0, p1)), on = t > p0 && t < p1 + 0.15;
+      W.pk.forEach((cc, i) => { const L = Math.max(0, k * W.len - i * 36); const pt = W.tr.getPointAtLength(L); cc.setAttribute('cx', pt.x); cc.setAttribute('cy', pt.y); cc.style.display = on ? 'block' : 'none'; });
+    });
+    // after the overview, small packets keep flowing on every wire
+    // captions
+    txt($('k0a'), t, 0.05, 2.25, 2.02); txt($('k0b'), t, 2.45, 4.1, 3.85);
+    txt($('k1a'), t, 5.3, 9.3, 9.21); txt($('k1b'), t, 9.45, 11.7, 11.59);
+    txt($('k2a'), t, 13.0, 14.2, 13.92); txt($('k2b'), t, 14.35, 17.3, 17.23);
+    txt($('k3a'), t, 18.6, 23.4, 19.71);
+    const qa = E('power3.out')(pr(t, 19.9, 20.4)), qb = E('power2.in')(pr(t, 23.4, 23.65));
+    $('q1').style.opacity = qa * (1 - qb); $('q1').style.transform = `translateY(${50 * (1 - qa)}px) scale(${0.96 + 0.04 * qa})`;
+    const n1 = Math.floor(Q[0].length * pr(t, 20.2, 21.9)), n2 = Math.floor(Q[1].length * pr(t, 22.3, 23.3));
+    qt.innerHTML = Q[0].slice(0, n1) + (n1 >= Q[0].length ? '<br/>' + Q[1].slice(0, n2) : '') + '<span style="opacity:0">' + (n1 < Q[0].length ? Q[0].slice(n1) + '<br/>' + Q[1] : Q[1].slice(n2)) + '</span>';
+    // C1: GPs land, one is picked; then the slot stretches
+    docEls.forEach((d, i) => { const a = E('back.out(1.6)')(pr(t, 5.9 + i * 0.14, 6.4 + i * 0.14)); d.style.opacity = cl(a * 2); d.style.transform = `translateY(${40 * (1 - a)}px) scale(${0.85 + 0.15 * a})`; });
+    const pk = E('back.out(2)')(pr(t, 7.55, 8.05)); $('pick').style.opacity = cl(pk * 2); $('pick').style.transform = `scale(${0.85 + 0.15 * pk})`;
+    const tk = E('back.out(2.2)')(pr(t, 8.0, 8.4)); $('tick').style.opacity = cl(tk * 2); $('tick').style.transform = `scale(${0.6 + 0.4 * tk})`;
+    const sl = E('power3.out')(pr(t, 9.9, 10.4)), st = E('elastic.out(1,0.6)')(pr(t, 10.55, 11.5));
+    let x = 0; const wds = [150, 150 + 170 * st, 150, 150];
+    slotEls.forEach((el, i) => { el.style.left = x + 'px'; el.style.width = (wds[i] - 16) + 'px'; x += wds[i]; el.style.opacity = cl(sl * 2 - i * 0.2); el.style.transform = `translateY(${30 * (1 - sl)}px)`; });
+    slots.style.transform = `translateX(${-85 * st}px)`;
+    // C2: dots fill and bars grow, row by row
+    rowEls.forEach((r, ri) => {
+      const t0 = 14.6 + ri * 0.75;
+      r.dots.forEach((d, i) => { const on = i < FREQ[ri] && t > t0 + i * 0.09; d.style.background = on ? '#2B7EF9' : '#E4E7EE'; const a = on ? E('back.out(3)')(pr(t, t0 + i * 0.09, t0 + i * 0.09 + 0.3)) : 1; d.style.transform = `scale(${on ? 0.7 + 0.3 * a : 1})`; });
+      r.bar.style.width = (320 * STR[ri] * E('power3.out')(pr(t, t0 + 0.3, t0 + 0.9))) + 'px';
+    });
+    // C3: voice bars move while she speaks
+    bars.forEach((b, i) => { const talk = (t > 18.6 && t < 23.4) ? 1 : 0.15; const h = 26 + talk * (60 + 50 * Math.sin(t * 9 + i * 1.3) * Math.sin(t * 3.1 + i * 0.7)); b.setAttribute('y', 85 - h / 2); b.setAttribute('height', Math.max(18, h)); });
+    txt($('k4'), t, 23.95, null, 25.92);
+    // recap chips land, then a light sweep runs along them
+    RC.forEach((el, i) => { const a = E('back.out(1.6)')(pr(t, 24.7 + i * 0.3, 25.2 + i * 0.3)); el.style.opacity = cl(a * 2); el.style.transform = `translateY(${40 * (1 - a)}px)`;
+      const sw = t - (26.0 + i * 0.55), on = sw > 0 && sw < 0.7 ? Math.sin(Math.PI * sw / 0.7) : 0;
+      el.style.background = `rgb(${lerp(244, 43, on)},${lerp(246, 126, on)},${lerp(250, 249, on)})`; el.style.color = on > 0.5 ? '#FFFFFF' : '#14213D'; });
+    const fin = t - 27.7, fo = fin > 0 && fin < 0.8 ? Math.sin(Math.PI * fin / 0.8) : 0; $('c4').style.boxShadow += `, 0 0 0 ${10 * fo}px rgba(43,126,249,${0.3 * fo})`;
+  }, { loop: false });
+})();
+</script>
+</body>
+</html>
