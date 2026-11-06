@@ -13,3 +13,10 @@ work/**/*.png
 work/**/*.jpg
 work/**/*.webm
 work/**/renders/
+work/30days/**/proj/media/
+work/30days/**/out/
+work/30days/**/stills/
+work/30days/**/.hyperframes/
+work/kit/sting/out/
+work/kit/sting/proj/stills/
+__pycache__/
