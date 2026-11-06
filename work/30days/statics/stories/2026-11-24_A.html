@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Clari story</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--night:#22103F;--plum:#4A2070;--violet:#7A45B5;--lilac:#C3A8EA;--cream:#FFF8EC;--pink:#F7B6CD;
+--blossom:#E8628F;--rose:#B83A68;--gold:#FFEFC9;--paper:#FBF6EE;--ink:#241A33;--deep:#2A1548}
+html,body{margin:0;padding:0;overflow:hidden;background:#22103F}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+#art,#svg{position:absolute;left:0;top:0}
+.cell{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column}
+.cell>*{flex-shrink:0}
+.abs{position:absolute}
+.h{font-family:'Fraunces',serif;font-weight:700;font-variation-settings:"opsz" 144;letter-spacing:-0.012em;word-spacing:0.05em;line-height:1.04;margin:0;color:var(--cream)}
+.h em{font-style:italic;font-weight:600;color:var(--pink);letter-spacing:-0.01em}
+.light .h{color:var(--ink)} .light .h em{color:var(--rose)}
+.s{font-family:'Figtree',sans-serif;font-weight:700;color:var(--cream);margin:0;line-height:1.25}
+.light .s{color:var(--ink)}
+.lab{font-family:'Figtree',sans-serif;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.hand{font-family:'Caveat',cursive;font-weight:700;line-height:1.05}
+.chrome-mark{position:absolute;height:86px}
+.counter{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:42px;letter-spacing:.04em;color:var(--cream);opacity:.9;line-height:86px;font-variant-numeric:tabular-nums}
+.src{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:44px;color:var(--cream);opacity:.92;line-height:1.15;margin:0}
+.light .counter,.light .src{color:var(--ink)}
+.lock{position:absolute}
+
+html,body{width:1080px;height:1920px;background:#22103F}
+</style></head>
+<body class="dark"><div id="stage" style="width:1080px;height:1920px">
+<canvas id="art" width="1080" height="1920"></canvas>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <radialGradient id="glowW"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset=".35" stop-color="#F9C9D8" stop-opacity=".35"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowP"><stop offset="0" stop-color="#F9C9D8" stop-opacity=".55"/><stop offset=".5" stop-color="#F9C9D8" stop-opacity=".16"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowHot"><stop offset="0" stop-color="#FFF3D6" stop-opacity="1"/><stop offset=".18" stop-color="#FFD9A8" stop-opacity=".75"/><stop offset=".45" stop-color="#F59AB8" stop-opacity=".28"/><stop offset="1" stop-color="#E8628F" stop-opacity="0"/></radialGradient>
+ <radialGradient id="moonG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".55" stop-color="#FFEFC9"/><stop offset="1" stop-color="#F5C99E"/></radialGradient>
+ <linearGradient id="petalG" x1="0" y1="-46" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF0F5"/><stop offset="1" stop-color="#F28DB2"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#10042A" flood-opacity=".35"/></filter>
+ <filter id="softS" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#10042A" flood-opacity=".28"/></filter>
+</defs></svg>
+<canvas id="art2" width="1080" height="1920" style="position:absolute;left:0;top:0"></canvas>
+<div class="cell" style="left:0;width:1080px;height:1920px;padding:370px 170px 0 88px">
+        <p class="lab" style="font-size:50px;color:var(--pink);letter-spacing:.18em">From the app</p>
+        <h2 class="h" style="font-size:110px;margin-top:34px">Your week, as <em>moons.</em> One for every day you log.</h2></div><div class="abs" style="left:330px;top:830px"><div style="width:503px;height:1052px;border-radius:92px;background:#16101F;box-shadow:0 37px 94px rgba(16,4,40,.45), inset 0 0 0 1.9px rgba(255,255,255,.14);transform:rotate(4deg);box-sizing:border-box;padding:16.5px;"><img src="../assets/home.png" style="display:block;width:470px;height:1019px;border-radius:75px"></div></div><svg class="abs" style="left:0;top:0" width="1080" height="1920" viewBox="0 0 1080 1920"><path fill="#4A2180" opacity="0.95" d="M0,1920 L0,1588.3 L40,1582.2 L80,1575.0 L120,1567.9 L160,1561.9 L200,1557.8 L240,1555.9 L280,1556.1 L320,1558.1 L360,1561.0 L400,1564.3 L440,1567.3 L480,1569.8 L520,1571.9 L560,1574.1 L600,1576.8 L640,1580.5 L680,1585.4 L720,1591.5 L760,1598.3 L800,1604.9 L840,1610.4 L880,1614.0 L920,1615.2 L960,1614.1 L1000,1610.8 L1040,1606.4 L1080,1601.8 L1120,1598.0 L1080,1920 Z"/><path fill="#1C0B36" opacity="1" d="M0,1920 L0,1674.0 L40,1672.8 L80,1673.0 L120,1674.2 L160,1676.2 L200,1678.3 L240,1680.1 L280,1681.1 L320,1681.2 L360,1680.3 L400,1678.7 L440,1676.7 L480,1674.7 L520,1673.1 L560,1671.9 L600,1671.3 L640,1671.0 L680,1670.7 L720,1670.0 L760,1668.5 L800,1665.9 L840,1662.3 L880,1657.8 L920,1652.9 L960,1648.2 L1000,1644.2 L1040,1641.5 L1080,1640.4 L1120,1641.0 L1080,1920 Z"/></svg><img class="chrome-mark" src="../assets/mark.png" style="left:88px;top:230px">
+</div>
+<script src="../assets/clari-art.js"></script>
+<script>
+const W=1080, H=1920, N=1, PW=1080;
+const c=document.getElementById('art').getContext('2d'); const c2=document.getElementById('art2').getContext('2d');
+const IM={};
+function loadAll(list){return Promise.all(list.map(n=>new Promise(r=>{const i=new Image();i.onload=()=>r();i.onerror=()=>r();i.src='../assets/'+n;IM[n]=i;})));}
+function show(i){document.getElementById('stage').style.transform='translateX('+(-i*W)+'px)';}
+function draw(){const g=c.createLinearGradient(0,0,0,H); const s=['#150929','#391766','#7742AE','#C47CBD','#F7B9CB']; [0,.36,.66,.86,1].forEach((p,k)=>g.addColorStop(p,s[k])); c.fillStyle=g; c.fillRect(0,0,W,H);CLARI.stars(c,W,H,0.5,{seed:40,n:220,bottom:0.8,alpha:0.8,sparkles:8});CLARI.moon(c, 190, 1080, 120, {glow:1});CLARI.branch(c2, -20, 1370, 2.6, false, 0, {});}
+Promise.all([document.fonts.ready, loadAll([])]).then(()=>{ if(typeof draw==='function') draw(); show(0); window.__ready=true; });
+</script></body></html>

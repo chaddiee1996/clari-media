@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<style>
+  :root { --night: #22103F; --cream: #FFF8EC; --pink: #F7B6CD; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  .abs { position: absolute; }
+  #c { left: 0; top: 0; width: 1080px; height: 1920px; }
+  .blk { position: absolute; right: 150px; bottom: 990px; text-align: right; font-family: 'Fraunces', serif; font-weight: 700;
+    font-size: 112px; line-height: 128px; color: var(--cream); letter-spacing: -0.015em; white-space: nowrap;
+    font-variation-settings: "opsz" 144; text-shadow: 0 6px 30px rgba(16, 4, 40, .5); }
+  .blk i { font-style: italic; font-weight: 600; color: var(--pink); }
+  .w { display: inline-block; will-change: transform, opacity; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="17.9" data-width="1080" data-height="1920">
+  <canvas id="c" class="abs" width="1080" height="1920"></canvas>
+  <div class="blk" id="L1" data-out="3.3">
+    <span class="w" data-t="0.0">Your</span> <span class="w" data-t="0.24">symptoms</span><br>
+    <span class="w" data-t="0.7">are</span> <span class="w" data-t="1.04">nobody's</span><br>
+    <span class="w" data-t="1.72">business</span> <span class="w" data-t="2.04">but</span><br>
+    <span class="w" data-t="2.38"><i>yours</i>.</span></div>
+  <div class="blk" id="L2" data-out="6.72">
+    <span class="w" data-t="4.78">Your</span> <span class="w" data-t="5.0">symptom</span><br>
+    <span class="w" data-t="5.28">data</span> <span class="w" data-t="5.5">stays</span> <span class="w" data-t="5.66">on</span><br>
+    <span class="w" data-t="5.96">your</span> <span class="w" data-t="6.12">phone.</span></div>
+  <div class="blk" id="L3" data-out="8.7">
+    <span class="w" data-t="6.98">No</span> <span class="w" data-t="7.24">account</span><br>
+    <span class="w" data-t="7.54">needed</span> <span class="w" data-t="7.84">to</span> <span class="w" data-t="8.06">start.</span></div>
+  <div class="blk" id="L4" data-out="11.15">
+    <span class="w" data-t="8.94">You</span> <span class="w" data-t="9.18">decide</span> <span class="w" data-t="9.54">what</span><br>
+    <span class="w" data-t="9.76">to</span> <span class="w" data-t="9.94">share,</span><br>
+    <span class="w" data-t="10.22">and</span> <span class="w" data-t="10.62">when.</span></div>
+  <div class="blk" id="L5" data-out="14.85">
+    <span class="w" data-t="11.6">A</span> <span class="w" data-t="11.76">summary</span><br>
+    <span class="w" data-t="11.98">for</span> <span class="w" data-t="12.28">your</span> <span class="w" data-t="12.42">GP,</span><br>
+    <span class="w" data-t="13.36">from</span> <span class="w" data-t="13.62">your</span><br>
+    <span class="w" data-t="13.74">own</span> <span class="w" data-t="14.04">notes.</span></div>
+  <div class="blk" id="L6" style="font-size:132px;line-height:146px">
+    <span class="w" data-t="15.18">Private,</span><br>
+    <span class="w" data-t="15.58">by</span> <span class="w" data-t="16.22">design.</span></div>
+</div>
+<script>
+const S = STUDIO, C = CLARI, W = 1080, H = 1920, TAU = Math.PI * 2, D = 17.9;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+const home = C.loadImg('media/home.png'), summ = C.loadImg('media/summary.png');
+const WORDS = [...document.querySelectorAll('.w')].map(el => ({ el, t: +el.dataset.t }));
+const BLKS = [...document.querySelectorAll('.blk')].map(el => ({ el, out: +el.dataset.out || 0 }));
+const T_LOCK = 14.9;
+const mk = (w, h) => { const k = document.createElement('canvas'); k.width = w; k.height = h; return k; };
+const sky = mk(W, 2300); let built = false;
+function ridge(k, y, amp, ph, col, W2) {
+  k.fillStyle = col; k.beginPath(); k.moveTo(-20, y + 900);
+  for (let x = -20; x <= W2 + 20; x += 12) k.lineTo(x, y - amp * (0.6 * Math.sin(x * 0.0042 + ph) + 0.4 * Math.sin(x * 0.0097 + ph * 1.7)));
+  k.lineTo(W2 + 20, y + 900); k.closePath(); k.fill();
+}
+function phoneDraw(x, y, w, rot, slide, glowA) {
+  const h = w * 2796 / 1290, bez = w * 0.035, R = w * 0.16;
+  c.save(); c.translate(x, y); c.rotate(rot);
+  c.shadowColor = 'rgba(16,4,40,0.6)'; c.shadowBlur = w * 0.25; c.shadowOffsetY = w * 0.1;
+  c.fillStyle = '#16101F'; C.rr(c, -w / 2 - bez, -h / 2 - bez, w + bez * 2, h + bez * 2, R + bez); c.fill(); c.shadowColor = 'transparent';
+  c.save(); C.rr(c, -w / 2, -h / 2, w, h, R); c.clip();
+  if (home.complete && home.naturalWidth) c.drawImage(home, -w / 2, -h / 2, w, h);
+  if (slide > 0 && summ.complete && summ.naturalWidth) { c.fillStyle = `rgba(16,4,40,${0.4 * slide})`; c.fillRect(-w / 2, -h / 2, w, h); c.drawImage(summ, -w / 2, -h / 2 + (1 - slide) * h, w, h); }
+  // a soft ripple when a word settles in
+  if (glowA > 0.01) { const g = c.createRadialGradient(0, 0, 10, 0, 0, w * 0.9); g.addColorStop(0, `rgba(247,182,205,${0.35 * glowA})`); g.addColorStop(1, 'rgba(247,182,205,0)'); c.fillStyle = g; c.fillRect(-w / 2, -h / 2, w, h); }
+  c.restore();
+  c.strokeStyle = 'rgba(255,255,255,0.16)'; c.lineWidth = 2; C.rr(c, -w / 2 - bez * 0.5, -h / 2 - bez * 0.5, w + bez, h + bez, R + bez * 0.5); c.stroke();
+  c.restore();
+}
+const SYM = ['Hot flushes', 'Brain fog', 'Low mood', 'Night sweats'];
+const PET = SYM.map((s, i) => { const r = S.rng(30 + i); return { s, t0: 3.7 + i * 0.55, x0: 1180 + r() * 120, y0: 1120 + i * 150 + r() * 60, arc: 140 + r() * 160, ph: r() * TAU }; });
+const FLY = 1.55;
+function render(t) {
+  if (!built) { C.sky(sky.getContext('2d'), 'night', W, 2300, { glowX: 260, glowY: 420, glowR: 800, glow: 0.18 }); built = true; }
+  const camY = -80 + 140 * S.seg(t, 0, D, 'sine.inOut');
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  c.drawImage(sky, 0, -200 - camY * 0.1);
+  C.stars(c, W, 1300, t, { seed: 21, n: 150, top: 0.0, bottom: 1, alpha: 0.9, sparkles: 6 });
+  // the Clari crescent: moon in the sky, then it swings down and closes round the phone
+  const lk = S.seg(t, T_LOCK, 1.25, 'expo.inOut');
+  const mr = S.mix(84, 430, S.seg(t, T_LOCK, 1.25, 'power3.inOut'));
+  const mx = S.mix(190, 372, lk), my = S.mix(330 - camY * 0.12, 1345 + 0.47 * 430, lk);
+  const mrot = S.mix(0, -0.95, lk) + 1.6 * Math.sin(Math.PI * lk) * (1 - lk);
+  if (lk < 0.999) { c.save(); c.translate(mx, my); c.rotate(mrot); C.moon(c, 0, 0, mr, { glow: 1 - 0.4 * lk }); c.restore(); }
+  // ridge (the horizon the headlines sit on) + nearer hills
+  ridge(c, 1060 - camY * 0.3, 46, 0.8, '#3B1A66', W);
+  ridge(c, 1250 - camY * 0.6, 70, 2.6, '#2A1248', W);
+  C.branch(c, 1120, 70 - camY * 0.2, 2.1, true, t, { blossoms: 7 });
+  // phone rises from behind the near hills and floats
+  const rise = S.seg(t, 2.9, 1.4, 'expo.out');
+  const fl = 10 * Math.sin(t * 1.3);
+  const px = 372, py = S.mix(2300, 1345, rise) + fl - camY * 0.0, pw = 360, prot = -0.07 + 0.015 * Math.sin(t * 0.9);
+  // ripples when petals land
+  let glowA = 0; PET.forEach(p => { const a = t - (p.t0 + FLY); if (a > 0) glowA += Math.exp(-a * 3.5) * Math.min(1, a * 10); });
+  const slide = S.seg(t, 11.45, 0.75, 'expo.out');
+  // crescent behind the phone once it has come down (drawn here so the phone sits in its hollow)
+  if (lk >= 0.999 || lk > 0.5) { c.save(); c.translate(mx, my); c.rotate(mrot); C.moon(c, 0, 0, mr, { glow: 0.6 }); c.restore(); }
+  if (rise > 0) phoneDraw(px, py, pw, prot, slide, Math.min(1, glowA));
+  // symptom words ride in on petals and settle into the screen
+  PET.forEach((p, i) => {
+    const a = (t - p.t0) / FLY; if (a < 0 || a > 1) return;
+    const e = S.ease('power2.inOut')(a);
+    const tx = px + 10, ty = py - 60 + i * 40;
+    const x = S.mix(p.x0, tx, e), y = S.mix(p.y0, ty, e) - Math.sin(e * Math.PI) * p.arc;
+    const sc = S.mix(1, 0.35, S.ease('power3.in')(a)), al = 1 - S.seg(a, 0.82, 0.18, 'power2.in');
+    c.save(); c.globalAlpha = al; c.translate(x, y); c.scale(sc, sc);
+    C.petal(c, -10, 30, 2.4, -0.6 + 0.5 * Math.sin(t * 3 + p.ph), 1);
+    c.font = "700 50px 'Figtree', sans-serif"; const tw = c.measureText(p.s).width;
+    c.fillStyle = 'rgba(74,32,112,0.88)'; C.rr(c, 30, -40, tw + 56, 78, 39); c.fill();
+    c.strokeStyle = 'rgba(247,182,205,0.6)'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#FFF8EC'; c.textBaseline = 'middle'; c.fillText(p.s, 58, 0);
+    c.restore();
+  });
+  // foreground hills edge for depth
+  c.fillStyle = 'rgba(18,7,35,0.9)'; c.beginPath(); c.moveTo(-20, H); c.lineTo(-20, 1820 - camY * 1.1); c.bezierCurveTo(300, 1760 - camY * 1.1, 700, 1850 - camY * 1.1, 1100, 1780 - camY * 1.1); c.lineTo(1100, H); c.fill();
+  // words
+  WORDS.forEach(({ el, t: wt }) => { const p = S.seg(t, wt - 0.05, 0.36, 'power3.out'); el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 46}px)`; });
+  BLKS.forEach(({ el, out }) => { const o = out ? S.seg(t, out, 0.32, 'power3.in') : 0; el.style.opacity = 1 - o; el.style.transform = `translateY(${-o * 70}px)`; });
+}
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = S.play(render, { loop: false });
+</script>
+</body>
+</html>

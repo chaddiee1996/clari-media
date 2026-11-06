@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<style>
+  :root { --night: #22103F; --cream: #FFF8EC; --pink: #F7B6CD; --ink: #241A33; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  .abs { position: absolute; }
+  #c { left: 0; top: 0; width: 1080px; height: 1920px; }
+  .mask { position: absolute; left: 0; width: 1080px; overflow: hidden; text-align: center; }
+  .ln { display: inline-block; font-family: 'Fraunces', serif; font-weight: 700; color: var(--cream);
+    font-variation-settings: "opsz" 144; letter-spacing: -0.015em; white-space: nowrap;
+    text-shadow: 0 6px 30px rgba(16, 4, 40, .45); will-change: transform; }
+  .ln i { font-style: italic; font-weight: 600; color: var(--pink); }
+  #warm { position: absolute; left: -9999px; top: 0; opacity: 0; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="23.1" data-width="1080" data-height="1920">
+  <canvas id="c" class="abs" width="1080" height="1920"></canvas>
+  <div class="mask" id="m1" style="top:330px;height:170px"><div class="ln" id="t1" style="font-size:132px;line-height:170px">You're not</div></div>
+  <div class="mask" id="m2" style="top:490px;height:180px"><div class="ln" id="t2" style="font-size:132px;line-height:170px"><i>imagining</i> it.</div></div>
+  <div class="mask" id="m3" style="top:330px;height:170px"><div class="ln" id="t3" style="font-size:118px;line-height:160px">Keep the receipt.</div></div>
+  <div class="mask" id="m4" style="top:490px;height:180px"><div class="ln" id="t4" style="font-size:118px;line-height:160px">Write it down.</div></div>
+  <div id="warm"><span style="font-family:Figtree;font-weight:800">A</span><span style="font-family:Figtree;font-weight:700">A</span><span style="font-family:Fraunces;font-weight:700">A</span><span style="font-family:Fraunces;font-weight:600;font-style:italic">A</span></div>
+</div>
+<script>
+const S = STUDIO, C = CLARI, W = 1080, H = 1920, TAU = Math.PI * 2, B = 60 / 82;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+const markPlum = C.loadImg('media/mark-plum.png');
+['800 60px Figtree', '700 44px Figtree', '700 112px Fraunces', '600 italic 112px Fraunces'].forEach(f => { try { document.fonts.load(f); } catch (e) {} });
+const INK = '#241A33', PAPER0 = '#FFFBF3', PAPER1 = '#F3EADB';
+const T_TEAR = 22.5 * B, D = 23.1;
+
+// ---------------- receipt rows (receipt-local px; width RW) ----------------
+const RW = 820, X0 = 62, X1 = RW - 62, LMAX = 3000;
+const rows = []; let cursor = 0;
+function row(t, h, paint) { rows.push({ t, h, y: cursor, paint }); cursor += h; }
+function wrap(text, font, maxW) {
+  c.font = font; const words = text.split(' '); const out = []; let cur = '';
+  words.forEach(w => { const tryL = cur ? cur + ' ' + w : w; if (c.measureText(tryL).width > maxW && cur) { out.push(cur); cur = w; } else cur = tryL; });
+  if (cur) out.push(cur); return out;
+}
+const F_ITEM = "800 60px 'Figtree', sans-serif";
+function itemLine(k, text, align, extra) {
+  return (k) => { k.font = F_ITEM; k.fillStyle = INK; k.textBaseline = 'alphabetic';
+    if (k.letterSpacing !== undefined) k.letterSpacing = '1px';
+    k.textAlign = align; k.fillText(text, align === 'right' ? X1 : X0, 56); };
+}
+const ITEMS = [
+  ['UNEXPECTED ITEM IN BAGGING AREA.', 'FOURTH TIME.'],
+  ['A RAGE I DIDN\'T', 'RECOGNISE.', 'left'],
+  ['CRIED AT AN ADVERT.', 'ABOUT GRAVY.'],
+  ['SNAPPED. SAID SORRY.', 'SNAPPED AGAIN.'],
+  ['LAY AWAKE.', 'WORRIED ABOUT EVERYTHING.'],
+];
+let built = false;
+function build() {
+  rows.length = 0; cursor = 0;
+  // header: stub (visible at t = 0) + Clari mark, then TODAY, then a dotted rule
+  row(-1, 60, k => {});
+  row(0.12, 170, k => { if (markPlum.complete && markPlum.naturalWidth) { const w = 150, h = w * markPlum.naturalHeight / markPlum.naturalWidth; k.drawImage(markPlum, RW / 2 - w / 2, 160 - h - 6, w, h); } });
+  row(0.34, 186, k => { k.font = "800 150px 'Figtree', sans-serif"; if (k.letterSpacing !== undefined) k.letterSpacing = '20px'; k.fillStyle = INK; k.textAlign = 'center'; k.fillText('TODAY', RW / 2 + 10, 150); });
+  row(0.56, 64, k => dots(k, 30));
+  ITEMS.forEach(([a, b, mode], i) => {
+    const t0 = 1.5 * B + 3 * B * i;
+    const la = wrap(a, F_ITEM, X1 - X0);
+    la.forEach((ln, j) => row(t0 + j * 0.15, 72, itemLine(0, ln, 'left')));
+    const lb = wrap(b, F_ITEM, X1 - X0);
+    lb.forEach((ln, j) => row(t0 + 1.5 * B + j * 0.15, 72, itemLine(0, ln, mode === 'left' ? 'left' : 'right')));
+    row(t0 + 1.5 * B + 0.12, i === ITEMS.length - 1 ? 30 : 44, k => {});
+  });
+  // total block
+  row(16.5 * B, 132, k => { dbl(k, 26); k.font = F_ITEM; k.fillStyle = INK; k.textAlign = 'left'; if (k.letterSpacing !== undefined) k.letterSpacing = '6px'; k.fillText('TOTAL', X0, 118); });
+  ['Mood swings,', 'low mood,', 'anxiety.'].forEach((s, i) => row((17 + 0.5 * i) * B, 124, k => {
+    k.font = "700 116px 'Fraunces', serif"; k.fillStyle = INK; k.textAlign = 'right'; k.fillText(s, X1, 100); }));
+  row(18.2 * B, 56, k => dots(k, 30));
+  row(19.5 * B, 92, k => { k.font = F_ITEM; k.fillStyle = INK; k.textAlign = 'center'; if (k.letterSpacing !== undefined) k.letterSpacing = '2px'; k.fillText('ALL ON THE NHS LIST.', RW / 2, 66); });
+  row(20 * B, 78, k => { k.font = "700 46px 'Figtree', sans-serif"; k.fillStyle = '#5F556B'; k.textAlign = 'center'; k.fillText('Source: NHS', RW / 2, 50); });
+  row(20.5 * B, 190, k => barcode(k, 30));
+  rows.forEach(r => {
+    r.img = document.createElement('canvas'); r.img.width = RW; r.img.height = Math.max(1, r.h);
+    const k = r.img.getContext('2d'); r.paint(k);
+  });
+  built = true;
+}
+function dots(k, y) { k.fillStyle = INK; for (let x = X0; x < X1; x += 22) k.fillRect(x, y, 11, 4); }
+function dbl(k, y) { k.fillStyle = INK; k.fillRect(X0, y, X1 - X0, 5); k.fillRect(X0, y + 12, X1 - X0, 5); }
+function barcode(k, y) {
+  const r = S.rng(77); let x = X0 + 90; k.fillStyle = INK;
+  while (x < X1 - 90) { const w = 3 + Math.floor(r() * 4) * 3; if (r() > 0.38) k.fillRect(x, y, w, 120); x += w + 3 + Math.floor(r() * 3) * 2; }
+}
+const ROWT = () => rows;
+function edgeAt(t) {
+  let e = 0; for (const r of rows) e += r.h * (r.t < 0 ? 1 : S.seg(t, r.t, 0.34, 'expo.out')); return e;
+}
+
+// ---------------- physics precompute: camera spring + paper sway ----------------
+const FPS = 30, NF = Math.ceil(D * FPS) + 2;
+let CAM = null, SWAY = null;
+function simulate() {
+  CAM = new Float32Array(NF); SWAY = new Float32Array(NF);
+  let x = 0, v = 0, a = 0, av = 0, prevE = edgeAt(0);
+  const w = 6.2, z = 0.82, sub = 6, dt = 1 / FPS / sub;
+  for (let f = 0; f < NF; f++) {
+    for (let s = 0; s < sub; s++) {
+      const t = (f + s / sub) / FPS;
+      const e = edgeAt(t), target = Math.max(0, 250 + e - 1390);
+      v += (w * w * (target - x) - 2 * z * w * v) * dt; x += v * dt;
+      // paper sway: the feed's speed kicks the pendulum; long paper swings slower
+      const de = (e - prevE) / dt; prevE = e;
+      const L = 250 + e, ww = Math.sqrt(9.8 / Math.max(0.6, L / 900)) * 1.4;
+      av += (-ww * ww * a - 1.1 * av + de * 0.000012) * dt; a += av * dt;
+    }
+    CAM[f] = x; SWAY[f] = a;
+  }
+}
+const fr = t => Math.max(0, Math.min(NF - 1, Math.round(t * FPS)));
+
+// ---------------- background layers (prebuilt) ----------------
+const sky = document.createElement('canvas'); sky.width = W; sky.height = 2600;
+const town = document.createElement('canvas'); town.width = 1500; town.height = 900;
+const shelfL = document.createElement('canvas'); shelfL.width = 300; shelfL.height = 1840;
+const shelfR = document.createElement('canvas'); shelfR.width = 300; shelfR.height = 1840;
+const rcv = document.createElement('canvas'); rcv.width = RW; rcv.height = LMAX; const rk = rcv.getContext('2d');
+function buildBG() {
+  const k = sky.getContext('2d');
+  C.sky(k, 'evening', W, 2600, { glowX: 800, glowY: 1020, glowR: 900, glow: 0.18 });
+  // town: rooftops with chimneys and a few lit windows (evening, closing time)
+  const t = town.getContext('2d'), r = S.rng(9);
+  const g = t.createLinearGradient(0, 0, 0, 900); g.addColorStop(0, '#3A1A63'); g.addColorStop(1, '#1E0E38');
+  t.fillStyle = g; let x = -20;
+  while (x < 1500) {
+    const w = 140 + r() * 160, h = 150 + r() * 160, roof = r();
+    t.beginPath(); t.moveTo(x, 900); t.lineTo(x, 340 - h);
+    if (roof > 0.45) { t.lineTo(x + w / 2, 340 - h - 70 - r() * 40); t.lineTo(x + w, 340 - h); }
+    else t.lineTo(x + w, 340 - h);
+    t.lineTo(x + w, 900); t.closePath(); t.fill();
+    if (r() > 0.4) { t.fillRect(x + w * 0.7, 340 - h - 90, 26, 80); }
+    for (let wy = 340 - h + 40; wy < 800; wy += 74) for (let wx = x + 24; wx < x + w - 40; wx += 56)
+      if (r() > 0.8) { t.fillStyle = `rgba(255,226,154,${0.35 + r() * 0.35})`; C.rr(t, wx, wy, 26, 34, 5); t.fill(); t.fillStyle = g; }
+    x += w - 2;
+  }
+  [shelfL, shelfR].forEach((cvs, side) => {
+    const k = cvs.getContext('2d'), r = S.rng(31 + side);
+    const off = document.createElement('canvas'); off.width = 300; off.height = 1840; const o = off.getContext('2d');
+    const gg = o.createLinearGradient(side ? 0 : 300, 0, side ? 300 : 0, 0); gg.addColorStop(0, '#3B1D64'); gg.addColorStop(1, '#1C0C33');
+    o.fillStyle = gg; o.fillRect(0, 0, 300, 1840);
+    const cols = ['#C3A8EA', '#F7B6CD', '#E8628F', '#FFF8EC', '#7A45B5', '#FFE29A', '#B89AD8'];
+    for (let sy = 40; sy < 1840; sy += 230) {
+      let px = 18;
+      while (px < 270) { const w = 34 + r() * 46, h = 70 + r() * 90; const col = cols[Math.floor(r() * cols.length)];
+        o.globalAlpha = 0.55; o.fillStyle = col; C.rr(o, px, sy + 180 - h, w, h, 8); o.fill();
+        o.globalAlpha = 0.25; o.fillStyle = '#FFFFFF'; o.fillRect(px + 6, sy + 186 - h, 5, h - 20); px += w + 8; }
+      o.globalAlpha = 1; o.fillStyle = '#5B3590'; o.fillRect(0, sy + 180, 300, 16); o.fillStyle = '#26123F'; o.fillRect(0, sy + 196, 300, 10);
+    }
+    k.filter = 'blur(3px)'; k.drawImage(off, 0, 0); k.filter = 'none';
+  });
+}
+
+function drawPrinter(k, y) {
+  // till printer hanging above the receipt (world y = its slot)
+  k.save(); k.translate(540, y);
+  k.shadowColor = 'rgba(16,4,40,0.5)'; k.shadowBlur = 60; k.shadowOffsetY = 26;
+  const g = k.createLinearGradient(0, -330, 0, 0); g.addColorStop(0, '#4D2780'); g.addColorStop(1, '#2A1548');
+  k.fillStyle = g; C.rr(k, -480, -330, 960, 340, 44); k.fill(); k.shadowColor = 'transparent';
+  const g2 = k.createLinearGradient(0, -120, 0, 0); g2.addColorStop(0, 'rgba(255,255,255,0.0)'); g2.addColorStop(1, 'rgba(255,255,255,0.06)');
+  k.fillStyle = g2; C.rr(k, -480, -120, 960, 130, 44); k.fill();
+  k.fillStyle = 'rgba(195,168,234,0.35)'; k.fillRect(-440, -112, 880, 3);
+  k.fillStyle = '#12071F'; C.rr(k, -440, -26, 880, 20, 10); k.fill();
+  k.fillStyle = 'rgba(255,255,255,0.12)'; k.fillRect(-430, -4, 860, 3);
+  // speaker grille + status light
+  k.fillStyle = 'rgba(16,4,40,0.55)';
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) { k.beginPath(); k.arc(300 + i * 22, -78 + j * 20 - 0, 5, 0, TAU); k.fill(); }
+  k.fillStyle = '#FFE29A'; k.beginPath(); k.arc(-400, -76, 9, 0, TAU); k.fill();
+  k.restore();
+}
+
+function composeReceipt(t, len, torn) {
+  rk.clearRect(0, 0, RW, LMAX);
+  const g = rk.createLinearGradient(0, 0, RW, 0);
+  g.addColorStop(0, PAPER1); g.addColorStop(0.12, PAPER0); g.addColorStop(0.85, PAPER0); g.addColorStop(1, PAPER1);
+  rk.fillStyle = g; rk.fillRect(0, 0, RW, len);
+  for (const r of rows) {
+    if (r.y > len) break;
+    const ink = r.t < 0 ? 1 : 0.25 + 0.75 * S.seg(t, r.t + 0.04, 0.22, 'power2.out');
+    rk.globalAlpha = ink; rk.drawImage(r.img, 0, r.y); rk.globalAlpha = 1;
+  }
+  // printer shadow on the paper near the slot
+  if (!torn) { const sg = rk.createLinearGradient(0, 0, 0, 70); sg.addColorStop(0, 'rgba(36,26,51,0.28)'); sg.addColorStop(1, 'rgba(36,26,51,0)'); rk.fillStyle = sg; rk.fillRect(0, 0, RW, 70); }
+  rk.clearRect(0, len, RW, LMAX - len);
+  if (torn) { // jagged torn top
+    rk.save(); rk.globalCompositeOperation = 'destination-out'; rk.beginPath(); rk.moveTo(0, 0);
+    const r = S.rng(5); for (let x = 0; x <= RW; x += 20) rk.lineTo(x, 4 + r() * 16); rk.lineTo(RW, 0); rk.closePath(); rk.fill(); rk.restore();
+  }
+}
+// draw the receipt as thin strips so it can bend and curl like long thermal paper
+function drawReceipt(k, t, len, ax, ay, rot, sc, curlAmt) {
+  k.save(); k.translate(ax, ay); k.rotate(rot); k.scale(sc, sc);
+  const st = 6, strips = [];
+  for (let y = 0; y < len; y += st) {
+    const f = Math.min(1, y / 700);
+    const xo = curlAmt * (12 * Math.sin(y / 520 + t * 0.7) * f + 6 * Math.sin(y / 230 - t * 1.1) * f);
+    const ws = 1 - curlAmt * 0.04 * (0.5 + 0.5 * Math.sin(y / 430 - t * 0.5 + 1)) * f;
+    strips.push([y, xo, ws]);
+  }
+  // soft shadow on the glass behind
+  k.save(); k.shadowColor = 'rgba(16,4,40,0.42)'; k.shadowBlur = 46; k.shadowOffsetX = 22; k.shadowOffsetY = 30; k.fillStyle = 'rgba(16,4,40,0.35)';
+  k.beginPath(); strips.forEach(([y, xo, ws], i) => { const x = -RW * ws / 2 + xo; i ? k.lineTo(x, y) : k.moveTo(x, y); });
+  for (let i = strips.length - 1; i >= 0; i--) { const [y, xo, ws] = strips[i]; k.lineTo(RW * ws / 2 + xo, y + st); }
+  k.closePath(); k.fill(); k.restore();
+  strips.forEach(([y, xo, ws]) => {
+    const h = Math.min(st, len - y); if (h <= 0) return;
+    k.drawImage(rcv, 0, y, RW, h, -RW * ws / 2 + xo, y, RW * ws, h + 0.6);
+    const sh = curlAmt * Math.max(0, Math.cos(y / 430 - t * 0.5 + 1)) * 0.07 * Math.min(1, y / 700);
+    if (sh > 0.004) { k.fillStyle = `rgba(74,32,112,${sh})`; k.fillRect(-RW * ws / 2 + xo, y, RW * ws, h + 0.6); }
+  });
+  // leading-edge curl: the paper lifts towards us
+  const [ly, lxo, lws] = strips[strips.length - 1] || [0, 0, 1];
+  const lg = k.createLinearGradient(0, len - 4, 0, len + 26);
+  lg.addColorStop(0, '#E9DDC8'); lg.addColorStop(0.6, '#FFF8EC'); lg.addColorStop(1, '#D9CBB4');
+  k.fillStyle = lg; k.beginPath(); k.ellipse(lxo, len + 4, RW * lws / 2, 22, 0, 0, Math.PI); k.fill();
+  k.restore();
+}
+
+const PET = Array.from({ length: 12 }, (_, i) => { const r = S.rng(100 + i); return { x: r() * 1200 - 60, y0: -200 - r() * 900, sp: 260 + r() * 220, s: 0.9 + r() * 1.1, ph: r() * TAU, rv: (r() - 0.5) * 2 }; });
+
+function render(t) {
+  if (!built && document.fonts.check("800 60px Figtree") && document.fonts.check("700 112px Fraunces")) { build(); simulate(); }
+  if (!built) { build(); simulate(); built = false; }
+  if (!sky.built) { buildBG(); sky.built = true; }
+  const f = fr(t), camY = CAM[f];
+  const tp = S.seg(t, T_TEAR, 1.6, 'power3.inOut');           // camera pull-back after the tear
+  const pull = 1 - 0.18 * tp;                                   // background scale
+  const L = (fz) => { const s = 1 + (pull - 1) * fz; c.setTransform(s, 0, 0, s, 540 * (1 - s), 960 * (1 - s)); };
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  // sky
+  L(0.3); c.drawImage(sky, 0, -camY * 0.06 - 120);
+  C.stars(c, W, 1200, t, { seed: 4, n: 90, top: 0.02, bottom: 0.9, alpha: 0.8, sparkles: 4 });
+  C.moon(c, 800, 900 - camY * 0.06, 96, { glow: 1 });
+  // town beyond the car park
+  L(0.4); const ty = 1150 - camY * 0.18; c.drawImage(town, -210, ty);
+  c.fillStyle = '#1E0E38'; c.fillRect(-300, ty + 899, W + 600, 2400);
+  // street lamps
+  [[170, 1.0], [930, 0.9]].forEach(([lx, s]) => { c.fillStyle = '#2A1548'; c.fillRect(lx - 5, ty + 120, 10, 330); c.fillStyle = '#FFE29A'; c.globalAlpha = 0.9; C.rr(c, lx - 26, ty + 104, 52, 18, 9); c.fill(); c.globalAlpha = 1; });
+  // shop window frame
+  L(0.6); const wy = -camY * 0.45;
+  c.fillStyle = '#2A1548';
+  for (let k = -1; k < 4; k++) { const y = 760 + k * 1150 + wy; if (y > -60 && y < H + 60) { c.fillRect(-200, y, W + 400, 34); c.fillStyle = 'rgba(195,168,234,0.25)'; c.fillRect(-200, y, W + 400, 3); c.fillStyle = '#2A1548'; } }
+  c.fillRect(526, -400, 28, H + 800);
+  c.fillStyle = 'rgba(255,255,255,0.035)'; c.beginPath(); c.moveTo(620, -200); c.lineTo(760, -200); c.lineTo(300, H + 200); c.lineTo(160, H + 200); c.fill();
+  // shelves (inside the shop), lights go off after the tear
+  L(0.85); const sy = (-camY * 0.75) % 1840;
+  const offs = (S.seg(t, T_TEAR + 1.0, 0.12, 'power2.out') + S.seg(t, T_TEAR + 1.45, 0.12, 'power2.out') + S.seg(t, T_TEAR + 1.9, 0.12, 'power2.out')) / 3;
+  for (let k = 0; k < 3; k++) { c.drawImage(shelfL, -205, sy + k * 1840); c.drawImage(shelfR, 985, sy + k * 1840); }
+  c.fillStyle = `rgba(16,4,40,${0.16 + 0.42 * offs})`; c.fillRect(-200, -200, 295, H + 400); c.fillRect(985, -200, 350, H + 400);
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  // printer + receipt
+  const tearing = t >= T_TEAR;
+  const tug = 34 * S.seg(t, T_TEAR - 0.26, 0.26, 'power2.in');
+  const len = Math.min(LMAX - 40, edgeAt(t));
+  if (!tearing) {
+    composeReceipt(t, len, false);
+    drawReceipt(c, t, len, 540, 250 - camY + tug, SWAY[f], 1, 1);
+  } else {
+    composeReceipt(t, len, true);
+    const p = S.seg(t, T_TEAR, 2.3, 'power3.inOut');
+    const y0 = 250 - camY + tug, y1 = 1150;
+    const ax = S.mix(540, 545, p) + Math.sin(p * Math.PI * 2.0) * 90 * (1 - p);
+    const ay = S.mix(y0, y1, p);
+    const rot = S.mix(0, -0.12, p) + Math.sin(p * Math.PI * 3) * 0.16 * (1 - p) + 0.012 * Math.sin(t * 1.3) * p;
+    const sc = S.mix(1, 0.5, S.seg(t, T_TEAR, 1.7, 'power2.inOut'));
+    drawReceipt(c, t, len, ax, ay + 6 * Math.sin(t * 1.1) * p, rot, sc, 1 + 1.6 * Math.sin(Math.PI * p));
+  }
+  drawPrinter(c, 250 - camY - 6);
+  // petals drift in once the receipt is free
+  if (t > T_TEAR) PET.forEach((q, i) => {
+    const dt = t - T_TEAR - i * 0.12; if (dt <= 0) return;
+    const x = q.x + Math.sin(dt * 1.2 + q.ph) * 60 - dt * 40, y = q.y0 + dt * q.sp + 300;
+    if (y > -80 && y < H + 80) C.petal(c, x, y, q.s * 1.3, q.ph + dt * q.rv, 0.9 * Math.min(1, dt * 2));
+  });
+  // close lines
+  const ln = (el, m, a, b) => { const pin = S.seg(t, a, 0.72, 'expo.out'), pout = b ? S.seg(t, b, 0.36, 'power3.in') : 0;
+    el.style.transform = `translateY(${(1 - pin) * 185 - pout * 185}px)`; m.style.visibility = (pin > 0 && pout < 1) ? 'visible' : 'hidden'; };
+  ln($('t1'), $('m1'), 23.5 * B, 27.1 * B); ln($('t2'), $('m2'), 23.5 * B + 0.09, 27.1 * B + 0.06);
+  ln($('t3'), $('m3'), 27.5 * B, 0); ln($('t4'), $('m4'), 28.5 * B, 0);
+}
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = S.play(render, { loop: false });
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Clari story</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--night:#22103F;--plum:#4A2070;--violet:#7A45B5;--lilac:#C3A8EA;--cream:#FFF8EC;--pink:#F7B6CD;
+--blossom:#E8628F;--rose:#B83A68;--gold:#FFEFC9;--paper:#FBF6EE;--ink:#241A33;--deep:#2A1548}
+html,body{margin:0;padding:0;overflow:hidden;background:#22103F}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+#art,#svg{position:absolute;left:0;top:0}
+.cell{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column}
+.cell>*{flex-shrink:0}
+.abs{position:absolute}
+.h{font-family:'Fraunces',serif;font-weight:700;font-variation-settings:"opsz" 144;letter-spacing:-0.012em;word-spacing:0.05em;line-height:1.04;margin:0;color:var(--cream)}
+.h em{font-style:italic;font-weight:600;color:var(--pink);letter-spacing:-0.01em}
+.light .h{color:var(--ink)} .light .h em{color:var(--rose)}
+.s{font-family:'Figtree',sans-serif;font-weight:700;color:var(--cream);margin:0;line-height:1.25}
+.light .s{color:var(--ink)}
+.lab{font-family:'Figtree',sans-serif;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.hand{font-family:'Caveat',cursive;font-weight:700;line-height:1.05}
+.chrome-mark{position:absolute;height:86px}
+.counter{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:42px;letter-spacing:.04em;color:var(--cream);opacity:.9;line-height:86px;font-variant-numeric:tabular-nums}
+.src{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:44px;color:var(--cream);opacity:.92;line-height:1.15;margin:0}
+.light .counter,.light .src{color:var(--ink)}
+.lock{position:absolute}
+
+html,body{width:1080px;height:1920px;background:#22103F}
+</style></head>
+<body class="dark"><div id="stage" style="width:1080px;height:1920px">
+<canvas id="art" width="1080" height="1920"></canvas>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <radialGradient id="glowW"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset=".35" stop-color="#F9C9D8" stop-opacity=".35"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowP"><stop offset="0" stop-color="#F9C9D8" stop-opacity=".55"/><stop offset=".5" stop-color="#F9C9D8" stop-opacity=".16"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowHot"><stop offset="0" stop-color="#FFF3D6" stop-opacity="1"/><stop offset=".18" stop-color="#FFD9A8" stop-opacity=".75"/><stop offset=".45" stop-color="#F59AB8" stop-opacity=".28"/><stop offset="1" stop-color="#E8628F" stop-opacity="0"/></radialGradient>
+ <radialGradient id="moonG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".55" stop-color="#FFEFC9"/><stop offset="1" stop-color="#F5C99E"/></radialGradient>
+ <linearGradient id="petalG" x1="0" y1="-46" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF0F5"/><stop offset="1" stop-color="#F28DB2"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#10042A" flood-opacity=".35"/></filter>
+ <filter id="softS" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#10042A" flood-opacity=".28"/></filter>
+</defs><line x1="629" y1="654" x2="908" y2="649" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><line x1="908" y1="649" x2="643" y2="825" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><line x1="643" y1="825" x2="461" y2="688" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><line x1="461" y1="688" x2="563" y2="466" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><circle cx="908.4" cy="649.4" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(908.4,649.4) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="908.4" cy="649.4" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="643.0" cy="825.0" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(643.0,825.0) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="643.0" cy="825.0" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="460.5" cy="688.1" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(460.5,688.1) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="460.5" cy="688.1" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="562.9" cy="466.4" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(562.9,466.4) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="562.9" cy="466.4" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="629" cy="654" r="360" fill="url(#glowHot)" opacity=".75"/><path transform="translate(629.0,654.0) scale(7.500)" fill="#FFF6E2" opacity="1" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="629" cy="654" r="20" fill="#FFFDF6"/><path fill="#2A1150" opacity="0.9" d="M0,1920 L0,1592.1 L40,1587.6 L80,1584.3 L120,1582.9 L160,1582.6 L200,1581.9 L240,1579.4 L280,1574.7 L320,1568.5 L360,1562.7 L400,1559.3 L440,1559.5 L480,1563.2 L520,1568.6 L560,1573.2 L600,1574.3 L640,1570.6 L680,1562.2 L720,1551.0 L760,1539.5 L800,1530.4 L840,1525.0 L880,1523.2 L920,1523.8 L960,1525.1 L1000,1525.9 L1040,1526.1 L1080,1526.7 L1120,1529.5 L1080,1920 Z"/></svg>
+<canvas id="art2" width="1080" height="1920" style="position:absolute;left:0;top:0"></canvas>
+<div class="cell" style="left:0;width:1080px;height:1920px;padding:370px 170px 530px 88px">
+        <p class="lab" style="font-size:50px;color:var(--pink);letter-spacing:.18em">On the NHS list</p>
+        <div style="flex:1"></div>
+        <h1 class="h" style="font-size:168px;line-height:1.0">Night sweats</h1><p class="h" style="font-size:60px;font-style:italic;font-weight:600;color:var(--pink);margin-top:34px;line-height:1.1">Hot flushes that happen at night.</p></div><img class="chrome-mark" src="../assets/mark.png" style="left:88px;top:230px"><p class="src" style="left:88px;top:1440px">Source: NHS</p>
+</div>
+<script src="../assets/clari-art.js"></script>
+<script>
+const W=1080, H=1920, N=1, PW=1080;
+const c=document.getElementById('art').getContext('2d'); const c2=document.getElementById('art2').getContext('2d');
+const IM={};
+function loadAll(list){return Promise.all(list.map(n=>new Promise(r=>{const i=new Image();i.onload=()=>r();i.onerror=()=>r();i.src='../assets/'+n;IM[n]=i;})));}
+function show(i){document.getElementById('stage').style.transform='translateX('+(-i*W)+'px)';}
+function draw(){const g=c.createLinearGradient(0,0,0,H); const s=['#120723','#2C1252','#4A2180','#6F3FA6','#8E57BE']; [0,.36,.66,.86,1].forEach((p,k)=>g.addColorStop(p,s[k])); c.fillStyle=g; c.fillRect(0,0,W,H);CLARI.stars(c,W,H,0.5,{seed:13,n:200,bottom:0.8,alpha:0.85,sparkles:8});}
+Promise.all([document.fonts.ready, loadAll([])]).then(()=>{ if(typeof draw==='function') draw(); show(0); window.__ready=true; });
+</script></body></html>

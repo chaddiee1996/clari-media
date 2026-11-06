@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<script src="type.js"></script>
+<style>
+  :root { --cream: #FFF8EC; --pink: #F7B6CD; --lilac: #C3A8EA; --night: #22103F; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  .abs { position: absolute; }
+  #c { left: 0; top: 0; width: 1080px; height: 1920px; }
+  .tblock { position: absolute; color: var(--cream); }
+  .serif { font-family: 'Fraunces', serif; font-weight: 700; letter-spacing: -0.02em; font-variation-settings: "opsz" 144;
+    font-variant-numeric: lining-nums; text-shadow: 0 6px 28px rgba(16, 4, 40, .55); }
+  .serif i { font-style: italic; font-weight: 600; color: var(--pink); }
+  .sans { font-family: 'Figtree', sans-serif; font-weight: 700; text-shadow: 0 4px 20px rgba(16, 4, 40, .6); }
+  .src { font-family: 'Figtree', sans-serif; font-weight: 700; color: var(--lilac); letter-spacing: 0.01em; }
+  .ln { overflow: hidden; padding: 0.02em 0.14em 0.2em; margin: -0.02em -0.14em -0.2em; }
+  .in { display: inline-block; will-change: transform; }
+  .slot { display: inline-block; position: relative; overflow: hidden; vertical-align: top;
+    padding: 0.02em 0.1em 0.2em; margin: -0.02em -0.1em -0.2em; }
+  .slot span { position: absolute; left: 0.1em; top: 0.02em; }
+  .slot .w0 { position: relative; left: 0; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1920">
+  <canvas id="c" class="abs" width="1080" height="1920"></canvas>
+  <div id="txt" class="abs" style="left:0;top:0;width:1080px;height:1920px"></div>
+</div>
+<script>
+const S = STUDIO, A = CLARI, P = A.P, W = 1080, H = 1920, TAU = Math.PI * 2;
+const seg = S.seg, mix = S.mix, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const room = document.createElement('canvas'); room.width = W; room.height = H; const rc = room.getContext('2d');
+const logImg = A.loadImg('media/log.png');
+
+// ---------- colour helpers ----------
+const hx = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mc = (a, b, p) => { const A1 = hx(a), B1 = hx(b); return `rgb(${A1.map((v, i) => Math.round(v + (B1[i] - v) * p)).join(',')})`; };
+const rgba = (h, a) => { const v = hx(h); return `rgba(${v[0]},${v[1]},${v[2]},${a})`; };
+const rr = A.rr;
+
+// ---------- the timeline (seconds) ----------
+const T = { b2: 1.95, b3: 3.35, b4: 4.65, b5: 5.75, b6: 7.35, b7: 8.95, b8: 11.35, b9: 14.55, end: 20 };
+
+// ---------- clock: minutes since midnight, flip events ----------
+const FL = [[-9, 186], [0.38, 187], [2.0, 192], [3.38, 199], [4.68, 204], [5.78, 221], [7.38, 242]];
+(function () { const N = 15, e = S.ease('sine.inOut'); for (let i = 1; i <= N; i++) FL.push([9.05 + 1.25 * e(i / N), Math.round(242 + (435 - 242) * i / N)]); })();
+function clockState(t) {
+  let k = 0; for (let i = 0; i < FL.length; i++) if (FL[i][0] <= t) k = i;
+  const prev = k > 0 ? FL[k - 1][1] : FL[0][1], cur = FL[k][1];
+  const gap = k + 1 < FL.length ? FL[k + 1][0] - FL[k][0] : 1;
+  const fd = Math.min(0.36, gap * 0.85);
+  return { prev, cur, p: k === 0 ? 1 : clamp((t - FL[k][0]) / fd, 0, 1) };
+}
+const hStr = m => String(Math.floor(m / 60)), mStr = m => String(m % 60).padStart(2, '0');
+
+function cardFace(k, x, y, w, h, str, half, shade) {
+  const hy = y + h / 2;
+  k.save(); k.beginPath(); if (half === 'top') k.rect(x - 2, y - 2, w + 4, h / 2 + 2); else k.rect(x - 2, hy, w + 4, h / 2 + 2); k.clip();
+  const g = k.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#6A3A9E'); g.addColorStop(0.5, '#4E2580'); g.addColorStop(0.5, '#43206F'); g.addColorStop(1, '#341858');
+  k.fillStyle = g; rr(k, x, y, w, h, h * 0.11); k.fill();
+  k.fillStyle = P.cream; k.font = `600 ${h * 0.8}px 'Fraunces'`; k.textAlign = 'center'; k.textBaseline = 'middle';
+  k.fillText(str, x + w / 2, hy + h * 0.035);
+  if (shade > 0) { k.fillStyle = `rgba(16,4,40,${shade})`; rr(k, x, y, w, h, h * 0.11); k.fill(); }
+  k.restore();
+}
+function card(k, x, y, w, h, a, b, p) {
+  const hy = y + h / 2;
+  if (a === b || p >= 1) { cardFace(k, x, y, w, h, b, 'top', 0); cardFace(k, x, y, w, h, b, 'bot', 0); }
+  else {
+    cardFace(k, x, y, w, h, b, 'top', 0); cardFace(k, x, y, w, h, a, 'bot', 0);
+    const e = S.ease('power2.in')(p);
+    if (e < 0.5) { const s = Math.cos(e * Math.PI); k.save(); k.translate(0, hy); k.scale(1, s); k.translate(0, -hy); cardFace(k, x, y, w, h, a, 'top', (1 - s) * 0.55); k.restore(); }
+    else { const s = -Math.cos(e * Math.PI); k.save(); k.translate(0, hy); k.scale(1, s); k.translate(0, -hy); cardFace(k, x, y, w, h, b, 'bot', (1 - s) * 0.45); k.restore(); }
+  }
+  k.fillStyle = 'rgba(16,4,40,0.75)'; k.fillRect(x, hy - 2, w, 4);
+  k.fillStyle = '#2A1548'; k.fillRect(x - 5, hy - 8, 6, 16); k.fillRect(x + w - 1, hy - 8, 6, 16);
+}
+function clock(k, t) {
+  const st = clockState(t);
+  // shadow on the nightstand
+  k.save(); k.fillStyle = 'rgba(16,4,40,0.45)'; k.beginPath(); k.ellipse(790, 894, 170, 14, 0, 0, TAU); k.fill(); k.restore();
+  // light spill from the digits on the stand top
+  const sp = k.createRadialGradient(790, 898, 10, 790, 898, 200); sp.addColorStop(0, 'rgba(255,239,201,0.20)'); sp.addColorStop(1, 'rgba(255,239,201,0)');
+  k.fillStyle = sp; k.fillRect(590, 870, 400, 60);
+  // body
+  k.save(); k.shadowColor = 'rgba(16,4,40,0.5)'; k.shadowBlur = 30; k.shadowOffsetY = 12;
+  const g = k.createLinearGradient(0, 700, 0, 886); g.addColorStop(0, '#7E4CB8'); g.addColorStop(1, '#3E1D6A');
+  k.fillStyle = g; rr(k, 640, 700, 300, 186, 38); k.fill(); k.restore();
+  k.fillStyle = 'rgba(255,255,255,0.10)'; rr(k, 652, 706, 276, 10, 5); k.fill();
+  // feet
+  k.fillStyle = '#2A1548'; rr(k, 668, 880, 40, 12, 5); k.fill(); rr(k, 872, 880, 40, 12, 5); k.fill();
+  // alarm button
+  k.fillStyle = P.pink; rr(k, 760, 690, 60, 14, 6); k.fill();
+  // cards
+  card(k, 654, 716, 104, 156, hStr(st.prev), hStr(st.cur), st.p);
+  card(k, 768, 716, 160, 156, mStr(st.prev), mStr(st.cur), st.p);
+  k.fillStyle = P.cream; [772, 816].forEach(y => { k.beginPath(); k.arc(763, y, 4.5, 0, TAU); k.fill(); });
+}
+
+// ---------- room pieces (world coords, room at z = 1 fills the frame) ----------
+const WIN = { x0: 130, x1: 520, y0: 200, ya: 395, y1: 730 };
+function opening(k) { const w = WIN, r = (w.x1 - w.x0) / 2; k.beginPath(); k.moveTo(w.x0, w.y1); k.lineTo(w.x0, w.ya); k.arc(w.x0 + r, w.ya, r, Math.PI, 0); k.lineTo(w.x1, w.y1); k.closePath(); }
+const skyN = document.createElement('canvas'), skyD = document.createElement('canvas');
+[skyN, skyD].forEach((cv2, i) => { cv2.width = 480; cv2.height = 620; A.sky(cv2.getContext('2d'), i ? 'dawn' : 'night', 480, 620, { glowX: 320, glowY: 160, glowR: 420, glow: 0.3 }); });
+function roofs(k, col, ox) {
+  k.fillStyle = col; k.beginPath(); k.moveTo(90, 760);
+  const pts = [[90, 640], [170, 600], [250, 640], [250, 610], [330, 560], [410, 610], [410, 630], [470, 600], [560, 640], [560, 760]];
+  pts.forEach(([x, y]) => k.lineTo(x + ox, y)); k.closePath(); k.fill();
+  [[200, 588, 22, 30], [360, 540, 20, 34], [480, 582, 18, 26]].forEach(([x, y, w, h]) => { k.fillRect(x + ox, y, w, h); k.fillRect(x + ox - 3, y - 6, w + 6, 8); });
+}
+function windowArt(k, t, dawn, open, ox) {
+  const w = WIN;
+  k.save(); opening(k); k.clip();
+  k.drawImage(skyN, w.x0 - 45 + ox * 0.5, w.y0 - 40);
+  if (dawn > 0) { k.globalAlpha = dawn; k.drawImage(skyD, w.x0 - 45 + ox * 0.5, w.y0 - 40); k.globalAlpha = 1; }
+  k.save(); k.translate(w.x0 + ox * 0.4, w.y0); A.stars(k, 390, 420, t, { seed: 5, n: 38, top: 0, bottom: 1, alpha: 1 - dawn, sparkles: 3 }); k.restore();
+  A.moon(k, 400 + ox * 0.45, mix(330, 520, dawn), 60, { glow: 1 - 0.5 * dawn });
+  roofs(k, mc('#170830', '#5A3C8C', dawn), ox * 0.7);
+  // glass sheen on the closed panes
+  k.fillStyle = 'rgba(255,255,255,0.05)'; k.beginPath(); k.moveTo(150, 730); k.lineTo(250, 400); k.lineTo(300, 400); k.lineTo(200, 730); k.fill();
+  k.restore();
+  // frame
+  k.save(); opening(k); k.lineWidth = 22; k.strokeStyle = mc('#9B7CC9', '#E2C9EE', dawn); k.stroke(); k.restore();
+  const fr = mc('#9B7CC9', '#E2C9EE', dawn);
+  k.fillStyle = fr; k.fillRect(w.x0, w.ya - 7, w.x1 - w.x0, 14);              // transom
+  k.fillRect(323, w.ya, 10, w.y1 - w.ya);                                     // fixed left casement edge
+  k.fillRect(w.x0, 560, 195, 8);                                                // left glazing bar
+  // sill
+  const sg = k.createLinearGradient(0, 730, 0, 768); sg.addColorStop(0, mc('#C3A8EA', '#F4E2F2', dawn)); sg.addColorStop(1, mc('#6E46A4', '#B08CC8', dawn));
+  k.fillStyle = sg; rr(k, 96, 728, 458, 34, 10); k.fill();
+}
+function casement(k, open, dawn) {
+  // right casement hinged at x1, swings into the room
+  const w = WIN, th = open * 2.15, cw = 190, fx = w.x1 - cw * Math.cos(th), grow = 26 * Math.sin(th);
+  const fr = mc('#9B7CC9', '#E2C9EE', dawn);
+  k.save();
+  k.beginPath(); k.moveTo(w.x1, w.ya + 7); k.lineTo(fx, w.ya + 7 - grow); k.lineTo(fx, w.y1 + grow); k.lineTo(w.x1, w.y1); k.closePath();
+  k.fillStyle = `rgba(230,215,255,${0.07 + 0.1 * Math.sin(th)})`; k.fill();
+  k.lineWidth = 12; k.strokeStyle = fr; k.lineJoin = 'round'; k.stroke();
+  const my = (w.ya + w.y1) / 2;
+  k.lineWidth = 7; k.beginPath(); k.moveTo(w.x1, 562); k.lineTo(fx, 562 + (562 - my) * (grow / 180)); k.stroke();
+  // little handle
+  k.fillStyle = P.gold; k.beginPath(); k.arc(fx + (w.x1 - fx) * 0.1, my, 7, 0, TAU); k.fill();
+  k.restore();
+}
+function curtain(k, x0, x1, side, wind, t, dawn) {
+  // side: -1 left curtain (inner edge on the right), 1 right curtain (inner edge on the left)
+  const top = 172, bot = 830;
+  const g = k.createLinearGradient(x0, 0, x1, 0);
+  g.addColorStop(0, mc('#4A2070', '#8A5AB0', dawn)); g.addColorStop(0.5, mc('#6A35A0', '#B07CC4', dawn)); g.addColorStop(1, mc('#4A2070', '#8A5AB0', dawn));
+  k.save(); k.fillStyle = g; k.beginPath();
+  const inner = side < 0 ? x1 : x0, outer = side < 0 ? x0 : x1;
+  const b = wind * 70 * -side, sw = 6 * Math.sin(t * 1.3);
+  k.moveTo(outer, top); k.lineTo(inner, top);
+  k.bezierCurveTo(inner + b * 0.2, 400, inner + b * 0.8 + sw, 600, inner + b + sw, bot - wind * 40);
+  k.quadraticCurveTo((inner + outer) / 2 + b * 0.5, bot + 14 - wind * 30, outer + b * 0.2, bot);
+  k.closePath(); k.fill();
+  // folds
+  k.clip(); k.strokeStyle = 'rgba(16,4,40,0.22)'; k.lineWidth = 10;
+  for (let i = 1; i < 4; i++) { const fx = outer + (inner - outer) * i / 4; k.beginPath(); k.moveTo(fx, top); k.bezierCurveTo(fx, 400, fx + b * 0.5 * i / 4, 640, fx + b * i / 4, bot); k.stroke(); }
+  k.restore();
+}
+function picture(k, t, dawn) {
+  k.save(); k.shadowColor = 'rgba(16,4,40,0.45)'; k.shadowBlur = 20; k.shadowOffsetY = 10;
+  k.fillStyle = mc('#B89AD8', '#EBD6F2', dawn); rr(k, 664, 330, 236, 190, 10); k.fill(); k.restore();
+  const g = k.createLinearGradient(0, 342, 0, 508); g.addColorStop(0, '#2C1252'); g.addColorStop(1, '#5A2C8C');
+  k.fillStyle = g; k.fillRect(676, 342, 212, 166);
+  k.save(); k.beginPath(); k.rect(676, 342, 212, 166); k.clip();
+  A.moon(k, 846, 382, 22, { glow: 0.7 });
+  A.branch(k, 668, 372, 0.95, false, t, { blossoms: 7 });
+  k.restore();
+}
+function nightstand(k, dawn) {
+  k.save(); k.shadowColor = 'rgba(16,4,40,0.45)'; k.shadowBlur = 26; k.shadowOffsetY = 10;
+  const g = k.createLinearGradient(0, 892, 0, 1150); g.addColorStop(0, mc('#4A2378', '#7E58A8', dawn)); g.addColorStop(1, mc('#331757', '#5E3E8A', dawn));
+  k.fillStyle = g; rr(k, 634, 906, 318, 246, 14); k.fill(); k.restore();
+  k.fillStyle = mc('#6A3A9E', '#A883CC', dawn); rr(k, 624, 890, 338, 22, 10); k.fill();
+  k.fillStyle = 'rgba(255,255,255,0.06)'; rr(k, 654, 934, 278, 90, 12); k.fill(); rr(k, 654, 1040, 278, 90, 12); k.fill();
+  k.fillStyle = P.gold; [979, 1085].forEach(y => { k.beginPath(); k.arc(793, y, 8, 0, TAU); k.fill(); });
+  k.fillStyle = mc('#2A1548', '#4A3070', dawn); k.fillRect(650, 1150, 18, 30); k.fillRect(918, 1150, 18, 30);
+}
+function bed(k, t, dawn, duvetX, lag, pil) {
+  // headboard
+  const hg = k.createLinearGradient(0, 760, 0, 1180); hg.addColorStop(0, mc('#7A45B5', '#A77CD0', dawn)); hg.addColorStop(1, mc('#4A2070', '#6E4A9E', dawn));
+  k.fillStyle = hg; rr(k, 584, 756, 40, 424, 18); k.fill();
+  k.fillStyle = 'rgba(255,255,255,0.08)'; rr(k, 590, 768, 8, 380, 4); k.fill();
+  // base + legs
+  k.fillStyle = mc('#2E1450', '#4E3078', dawn); k.fillRect(548, 1110, 24, 70); k.fillRect(40, 1110, 24, 70);
+  const bg = k.createLinearGradient(0, 1046, 0, 1114); bg.addColorStop(0, mc('#5A2C8C', '#8A62B4', dawn)); bg.addColorStop(1, mc('#3A1A63', '#5E3E8A', dawn));
+  k.fillStyle = bg; rr(k, -220, 1046, 804, 68, 12); k.fill();
+  // mattress / sheet
+  const mg = k.createLinearGradient(0, 966, 0, 1050); mg.addColorStop(0, mc('#D9CCEC', '#F6EEF8', dawn)); mg.addColorStop(1, mc('#A996C8', '#D8C6E6', dawn));
+  k.fillStyle = mg; rr(k, -220, 966, 802, 84, 20); k.fill();
+  k.fillStyle = 'rgba(16,4,40,0.18)'; k.fillRect(-220, 1040, 800, 6);
+  // pillow (flips around its long axis)
+  const pc = { x: 500, y: 937 - pil.hop };
+  const sy = Math.cos(pil.a), cold = sy < 0;
+  k.save(); k.translate(pc.x, pc.y); k.rotate(pil.tilt); k.scale(1, Math.max(0.08, Math.abs(sy)));
+  k.shadowColor = 'rgba(16,4,40,0.35)'; k.shadowBlur = 16; k.shadowOffsetY = 6;
+  const pg = k.createLinearGradient(0, -34, 0, 34);
+  if (cold) { pg.addColorStop(0, '#F4F7FF'); pg.addColorStop(1, '#BFC8F0'); } else { pg.addColorStop(0, mc('#FFF8EC', '#FFFBF4', dawn)); pg.addColorStop(1, mc('#D9C8E6', '#EADCEB', dawn)); }
+  k.fillStyle = pg; k.beginPath();
+  k.moveTo(-80, -26); k.quadraticCurveTo(0, -42, 80, -26); k.quadraticCurveTo(92, 0, 80, 26); k.quadraticCurveTo(0, 40, -80, 26); k.quadraticCurveTo(-92, 0, -80, -26); k.fill();
+  k.shadowColor = 'transparent'; k.strokeStyle = cold ? 'rgba(120,130,200,0.35)' : 'rgba(122,69,181,0.22)'; k.lineWidth = 3;
+  k.beginPath(); k.moveTo(-60, 0); k.quadraticCurveTo(0, 6, 60, 0); k.stroke();
+  k.restore();
+  if (pil.spark > 0) {
+    [[440, 896, 1.0, 0], [560, 884, 0.8, 0.12], [508, 862, 0.65, 0.24], [600, 912, 0.55, 0.3]].forEach(([x, y, s, d]) => {
+      const p = clamp((pil.spark - d) * 2.2, 0, 1); A.sparkle(k, x, y - pil.hop * 0.3, s * (0.6 + 0.4 * p), p * (1 - clamp(pil.spark - 1.1, 0, 1)));
+    });
+  }
+  // duvet
+  if (duvetX > -820) {
+    k.save(); k.translate(duvetX, 0);
+    const L = -260, R = 470;
+    const sh = y => lag * clamp((y - 950) / 150, 0, 1);
+    k.beginPath(); k.moveTo(L, 948);
+    for (let x = L; x <= R; x += 20) k.lineTo(x, 940 + 7 * Math.sin(x * 0.028 + 1.2));
+    k.bezierCurveTo(R + 30, 940, R + 44, 962, R + 40 + sh(1000), 1000);
+    k.lineTo(R + 30 + sh(1100), 1102);
+    for (let x = R + 30; x >= L; x -= 20) k.lineTo(x + sh(1104), 1102 + 9 * Math.sin(x * 0.045));
+    k.closePath();
+    k.save(); k.shadowColor = 'rgba(16,4,40,0.4)'; k.shadowBlur = 24; k.shadowOffsetY = 10;
+    const dg = k.createLinearGradient(0, 936, 0, 1110); dg.addColorStop(0, mc('#D7C2F2', '#F2E2F6', dawn)); dg.addColorStop(0.35, mc('#B392E0', '#DCC0EA', dawn)); dg.addColorStop(1, mc('#8A62C4', '#B88ED6', dawn));
+    k.fillStyle = dg; k.fill(); k.restore();
+    k.save(); k.clip();
+    k.strokeStyle = 'rgba(74,32,112,0.22)'; k.lineWidth = 3; k.setLineDash([10, 9]);
+    for (let x = L + 70; x < R; x += 120) { k.beginPath(); k.moveTo(x, 952); k.lineTo(x + sh(1100), 1100); k.stroke(); }
+    k.setLineDash([]); k.fillStyle = 'rgba(255,255,255,0.18)'; k.fillRect(L, 944, R - L, 14);
+    // blossom print on the duvet: small, brand
+    [[-40, 1040], [140, 1068], [320, 1030]].forEach(([x, y], i) => A.blossom(k, x + sh(y), y, 0.42, i, { alpha: 0.75 }));
+    k.restore();
+    k.restore();
+  }
+}
+function wallAndFloor(k, dawn, t) {
+  const g = k.createLinearGradient(0, -200, 0, 1180); g.addColorStop(0, mc('#1C0B38', '#4A3282', dawn)); g.addColorStop(1, mc('#3A1C68', '#9A6EA8', dawn));
+  k.fillStyle = g; k.fillRect(-900, -600, 2900, 1780);
+  k.fillStyle = `rgba(255,255,255,${0.025 + 0.01 * dawn})`; for (let x = -880; x < 2000; x += 64) k.fillRect(x, -600, 3, 1760);
+  // skirting
+  k.fillStyle = mc('#2A1350', '#6A4A98', dawn); k.fillRect(-900, 1146, 2900, 36);
+  k.fillStyle = 'rgba(255,255,255,0.08)'; k.fillRect(-900, 1146, 2900, 4);
+  // floor
+  const f = k.createLinearGradient(0, 1180, 0, 2400); f.addColorStop(0, mc('#1E0C3A', '#3C2466', dawn)); f.addColorStop(1, mc('#120624', '#24123E', dawn));
+  k.fillStyle = f; k.fillRect(-900, 1180, 2900, 1300);
+  k.strokeStyle = 'rgba(195,168,234,0.07)'; k.lineWidth = 3;
+  [1218, 1270, 1340, 1440, 1580, 1780, 2050].forEach(y => { k.beginPath(); k.moveTo(-900, y); k.lineTo(2000, y); k.stroke(); });
+  // moonlight (then dawn light) through the window
+  const sh = k.createLinearGradient(0, 740, 0, 1400);
+  const col = dawn > 0 ? mc('#C3A8EA', '#FFDDB5', dawn) : '#C3A8EA';
+  const cv3 = hx(col.startsWith('#') ? col : '#C3A8EA');
+  sh.addColorStop(0, `rgba(230,215,255,${0.10 + 0.08 * dawn})`); sh.addColorStop(1, 'rgba(230,215,255,0)');
+  k.fillStyle = sh; k.beginPath(); k.moveTo(140, 744); k.lineTo(520, 744); k.lineTo(980, 1400); k.lineTo(430, 1400); k.closePath(); k.fill();
+  if (dawn > 0) { const s2 = k.createLinearGradient(0, 740, 0, 1400); s2.addColorStop(0, `rgba(255,221,181,${0.16 * dawn})`); s2.addColorStop(1, 'rgba(255,221,181,0)'); k.fillStyle = s2; k.fill(); }
+}
+function rugAndSlippers(k, dawn) {
+  k.save(); k.shadowColor = 'rgba(10,3,24,0.5)'; k.shadowBlur = 20; k.shadowOffsetY = 8;
+  const g = k.createLinearGradient(0, 1470, 0, 1580); g.addColorStop(0, mc('#3E1C6C', '#6A4A98', dawn)); g.addColorStop(1, mc('#2A1350', '#4A3070', dawn));
+  k.fillStyle = g; rr(k, 60, 1478, 900, 92, 46); k.fill(); k.restore();
+  k.strokeStyle = rgba('#F7B6CD', 0.35); k.lineWidth = 6; rr(k, 84, 1494, 852, 60, 30); k.stroke();
+  // slippers, side by side, toes to the left
+  [[360, 1466], [500, 1472]].forEach(([x, y]) => {
+    k.save(); k.shadowColor = 'rgba(10,3,24,0.45)'; k.shadowBlur = 14; k.shadowOffsetY = 6;
+    const sg = k.createLinearGradient(0, y - 34, 0, y + 10); sg.addColorStop(0, '#F7B6CD'); sg.addColorStop(1, '#C77AA6');
+    k.fillStyle = sg; k.beginPath(); k.moveTo(x - 70, y + 8); k.quadraticCurveTo(x - 78, y - 30, x - 30, y - 34); k.lineTo(x + 40, y - 20); k.quadraticCurveTo(x + 74, y - 14, x + 70, y + 8); k.closePath(); k.fill(); k.restore();
+    k.fillStyle = 'rgba(255,248,236,0.55)'; k.beginPath(); k.ellipse(x - 34, y - 26, 30, 9, -0.15, 0, TAU); k.fill();
+  });
+}
+function streaks(k, t) {
+  k.save(); k.lineCap = 'round';
+  for (let i = 0; i < 6; i++) {
+    const st = 7.55 + i * 0.13, p = (t - st) / 0.9; if (p < 0 || p > 1.2) continue;
+    const y = 450 + i * 52;
+    const path = new Path2D(`M${300} ${y} C ${520} ${y - 40}, ${700} ${y + 120 + i * 20}, ${1060} ${y + 160 + i * 40}`);
+    k.setLineDash([200, 2400]); k.lineDashOffset = 200 - S.ease('power2.out')(clamp(p, 0, 1)) * 1100;
+    k.strokeStyle = `rgba(241,234,247,${0.5 * (1 - clamp((p - 0.7) / 0.5, 0, 1))})`; k.lineWidth = 5 - i * 0.4; k.stroke(path);
+  }
+  k.restore();
+}
+function leaf(k, t) {
+  const st = 7.6, p = clamp((t - st) / 1.25, 0, 1); if (t < st) return;
+  const e = S.ease('power2.out')(p);
+  const bz = (a, b, cc, d, u) => (1 - u) ** 3 * a + 3 * (1 - u) ** 2 * u * b + 3 * (1 - u) * u * u * cc + u ** 3 * d;
+  const x = bz(330, 820, 700, 250, e), y = bz(520, 560, 980, 958, e) + Math.sin(e * 9) * 14 * (1 - e);
+  const rot = mix(0.4, TAU * 2 + 0.12, e);
+  k.save(); k.translate(x, y); k.rotate(rot); k.scale(1.25, (0.55 + 0.45 * Math.abs(Math.cos(e * 7))) * (1 - 0.4 * seg(p, 0.85, 0.15)));
+  const g = k.createLinearGradient(-30, 0, 30, 0); g.addColorStop(0, '#FFE29A'); g.addColorStop(1, '#F5A97E');
+  k.fillStyle = g; k.beginPath(); k.moveTo(-34, 0); k.quadraticCurveTo(0, -22, 34, 0); k.quadraticCurveTo(0, 22, -34, 0); k.fill();
+  k.strokeStyle = '#C9744E'; k.lineWidth = 2.5; k.beginPath(); k.moveTo(-40, 0); k.lineTo(28, 0); k.stroke();
+  k.restore();
+}
+function plant(k, cam, al) {
+  if (al <= 0) return;
+  const z = 1 + (cam.z - 1) * 1.4, ox = -(cam.fx - 540) * 0.5, oy = -(cam.fy - 960) * 0.5;
+  k.save(); k.globalAlpha = al; k.translate(1000 + ox, 1860 + oy); k.scale(z, z); k.filter = 'blur(5px)';
+  k.fillStyle = '#1E0C3A';
+  [[-1.9, 300], [-1.55, 360], [-1.2, 330], [-0.85, 270], [-2.3, 240]].forEach(([a, l]) => {
+    k.save(); k.rotate(a + Math.PI / 2); k.beginPath(); k.moveTo(0, 0); k.quadraticCurveTo(-70, -l * 0.5, 0, -l); k.quadraticCurveTo(70, -l * 0.5, 0, 0); k.fill(); k.restore();
+  });
+  k.fillStyle = '#1C0B38'; k.beginPath(); k.moveTo(-120, -40); k.lineTo(120, -40); k.lineTo(96, 200); k.lineTo(-96, 200); k.fill();
+  k.filter = 'none'; k.restore();
+}
+
+// ---------- camera ----------
+function camera(t) {
+  const pb = seg(t, 1.38, 1.05, 'expo.inOut');
+  const z0 = 2.42 + 0.12 * seg(t, 0, 1.5, 'sine.out');
+  let z = mix(z0, 1.14, S.ease('power2.inOut')(pb)), fx = mix(790, 540, pb), fy = mix(795, 943, pb), px = mix(540, 540, pb), py = mix(690, 960, pb);
+  z += 0.05 * seg(t, 2.3, 6.6, 'sine.inOut');
+  fx += -28 * seg(t, 7.3, 1.3, 'power2.inOut') + 28 * seg(t, 9.0, 1.2, 'power2.inOut');
+  fy += 175 * seg(t, 8.95, 1.1, 'expo.inOut');
+  z += 0.07 * seg(t, 11.3, 3.4, 'sine.inOut');
+  return { z, fx, fy, px, py, reveal: pb };
+}
+
+// ---------- text ----------
+const txt = document.getElementById('txt'), TB = TYPE.block;
+const b1 = TB(txt, '3:07am.', { left: 0, top: 1060, width: 1080, size: 210 });
+const bD = TB(txt, 'Duvet <span class="slot"><span class="w0">off.</span><span class="w1">on.</span><span class="w2">off.</span></span>', { left: 110, top: 1300, width: 820, size: 170 });
+const slotW = [...bD.el.querySelectorAll('.slot span')];
+const b5 = TB(txt, 'Pillow flipped|to the <i>cold</i> side.', { left: 110, top: 1278, width: 820, size: 124 });
+const b6 = TB(txt, 'Window open.|In November.', { left: 110, top: 1272, width: 820, size: 130 });
+const b7 = TB(txt, 'By breakfast, you’ll|have <i>forgotten</i>|it happened.', { left: 100, top: 1150, width: 840, size: 112, lh: 1.07 });
+const b8a = TB(txt, 'Night sweats', { left: 110, top: 1040, width: 820, size: 156 });
+const b8b = TB(txt, 'are on the NHS list of|perimenopause symptoms.', { left: 110, top: 1238, width: 820, size: 66, lh: 1.22, cls: 'sans' });
+const b8c = TB(txt, 'Source: NHS', { left: 110, top: 1430, width: 820, size: 46, cls: 'src' });
+const b9 = TB(txt, 'Log it <i>before</i>|you forget.', { left: 110, top: 1262, width: 820, size: 124 });
+
+function slotSwap(t) {
+  // word 0 'off.' in at b2, swaps to 'on.' at b3, back to 'off.' at b4
+  const sw = [[T.b2, T.b3], [T.b3, T.b4], [T.b4, T.b5]];
+  slotW.forEach((el, i) => {
+    const [a, b] = sw[i];
+    const pin = i === 0 ? 1 : seg(t, a, 0.5, 'expo.out'), pout = seg(t, b, 0.34, 'power3.in');
+    const y = i === 0 ? -pout * 105 : (1 - pin) * 105 - pout * 105;
+    el.style.transform = `translateY(${y}%)`;
+    el.style.opacity = (t >= a - 0.01 || i === 0) && t < b + 0.36 ? 1 : 0;
+  });
+}
+
+// ---------- petals for the close ----------
+const pr = S.rng(77);
+const PET = Array.from({ length: 14 }, (_, i) => ({ x: pr() * 1100 - 10, d: pr() * 2.2, sp: 150 + pr() * 120, s: 0.55 + pr() * 0.7, r: pr() * TAU, vr: (pr() - 0.5) * 2.2, ph: pr() * TAU, front: i % 3 === 0 }));
+function petals(k, t, front) {
+  const t0 = T.b9 + 0.3; if (t < t0) return;
+  PET.forEach(p => {
+    if (p.front !== front) return;
+    const u = t - t0 - p.d; if (u < 0) return;
+    const y = -80 + u * p.sp, x = p.x + Math.sin(u * 1.3 + p.ph) * 50 - u * 30;
+    A.petal(k, x, y, p.s * (front ? 1.5 : 1), p.r + u * p.vr, front ? 0.95 : 0.8);
+  });
+}
+
+// ---------- render ----------
+window.__timelines["main"] = S.play(function render(t) {
+  const cam = camera(t);
+  const dawn = seg(t, 9.05, 1.7, 'power2.inOut');
+  // duvet: kick off (anticipation, fling), pull back on, kick off faster
+  const dx = d => 18 * seg(d, 0, 0.12, 'power2.out');
+  const duvetAt = u => {
+    let x = 0;
+    x += 18 * seg(u, T.b2 + 0.12, 0.12, 'power2.out') - 18 * seg(u, T.b2 + 0.24, 0.1) - 800 * seg(u, T.b2 + 0.24, 0.62, 'expo.out');
+    x += 800 * seg(u, T.b3 + 0.06, 0.7, 'back.out(1.15)');
+    x += -800 * seg(u, T.b4 + 0.08, 0.42, 'expo.out');
+    return x;
+  };
+  const dX = duvetAt(t), vel = (dX - duvetAt(t - 1 / 30)) * 30;
+  const lag = clamp(-vel * 0.05, -70, 70);
+  const pf = seg(t, T.b5 + 0.12, 0.62, 'power3.inOut');
+  const pil = { a: pf * Math.PI, hop: 80 * Math.sin(pf * Math.PI), tilt: 0.12 * Math.sin(pf * Math.PI), spark: clamp((t - T.b5 - 0.6) / 0.6, 0, 2.2) };
+  const open = seg(t, T.b6 + 0.08, 0.75, 'back.out(1.4)') + 0.04 * Math.sin((t - T.b6 - 0.8) * 7) * Math.exp(-(t - T.b6 - 0.8) * 2.2) * (t > T.b6 + 0.8 ? 1 : 0);
+  const wind = seg(t, T.b6 + 0.15, 0.35, 'power2.out') * (1 - seg(t, T.b6 + 1.2, 1.4, 'sine.inOut') * 0.75);
+
+  // ---- room into the offscreen canvas ----
+  rc.setTransform(1, 0, 0, 1, 0, 0); rc.clearRect(0, 0, W, H);
+  rc.setTransform(cam.z, 0, 0, cam.z, cam.px - cam.fx * cam.z, cam.py - cam.fy * cam.z);
+  const ox = (cam.fx - 540) * 0.25;
+  wallAndFloor(rc, dawn, t);
+  windowArt(rc, t, dawn, open, ox);
+  curtain(rc, 50, 175, -1, wind * 0.5, t, dawn);
+  curtain(rc, 470, 598, 1, wind, t, dawn);
+  rc.fillStyle = mc('#B89AD8', '#EBD6F2', dawn); rc.fillRect(30, 166, 590, 10);
+  rc.beginPath(); rc.arc(30, 171, 13, 0, TAU); rc.arc(620, 171, 13, 0, TAU); rc.fill();
+  casement(rc, open, dawn);
+  picture(rc, t, dawn);
+  nightstand(rc, dawn);
+  rugAndSlippers(rc, dawn);
+  bed(rc, t, dawn, dX, lag, pil);
+  streaks(rc, t);
+  leaf(rc, t);
+  // darkness of 3am, before the eyes adjust
+  rc.setTransform(1, 0, 0, 1, 0, 0);
+  const dark = 0.94 * (1 - seg(t, 1.3, 1.1, 'power2.inOut'));
+  if (dark > 0) { rc.fillStyle = `rgba(10,3,24,${dark})`; rc.fillRect(0, 0, W, H); }
+  rc.setTransform(cam.z, 0, 0, cam.z, cam.px - cam.fx * cam.z, cam.py - cam.fy * cam.z);
+  clock(rc, t);
+  rc.setTransform(1, 0, 0, 1, 0, 0);
+  plant(rc, cam, cam.reveal);
+
+  // ---- composite ----
+  const blur = 12 * seg(t, T.b9, 0.8, 'power2.out');
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.fillStyle = '#12062A'; c.fillRect(0, 0, W, H);
+  if (blur > 0.3) { c.filter = `blur(${blur}px)`; c.drawImage(room, -20, -20, W + 40, H + 40); c.filter = 'none'; }
+  else c.drawImage(room, 0, 0);
+  // vignette
+  const vg = c.createRadialGradient(540, 860, 300, 540, 960, 1250); vg.addColorStop(0, 'rgba(10,3,24,0)'); vg.addColorStop(1, 'rgba(10,3,24,0.55)');
+  c.fillStyle = vg; c.fillRect(0, 0, W, H);
+  // scrim for the dawn lines and the fact
+  const scr = Math.max(seg(t, T.b7, 0.6, 'power2.out') * 0.55, seg(t, T.b8 - 0.1, 0.6, 'power2.out') * 0.85);
+  if (scr > 0) {
+    const sg = c.createLinearGradient(0, 820, 0, 1700); sg.addColorStop(0, 'rgba(18,6,40,0)'); sg.addColorStop(0.45, `rgba(18,6,40,${scr})`); sg.addColorStop(1, `rgba(18,6,40,${scr})`);
+    c.fillStyle = sg; c.fillRect(0, 0, W, H);
+  }
+  // the close: dim, phone rises
+  const ph = seg(t, T.b9, 0.95, 'expo.out');
+  if (t >= T.b9) {
+    c.fillStyle = `rgba(18,6,40,${0.6 * seg(t, T.b9, 0.8)})`; c.fillRect(0, 0, W, H);
+    petals(c, t, false);
+    const fl = Math.sin((t - T.b9) * 1.6) * 8 * seg(t, T.b9 + 0.8, 1.0);
+    const py = mix(2700, 716, ph) + fl, rot = mix(-0.16, -0.035, ph) + 0.006 * Math.sin((t - T.b9) * 1.1);
+    const pz = 1 + 0.04 * seg(t, T.b9 + 1, 4.5, 'sine.inOut');
+    c.save(); c.translate(540, py); c.scale(pz, pz); c.translate(-540, -py);
+    A.phone(c, logImg, 540, py, 490, { rot });
+    // tap on Night Sweats
+    const tp = (t - (T.b9 + 1.95)) / 0.9;
+    if (tp > 0 && tp < 1) {
+      c.save(); c.translate(540, py); c.rotate(rot);
+      const tx = (0.74 - 0.5) * 490, ty = (0.79 - 0.5) * 1062;
+      c.strokeStyle = `rgba(255,248,236,${0.85 * (1 - tp)})`; c.lineWidth = 6; c.beginPath(); c.arc(tx, ty, 16 + 70 * S.ease('expo.out')(tp), 0, TAU); c.stroke();
+      c.fillStyle = `rgba(255,248,236,${0.5 * (1 - tp)})`; c.beginPath(); c.arc(tx, ty, 22, 0, TAU); c.fill();
+      c.restore();
+    }
+    c.restore();
+    petals(c, t, true);
+  }
+
+  // ---- type ----
+  TYPE.show(b1, t, 0.5, 1.5, { dur: 0.8 });
+  TYPE.show(bD, t, T.b2, T.b5 - 0.05);
+  slotSwap(t);
+  TYPE.show(b5, t, T.b5 + 0.05, T.b6 - 0.05);
+  TYPE.show(b6, t, T.b6 + 0.05, T.b7 - 0.05);
+  TYPE.show(b7, t, T.b7 + 0.1, T.b8 - 0.08, { stag: 0.12 });
+  TYPE.show(b8a, t, T.b8 + 0.05, T.b9 - 0.05);
+  TYPE.show(b8b, t, T.b8 + 0.25, T.b9 - 0.05, { stag: 0.08 });
+  TYPE.show(b8c, t, T.b8 + 0.55, T.b9 - 0.05);
+  TYPE.show(b9, t, T.b9 + 0.45, null, { stag: 0.1 });
+}, { loop: false });
+</script>
+</body>
+</html>

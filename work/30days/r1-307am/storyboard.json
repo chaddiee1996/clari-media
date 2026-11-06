@@ -1,0 +1,16 @@
+{
+  "title": "R1 3:07am",
+  "format": "9:16",
+  "seconds": 20,
+  "shots": [
+    {"time": "0.0-1.6", "graphic": "Dark room, camera tight on the flip clock; minute card flips 06 to 07; '3:07am.' rises under it", "asset": {"kind": "code"}},
+    {"time": "1.4-3.35", "graphic": "Camera pulls back to the moonlit bedroom; clock 3:12; duvet kicked off the bed edge; 'Duvet off.' lower third", "asset": {"kind": "code"}},
+    {"time": "3.35-4.65", "graphic": "Clock 3:19; duvet pulled back on; second word flips to 'on.'", "asset": {"kind": "code"}},
+    {"time": "4.65-5.75", "graphic": "Clock 3:24; faster fling; 'off.' again", "asset": {"kind": "code"}},
+    {"time": "5.75-7.35", "graphic": "Clock 3:41; pillow hops and flips to its cold side with sparkles", "asset": {"kind": "code"}},
+    {"time": "7.35-8.95", "graphic": "Clock 4:02; casement swings open, curtains billow, air streaks, a leaf lands on the bed", "asset": {"kind": "code"}},
+    {"time": "8.95-11.35", "graphic": "Clock spins to 7:15, sky turns dawn, room warms, camera tilts; glockenspiel on 'forgotten'", "asset": {"kind": "code"}},
+    {"time": "11.35-14.55", "graphic": "Scrim; 'Night sweats' big + Figtree line; Source: NHS; petals drift in the dawn light", "asset": {"kind": "code"}},
+    {"time": "14.55-20.0", "graphic": "Room blurs; phone rises with the real Log screen; 'Log it before you forget.'; tap on Night Sweats; calm hold", "asset": {"kind": "code"}}
+  ]
+}

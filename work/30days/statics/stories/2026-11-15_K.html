@@ -1,0 +1,51 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Clari story</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--night:#22103F;--plum:#4A2070;--violet:#7A45B5;--lilac:#C3A8EA;--cream:#FFF8EC;--pink:#F7B6CD;
+--blossom:#E8628F;--rose:#B83A68;--gold:#FFEFC9;--paper:#FBF6EE;--ink:#241A33;--deep:#2A1548}
+html,body{margin:0;padding:0;overflow:hidden;background:#22103F}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+#art,#svg{position:absolute;left:0;top:0}
+.cell{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column}
+.cell>*{flex-shrink:0}
+.abs{position:absolute}
+.h{font-family:'Fraunces',serif;font-weight:700;font-variation-settings:"opsz" 144;letter-spacing:-0.012em;word-spacing:0.05em;line-height:1.04;margin:0;color:var(--cream)}
+.h em{font-style:italic;font-weight:600;color:var(--pink);letter-spacing:-0.01em}
+.light .h{color:var(--ink)} .light .h em{color:var(--rose)}
+.s{font-family:'Figtree',sans-serif;font-weight:700;color:var(--cream);margin:0;line-height:1.25}
+.light .s{color:var(--ink)}
+.lab{font-family:'Figtree',sans-serif;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.hand{font-family:'Caveat',cursive;font-weight:700;line-height:1.05}
+.chrome-mark{position:absolute;height:86px}
+.counter{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:42px;letter-spacing:.04em;color:var(--cream);opacity:.9;line-height:86px;font-variant-numeric:tabular-nums}
+.src{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:44px;color:var(--cream);opacity:.92;line-height:1.15;margin:0}
+.light .counter,.light .src{color:var(--ink)}
+.lock{position:absolute}
+
+html,body{width:1080px;height:1920px;background:#FBF6EE}
+</style></head>
+<body class="light"><div id="stage" style="width:1080px;height:1920px">
+<canvas id="art" width="1080" height="1920"></canvas>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <radialGradient id="glowW"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset=".35" stop-color="#F9C9D8" stop-opacity=".35"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowP"><stop offset="0" stop-color="#F9C9D8" stop-opacity=".55"/><stop offset=".5" stop-color="#F9C9D8" stop-opacity=".16"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowHot"><stop offset="0" stop-color="#FFF3D6" stop-opacity="1"/><stop offset=".18" stop-color="#FFD9A8" stop-opacity=".75"/><stop offset=".45" stop-color="#F59AB8" stop-opacity=".28"/><stop offset="1" stop-color="#E8628F" stop-opacity="0"/></radialGradient>
+ <radialGradient id="moonG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".55" stop-color="#FFEFC9"/><stop offset="1" stop-color="#F5C99E"/></radialGradient>
+ <linearGradient id="petalG" x1="0" y1="-46" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF0F5"/><stop offset="1" stop-color="#F28DB2"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#10042A" flood-opacity=".35"/></filter>
+ <filter id="softS" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#10042A" flood-opacity=".28"/></filter>
+</defs><rect width="1080" height="1920" fill="#FBF6EE"/><line x1="0" x2="1080" y1="0" y2="0" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="64" y2="64" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="128" y2="128" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="192" y2="192" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="256" y2="256" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="320" y2="320" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="384" y2="384" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="448" y2="448" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="512" y2="512" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="576" y2="576" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="640" y2="640" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="704" y2="704" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="768" y2="768" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="832" y2="832" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="896" y2="896" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="960" y2="960" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1024" y2="1024" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1088" y2="1088" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1152" y2="1152" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1216" y2="1216" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1280" y2="1280" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1344" y2="1344" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1408" y2="1408" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1472" y2="1472" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1536" y2="1536" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1600" y2="1600" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1664" y2="1664" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1728" y2="1728" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1792" y2="1792" stroke="#F1E8DA" stroke-width="2"/><line x1="0" x2="1080" y1="1856" y2="1856" stroke="#F1E8DA" stroke-width="2"/><path d="M770 420 L770 300 Q770 250 820 250 Q870 250 870 300 L870 470 Q870 530 810 530 Q750 530 750 470 L750 330" fill="none" stroke="#8A7A9C" stroke-width="10" stroke-linecap="round"/></svg>
+<canvas id="art2" width="1080" height="1920" style="position:absolute;left:0;top:0"></canvas>
+<div class="abs" style="left:110px;top:470px;width:800px;height:880px;background:linear-gradient(165deg,#DCC8F5,#DCC8F5DD);transform:rotate(2.5deg);box-shadow:0 26px 40px rgba(36,26,51,.20), 0 2px 0 rgba(0,0,0,.04);padding:110px 80px 70px;box-sizing:border-box;display:flex;flex-direction:column"><div style="position:absolute;left:300px;top:-30px;width:200px;height:62px;background:#F7B6CD;opacity:.75;transform:rotate(-3.5deg)"></div><p class="lab" style="font-size:48px;color:#B83A68;letter-spacing:.18em">Check-in</p><p class="hand" style="font-size:98px;color:#241A33;margin:30px 0 0;line-height:1.02">Sunday check-in: what was the hardest bit of this week? Write it down.</p><div style="flex:1"></div><div style="height:4px;background:rgba(36,26,51,.18);margin-top:58px;border-radius:2px"></div><div style="height:4px;background:rgba(36,26,51,.18);margin-top:58px;border-radius:2px"></div></div><img class="chrome-mark" src="../assets/mark-plum.png" style="left:88px;top:230px">
+</div>
+<script src="../assets/clari-art.js"></script>
+<script>
+const W=1080, H=1920, N=1, PW=1080;
+const c=document.getElementById('art').getContext('2d'); const c2=document.getElementById('art2').getContext('2d');
+const IM={};
+function loadAll(list){return Promise.all(list.map(n=>new Promise(r=>{const i=new Image();i.onload=()=>r();i.onerror=()=>r();i.src='../assets/'+n;IM[n]=i;})));}
+function show(i){document.getElementById('stage').style.transform='translateX('+(-i*W)+'px)';}
+
+Promise.all([document.fonts.ready, loadAll([])]).then(()=>{ if(typeof draw==='function') draw(); show(0); window.__ready=true; });
+</script></body></html>

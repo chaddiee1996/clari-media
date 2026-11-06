@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<script src="fx.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #2A1548; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #2A1548; }
+  #c { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="24.3" data-width="1080" data-height="1920">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div style="position:absolute;left:-9999px;top:0;opacity:0"><span style="font:700 66px Caveat">Menopause</span><span style="font:700 40px Fraunces">a</span><span style="font:italic 600 40px Fraunces">a</span><span style="font:800 40px Figtree">a</span><span style="font:700 40px Figtree">a</span></div>
+</div>
+<script>
+const S = STUDIO, W = 1080, H = 1920, TAU = Math.PI * 2;
+const { cl, lerp, seg, rr, shadow, noShadow, vgrad, rgrad } = FX;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const E = n => S.ease(n);
+const DOOR = { x: 60, y: 230, w: 640, h: 1290 };      // world coords; floor starts at y 1520
+const LB = { x: 380, y: 1020, w: 330, h: 74 };        // letterbox centre
+const TILT = 860, T_TILT = 3.45;
+const camY = t => TILT * seg(t, T_TILT, 1.15, 'power3.inOut');
+const CARD = { x: 345, y: 1185, w: 520, h: 650, rot: -0.045 };   // screen coords of the hero card centre (after tilt)
+const rm = S.rng(8);
+const MOTES = Array.from({ length: 60 }, () => [rm() * W, rm() * 2800, 2.5 + rm() * 4, rm() * TAU, 30 + rm() * 40]);
+const PET = Array.from({ length: 14 }, () => [rm() * W, rm() * H, 1.5 + rm() * 1.6, rm() * TAU, 90 + rm() * 80]);
+
+function sceneWorld(t) {
+  // wall
+  c.fillStyle = vgrad(c, -200, 2900, [[0, '#3A2470'], [0.5, '#2E1A5C'], [1, '#22103F']]); c.fillRect(-50, -300, W + 100, 3300);
+  // dawn light from the fanlight: soft diagonal shafts across wall and floor
+  const sun = 0.7 + 0.3 * seg(t, 0, 24, 'power1.inOut');
+  c.save(); c.globalAlpha = 0.24 * sun; c.fillStyle = '#FFCFA8';
+  [[180, 260], [420, 180], [640, 220]].forEach(([x, w], i) => { c.beginPath(); c.moveTo(x, 0); c.lineTo(x + w, 0); c.lineTo(x + w + 760, 2600); c.lineTo(x + 760, 2600); c.closePath(); c.fill(); });
+  c.restore();
+  // fanlight over the door (the dawn sky, the crescent fading)
+  const fx = DOOR.x + 20, fw = DOOR.w - 40, fy = 20, fh = 190;
+  c.save(); shadow(c, 30, 12, 0.4); c.fillStyle = '#1E0E38'; rr(c, fx - 18, fy - 18, fw + 36, fh + 36, 20); c.fill(); noShadow(c);
+  rr(c, fx, fy, fw, fh, 10); c.clip(); c.translate(fx, fy);
+  CLARI.sky(c, 'dawn', fw, fh * 2.2, { glowX: fw * 0.75, glowY: fh * 0.4, glowR: fw * 0.6, glow: 0.3 });
+  CLARI.stars(c, fw, fh, t, { seed: 4, n: 30, bottom: 0.6, alpha: 0.6, sparkles: 2 });
+  CLARI.moon(c, fw * 0.76, fh * 0.42, 46, { glow: 0.8 });
+  CLARI.branch(c, -20, 4, 1.8, false, t, {});
+  c.restore();
+  c.save(); c.fillStyle = '#1E0E38'; for (let i = 1; i < 4; i++) c.fillRect(fx + i * fw / 4 - 6, fy, 12, fh); c.restore();
+  // the door
+  c.save(); shadow(c, 70, 0, 0.5);
+  c.fillStyle = vgrad(c, DOOR.y, DOOR.y + DOOR.h, [[0, '#5A2A8A'], [1, '#3C1A66']]); rr(c, DOOR.x, DOOR.y, DOOR.w, DOOR.h, 14); c.fill(); noShadow(c);
+  // panels
+  [[DOOR.y + 60, 360], [DOOR.y + 520, 200], [DOOR.y + 880, 330]].forEach(([y, h]) => {
+    [DOOR.x + 60, DOOR.x + DOOR.w / 2 + 20].forEach(x => {
+      const w = DOOR.w / 2 - 80;
+      c.fillStyle = 'rgba(20,6,40,0.28)'; rr(c, x, y, w, h, 12); c.fill();
+      c.strokeStyle = 'rgba(195,168,234,0.22)'; c.lineWidth = 4; rr(c, x + 6, y + 6, w - 12, h - 12, 9); c.stroke();
+    });
+  });
+  // knob
+  c.fillStyle = rgrad(c, DOOR.x + 56, 1150, 4, 30, [[0, '#FFF3D0'], [1, '#D9A85A']]); c.beginPath(); c.arc(DOOR.x + 50, 1150, 24, 0, TAU); c.fill();
+  c.restore();
+  // floor + skirting + mat
+  c.fillStyle = vgrad(c, 1520, 2900, [[0, '#3B2266'], [1, '#2A164C']]); c.fillRect(-50, 1520, W + 100, 1400);
+  c.strokeStyle = 'rgba(16,4,40,0.35)'; c.lineWidth = 3;
+  for (let i = 0; i < 9; i++) { const y = 1560 + i * i * 22 + i * 60; c.beginPath(); c.moveTo(-50, y); c.lineTo(W + 50, y); c.stroke(); }
+  c.fillStyle = '#2A1548'; c.fillRect(-50, 1500, W + 100, 26);
+  c.fillStyle = rgrad(c, 640, 2050, 40, 760, [[0, `rgba(255,190,160,${0.34 * sun})`], [0.5, `rgba(248,183,169,${0.14 * sun})`], [1, 'rgba(248,183,169,0)']]); c.fillRect(-50, 1300, W + 100, 1500);
+  c.save(); shadow(c, 40, 16, 0.4); c.fillStyle = vgrad(c, 1880, 2420, [[0, '#5E2A5E'], [1, '#4A1F4E']]); rr(c, 30, 1890, 1020, 500, 60); c.fill(); noShadow(c);
+  c.strokeStyle = 'rgba(247,182,205,0.18)'; c.lineWidth = 5; c.setLineDash([16, 12]); rr(c, 64, 1920, 952, 440, 40); c.stroke(); c.setLineDash([]); c.restore();
+}
+function letterbox(t, flap) {
+  const { x, y, w, h } = LB;
+  c.save(); shadow(c, 20, 8, 0.45);
+  c.fillStyle = vgrad(c, y - h / 2 - 18, y + h / 2 + 18, [[0, '#FFF0C8'], [0.5, '#F2C873'], [1, '#C79343']]);
+  rr(c, x - w / 2 - 22, y - h / 2 - 22, w + 44, h + 44, 18); c.fill(); noShadow(c);
+  c.fillStyle = '#140626'; rr(c, x - w / 2, y - h / 2, w, h, 8); c.fill();
+  c.restore();
+  return () => {   // flap drawn on top of the envelope
+    c.save(); c.translate(x, y - h / 2); c.scale(1, Math.cos(flap * 1.25));
+    c.fillStyle = vgrad(c, 0, h, [[0, '#FFE9B0'], [1, '#D9A85A']]); rr(c, -w / 2, 0, w, h, 8); c.fill();
+    c.fillStyle = 'rgba(120,70,20,0.35)'; rr(c, -w / 2 + 30, h / 2 - 5, w - 60, 10, 5); c.fill();
+    c.restore();
+  };
+}
+function envelope(x, y, rot, s, open, alpha) {
+  const w = 400, h = 260;
+  c.save(); c.translate(x, y); c.rotate(rot); c.scale(s, s); c.globalAlpha = alpha == null ? 1 : alpha;
+  shadow(c, 30, 14, 0.4); c.fillStyle = '#FBF6EE'; rr(c, -w / 2, -h / 2, w, h, 12); c.fill(); noShadow(c);
+  c.strokeStyle = 'rgba(122,69,181,0.25)'; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(-w / 2 + 6, h / 2 - 6); c.lineTo(0, 10); c.lineTo(w / 2 - 6, h / 2 - 6); c.stroke();
+  // flap: closed points down, opens upwards
+  const fl = Math.cos(open * Math.PI);
+  c.fillStyle = open > 0.5 ? '#EFE5F5' : '#F4ECE0';
+  c.beginPath(); c.moveTo(-w / 2, -h / 2); c.lineTo(w / 2, -h / 2); c.lineTo(0, -h / 2 + 150 * fl); c.closePath(); c.fill();
+  c.strokeStyle = 'rgba(122,69,181,0.25)'; c.stroke();
+  if (open < 0.5) CLARI.blossom(c, 0, -h / 2 + 150 * fl - 12, 0.55, 0.3, { open: 1 });
+  c.restore();
+}
+function card(t, p, write, ring) {
+  // p: 0 (inside the envelope) .. 1 (hero)
+  const ex = 690, ey = 1330;
+  const x = lerp(ex, CARD.x, p), y = lerp(ey, CARD.y, p), s = lerp(0.62, 1, p), rot = lerp(-0.02, CARD.rot, p);
+  const { w, h } = CARD;
+  c.save(); c.translate(x, y); c.rotate(rot); c.scale(s, s);
+  shadow(c, 70, 30, 0.45); c.fillStyle = '#FBF6EE'; rr(c, -w / 2, -h / 2, w, h, 18); c.fill(); noShadow(c);
+  c.fillStyle = vgrad(c, -h / 2, -h / 2 + 90, [[0, '#7A45B5'], [1, '#4A2070']]); rr(c, -w / 2, -h / 2, w, 92, 18); c.fill();
+  c.fillRect(-w / 2, -h / 2 + 60, w, 32);
+  c.font = FX.font('s', 48, 800); c.fillStyle = '#FFF8EC'; c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillText('INVITATION', -w / 2 + 40, -h / 2 + 48);
+  // printed lines (abstract), each with a tick box
+  for (let i = 0; i < 4; i++) {
+    const yy = -h / 2 + 150 + i * 62;
+    c.strokeStyle = '#C3A8EA'; c.lineWidth = 4; rr(c, -w / 2 + 40, yy - 15, 30, 30, 7); c.stroke();
+    c.fillStyle = '#E4DAEE'; rr(c, -w / 2 + 92, yy - 8, [300, 250, 320, 220][i], 16, 8); c.fill();
+  }
+  // the new line, written by itself
+  const yy = -h / 2 + 150 + 4 * 62 + 30;
+  c.strokeStyle = '#E8628F'; c.lineWidth = 5; rr(c, -w / 2 + 40, yy - 15, 30, 30, 7); c.stroke();
+  if (write > 0) {
+    c.save(); c.beginPath(); c.rect(-w / 2 + 84, yy - 70, (w - 110) * cl(write * 2, 0, 1), 140); c.rect(-w / 2 + 84, yy + 10, (w - 110) * cl(write * 2 - 1, 0, 1), 140); c.clip();
+    c.font = FX.font('h', 66, 700); c.fillStyle = '#B83A68'; c.textBaseline = 'alphabetic';
+    c.fillText('Menopause and', -w / 2 + 88, yy + 14);
+    c.fillText('perimenopause', -w / 2 + 88, yy + 82);
+    c.restore();
+    // tick
+    const tk = seg(t, 9.3, 0.4, 'power2.out');
+    if (tk > 0) { c.strokeStyle = '#B83A68'; c.lineWidth = 6; c.lineCap = 'round'; c.beginPath(); c.moveTo(-w / 2 + 44, yy); c.lineTo(-w / 2 + 44 + 10 * Math.min(1, tk * 2), yy + 10 * Math.min(1, tk * 2)); if (tk > 0.5) c.lineTo(-w / 2 + 54 + 14 * (tk - 0.5) * 2, yy + 10 - 24 * (tk - 0.5) * 2); c.stroke(); }
+  }
+  // pen circle around the new line
+  if (ring > 0) {
+    c.strokeStyle = 'rgba(232,98,143,0.9)'; c.lineWidth = 6; c.lineCap = 'round'; c.beginPath();
+    const n = 60; for (let i = 0; i <= n * ring; i++) { const a = -2.6 + i / n * TAU * 1.08, rx = 230 + 6 * Math.sin(i * 0.4), ry = 92; c.lineTo(20 + Math.cos(a) * rx, yy + 44 + Math.sin(a) * ry); }
+    c.stroke();
+  }
+  c.restore();
+}
+// ---------- words (right-aligned, x 930) ----------
+const RX = 930, Y0 = 360;
+const WORDS = [
+  { lines: [[['Something new', 'b']], [['is coming to the', 'b']], [['NHS Health Check.', 'b']]], times: [0.0, 0.40, 0.78, 1.04, 1.26, 1.50, 1.62, 2.06, 2.48], tout: 3.3 },
+  { lines: [[['In England.', 'b']]], times: [3.88, 3.92], tout: 4.45, y: Y0 + 100 },
+  { lines: [[['Women aged', 'b']], [['40 to 55', 'i']]], times: [4.88, 5.0, 5.34, 5.82, 5.96], tout: 6.2, size: 118, lh: 1.05, y: Y0 + 40 },
+  { lines: [[['will be asked about', 'b']], [['menopause and', 'b']], [['perimenopause.', 'b']]], times: [6.56, 7.10, 7.24, 7.46, 7.76, 8.40, 8.66], tout: 9.8 },
+  { lines: [[['Part of the', 'b']], [["government's plan", 'b']], [["for women's health.", 'b']]], times: [10.44, 10.62, 10.80, 10.92, 11.40, 11.64, 11.86, 12.26], tout: 12.85 },
+  { lines: [[['When your', 'b']], [['invitation lands,', 'b']], [['go in ', 'b'], ['ready.', 'i']]], times: [13.34, 13.52, 13.66, 14.08, 15.30, 15.50, 15.70], tout: 16.25 },
+  { lines: [[['Your symptoms.', 'b']], [['How long.', 'b']], [['How often.', 'b']]], times: [16.70, 16.86, 18.04, 18.18, 18.96, 19.14], tout: 19.75 },
+  { lines: [[["It's your chance", 'b']], [['to be asked.', 'b']], [['Make it ', 'b'], ['count.', 'i']]], times: [20.18, 20.42, 20.66, 20.98, 21.24, 21.36, 22.30, 22.50, 22.68], tout: 99 },
+];
+window.__timelines["main"] = S.play(function render(t) {
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  const cy = camY(t);
+  const z = 1.04 - 0.04 * seg(t, 0, 3, 'power2.out') + 0.05 * seg(t, 13.3, 3, 'power2.inOut') - 0.02 * seg(t, 19.8, 3, 'power2.inOut');
+  c.save(); c.translate(CARD.x, 1100); c.scale(z, z); c.translate(-CARD.x, -1100);
+  c.save(); c.translate(0, -cy);
+  sceneWorld(t);
+  // letterbox flap + envelope through the slot
+  const push = seg(t, 0.35, 0.9, 'power2.out'), drop = seg(t, 2.35, 0.55, 'power2.in');
+  const flap = Math.min(1, push * 1.6) * (1 - seg(t, 2.4, 0.12, 'power3.in'));
+  const flapTop = letterbox(t, flap);
+  if (t < 3.3) {
+    // envelope emerges below the slot (clipped to below the slot), then drops
+    const ey = LB.y + lerp(-140, 150, push) + drop * 1050, er = drop * 0.9 + 0.02 * Math.sin(t * 3);
+    c.save(); if (drop <= 0) { c.beginPath(); c.rect(0, LB.y - 10, W, 3000); c.clip(); }
+    envelope(LB.x + drop * 40, ey, er, 0.78, 0); c.restore();
+  }
+  flapTop();
+  // dust motes in the light
+  MOTES.forEach(([x, y, r, ph, sp]) => { c.globalAlpha = 0.35 + 0.25 * Math.sin(t * 2 + ph); c.fillStyle = '#FFE9C8'; c.beginPath(); c.arc(x + 30 * Math.sin(t * 0.3 + ph), y - t * sp, r, 0, TAU); c.fill(); });
+  c.globalAlpha = 1;
+  c.restore();
+  PET.forEach(([x, y, sc, ph, sp]) => { const yy = (y + t * sp) % (H + 120) - 60, xx = x + 90 * Math.sin(t * 0.7 + ph); CLARI.petal(c, xx, yy, sc, ph + t, 0.8); });
+  // after the tilt: envelope on the mat opens, card rises
+  if (t >= 3.3) {
+    const land = seg(t, 3.3, 0.6, 'power2.out');
+    const open = seg(t, 3.95, 0.45, 'power2.inOut'), rise = seg(t, 4.45, 1.0, 'expo.out');
+    const eY = 1330 + (1 - land) * 200 + rise * 40;
+    envelope(700 + rise * 40, eY, 0.1 - rise * 0.04, 1.0, open, 1);
+    if (open > 0.6) card(t, rise, seg(t, 7.76, 1.3, 'power1.inOut'), seg(t, 20.66, 0.9, 'power2.inOut'));
+  }
+  c.restore();
+  // words + fact (screen space)
+  WORDS.forEach(w => FX.text(c, Object.assign({ x: RX, y: Y0, align: 'right', size: 96, lh: 1.05, dur: 0.6, outDur: 0.3, stagger: 0.02, tin: w.times[0], shadow: 0.5 }, w), t));
+  const fa = seg(t, 10.3, 0.6) ;
+  if (fa > 0) {
+    c.save(); c.globalAlpha = fa; c.textAlign = 'right'; c.fillStyle = '#FFF8EC'; c.font = FX.font('s', 48, 700);
+    c.shadowColor = 'rgba(16,4,40,0.5)'; c.shadowBlur = 12;
+    c.fillText('NHS Health Checks: every 5 years,', RX, 700 + (1 - fa) * 20);
+    c.fillText('ages 40 to 74, England.', RX, 760 + (1 - fa) * 20);
+    c.fillStyle = '#F7B6CD'; c.font = FX.font('s', 44, 700); c.fillText('Source: UK Government, Oct 2025', RX, 830 + (1 - fa) * 20);
+    c.restore();
+  }
+}, { loop: false });
+</script>
+</body>
+</html>

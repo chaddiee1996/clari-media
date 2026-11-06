@@ -384,15 +384,15 @@ Source: GOV.UK, Creating an action plan: guidance for employers.
 
 ### C7 "When the NHS says to contact your GP"  (Mon 30 Nov, TT Fri 4 Dec) · Paper: the GP summary page style · 7 slides
 1. "When the NHS says to *contact your GP*."
-2. "You think you have symptoms of perimenopause or menopause and want to know your options."
-3. "You have symptoms like a fast heartbeat (palpitations)."
+2. "You think it could be perimenopause or menopause, and want to know your options."
+3. "Symptoms like a fast heartbeat (palpitations)."
 4. "You still have periods, but you're bleeding more, not less, than before."
-5. "You haven't had a period for 12 months or more, and you have any vaginal bleeding."
+5. "You haven't had a period for 12 months or more, and then get any vaginal bleeding."
 6. "Early advice can help reduce the effects on your health, relationships and work."
 7. lockup + "Save this."
 Source on each: NHS. Caption:
 "When to contact your GP about perimenopause or menopause, according to the NHS.
-If you want to know your options, if you have palpitations, if your bleeding is heavier than before, or if you have any bleeding 12 months or more after your last period.
+If you want to know your options, if you notice palpitations, if bleeding gets heavier than before, or if there is any bleeding 12 months or more after your last period.
 Save this.
 #perimenopause #perimenopauseUK #menopausesymptoms"
 
@@ -455,7 +455,7 @@ S28 Sat 28 Nov 10:30 K: "Heating on? NHS tip: keep your bedroom cool at night."
 S29 Sun 29 Nov 10:30 K: "Sunday check-in: anything new this week? A new symptom, a new pattern?"
 S30 Mon 30 Nov 08:15 N: "A change to your periods" / "Usually one of the first signs."
 S01 Tue 1 Dec 08:15 K: "December. Party season. Notice what sets your flushes off."
-S02 Wed 2 Dec 08:15 N: "Palpitations" / "The NHS says contact your GP if you have them."
+S02 Wed 2 Dec 08:15 N: "Palpitations" / "The NHS says to contact your GP about them."
 S03 Thu 3 Dec 08:15 A: "A one-page summary for your GP, made from your own notes." (summary.png)
 S04 Fri 4 Dec 08:15 N: "Hair thinning"
 S05 Sat 5 Dec 10:30 K: "Christmas list idea: a cold water bottle by the bed. Not festive. Very useful."

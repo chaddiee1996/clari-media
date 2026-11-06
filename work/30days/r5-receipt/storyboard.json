@@ -1,0 +1,12 @@
+{
+  "title": "R5 The receipt",
+  "format": "9:16",
+  "seconds": 23.1,
+  "shots": [
+    {"time": "0.0-1.1", "graphic": "Evening supermarket window, plum till printer at top; receipt feeds out, Clari mark + TODAY print", "asset": {"kind": "code"}},
+    {"time": "1.1-12.0", "graphic": "Five items print one per 3 beats, punchline lands in the price column; camera springs down after the paper edge with parallax", "asset": {"kind": "code"}},
+    {"time": "12.0-16.4", "graphic": "Double rule, TOTAL, three big Fraunces lines in the price column, All on the NHS list, Source: NHS, barcode", "asset": {"kind": "code"}},
+    {"time": "16.4-20.0", "graphic": "Receipt tears at the printer, camera pulls back, receipt flutters down; shop lights go off; You're not imagining it.", "asset": {"kind": "code"}},
+    {"time": "20.0-23.1", "graphic": "Receipt drifts to rest in the lower half; Keep the receipt. Write it down. Calm hold for the sting", "asset": {"kind": "code"}}
+  ]
+}

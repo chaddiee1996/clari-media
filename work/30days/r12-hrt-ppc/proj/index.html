@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<script src="fx.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #9A90E2; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #9A90E2; }
+  #c { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="23.8" data-width="1080" data-height="1920">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div style="position:absolute;left:-9999px;top:0;opacity:0"><span style="font:700 66px Caveat">Menopause</span><span style="font:700 40px Fraunces">a</span><span style="font:800 40px Fraunces">a</span><span style="font:italic 600 40px Fraunces">a</span><span style="font:800 40px Figtree">a</span><span style="font:700 40px Figtree">a</span></div>
+</div>
+<script>
+const S = STUDIO, W = 1080, H = 1920, TAU = Math.PI * 2;
+const { cl, lerp, seg, rr, shadow, noShadow, vgrad, rgrad } = FX;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const E = n => S.ease(n);
+const INK = '#241A33', ROSE = '#B83A68', PAPER = '#FBF6EE';
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const TW = 175, TH = 118, TG = 18, GW = TW * 4 + TG * 3, GH = TH * 3 + TG * 2, GX = 540 - GW / 2;
+const T_PRICE = 9.28, T_CERT = 14.0;
+const gridK = t => seg(t, T_PRICE - 0.35, 0.8, 'expo.out');
+const gridS = t => lerp(1.2, 1, gridK(t));
+const gridY = t => lerp(1000 - GH / 2, 1035, gridK(t));
+const mark = CLARI.loadImg('mark-plum.png');
+const lightAt = i => 11.3 + i * 0.205;
+
+const rc = S.rng(4);
+const CLOUDS = Array.from({ length: 6 }, (_, i) => [rc() * W, 60 + rc() * 220, 0.7 + rc() * 0.8, 6 + rc() * 10]);
+const rp = S.rng(12);
+const PET = Array.from({ length: 16 }, () => [rp() * W, rp() * H, 1.4 + rp() * 1.6, rp() * TAU, 70 + rp() * 70]);
+
+function cloud(x, y, s) {
+  c.save(); c.translate(x, y); c.scale(s, s); c.fillStyle = 'rgba(255,255,255,0.75)';
+  [[0, 0, 70], [70, -26, 60], [130, 6, 54], [-62, 14, 48], [40, 26, 66]].forEach(([a, b, r]) => { c.beginPath(); c.arc(a, b, r, 0, TAU); c.fill(); });
+  c.restore();
+}
+function backdrop(t) {
+  CLARI.sky(c, 'day', W, H, { glowX: 860, glowY: 180, glow: 0.25 });
+  CLOUDS.forEach(([x, y, s, sp]) => cloud(((x + t * sp) % (W + 400)) - 200, y, s));
+  CLARI.hills(c, W, H, 'day', { y: 30 });
+}
+function paper(t) {
+  c.save(); c.translate(540, 960); c.rotate(-0.008); c.translate(-540, -960);
+  shadow(c, 80, 30, 0.28); c.fillStyle = PAPER; rr(c, 54, 236, 972, 1380, 26); c.fill(); noShadow(c);
+  // faint ruled lines
+  c.strokeStyle = 'rgba(122,69,181,0.07)'; c.lineWidth = 2;
+  for (let y = 320; y < 1580; y += 64) { c.beginPath(); c.moveTo(90, y); c.lineTo(990, y); c.stroke(); }
+  // washi tape
+  c.save(); c.translate(540, 240); c.rotate(-0.03); c.fillStyle = 'rgba(247,182,205,0.85)'; c.fillRect(-120, -26, 240, 52);
+  c.fillStyle = 'rgba(255,255,255,0.35)'; for (let i = -110; i < 120; i += 28) c.fillRect(i, -26, 10, 52); c.restore();
+  if (mark.complete && mark.naturalWidth) { const mw = 96; c.globalAlpha = 0.95; c.drawImage(mark, 100, 1452, mw, mw * mark.naturalHeight / mark.naturalWidth); c.globalAlpha = 1; }
+  c.restore();
+}
+function tiles(t) {
+  const gy = gridY(t), gs = gridS(t);
+  c.save(); c.translate(540, gy + GH / 2); c.scale(gs, gs); c.translate(-540, -(gy + GH / 2));
+  const app = seg(t, 0.35, 0.9, 'expo.out');
+  MONTHS.forEach((m, i) => {
+    const col = i % 4, row = Math.floor(i / 4);
+    const x = GX + col * (TW + TG), y = gy + row * (TH + TG) + (1 - E('expo.out')(cl((t - 0.35 - i * 0.04) / 0.8, 0, 1))) * 60;
+    const lit = seg(t, lightAt(i), 0.45, 'expo.out');
+    const pop = Math.sin(Math.PI * cl((t - lightAt(i)) / 0.35, 0, 1)) * 0.06;
+    c.save(); c.globalAlpha = cl(app * 1.4 - i * 0.03, 0, 1);
+    c.translate(x + TW / 2, y + TH / 2); c.scale(1 + pop, 1 + pop);
+    shadow(c, 18, 6, 0.12 + 0.18 * lit);
+    c.fillStyle = '#F1EAF7'; rr(c, -TW / 2, -TH / 2, TW, TH, 22); c.fill(); noShadow(c);
+    if (lit > 0) { c.globalAlpha *= lit; c.fillStyle = vgrad(c, -TH / 2, TH / 2, [[0, '#F7B6CD'], [1, '#E8628F']]); rr(c, -TW / 2, -TH / 2, TW, TH, 22); c.fill(); c.globalAlpha = 1; }
+    c.font = FX.font('s', 52, 800); c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = lit > 0.5 ? '#FFF8EC' : '#5F556B'; c.fillText(m, 0, 4);
+    if (lit > 0) CLARI.blossom(c, TW / 2 - 18, -TH / 2 + 18, 0.38 * lit, i, { open: lit });
+    c.restore();
+  });
+  c.restore();
+}
+function certificate(t) {
+  const p = seg(t, T_CERT, 0.5, 'power3.in');                  // slides in, then the stamp settles it
+  if (t < T_CERT) return;
+  const land = t - (T_CERT + 0.5);
+  const sq = land > 0 ? 0.03 * Math.exp(-land * 8) * Math.cos(land * 30) : 0;
+  const gy = gridY(t), cx = 540, cy = gy + GH / 2;
+  const x = lerp(cx + 1100, cx, p), rot = lerp(0.3, -0.025, p);
+  const cw = 840, ch = 480;
+  c.save(); c.translate(x, cy + (1 - p) * -80); c.rotate(rot); c.scale(1 + sq, 1 - sq);
+  shadow(c, 60, 26, 0.35); c.fillStyle = '#FFFDF8'; rr(c, -cw / 2, -ch / 2, cw, ch, 22); c.fill(); noShadow(c);
+  c.strokeStyle = '#C3A8EA'; c.lineWidth = 4; rr(c, -cw / 2 + 20, -ch / 2 + 20, cw - 40, ch - 40, 14); c.stroke();
+  c.setLineDash([6, 8]); c.strokeStyle = 'rgba(122,69,181,0.35)'; c.lineWidth = 2; rr(c, -cw / 2 + 34, -ch / 2 + 34, cw - 68, ch - 68, 10); c.stroke(); c.setLineDash([]);
+  c.fillStyle = vgrad(c, -ch / 2, -ch / 2 + 90, [[0, '#7A45B5'], [1, '#4A2070']]); rr(c, -cw / 2 + 20, -ch / 2 + 20, cw - 40, 86, 14); c.fill();
+  c.font = FX.font('s', 48, 800); c.fillStyle = '#FFF8EC'; c.textAlign = 'left'; c.textBaseline = 'middle';
+  c.fillText('12 MONTHS', -cw / 2 + 60, -ch / 2 + 64);
+  c.textBaseline = 'alphabetic'; c.fillStyle = INK; c.font = FX.font('b', 64, 700);
+  c.fillText('HRT prescription', -cw / 2 + 60, -10);
+  c.fillText('prepayment', -cw / 2 + 60, 66);
+  c.font = FX.font('i', 64, 600); c.fillStyle = ROSE; c.fillText('certificate', -cw / 2 + 60, 142);
+  // blossom seal
+  const sx = cw / 2 - 150, sy = 70;
+  c.fillStyle = rgrad(c, sx, sy, 10, 100, [[0, '#FFF0F5'], [1, '#F7B6CD']]);
+  c.beginPath(); for (let i = 0; i < 24; i++) { const a = i * TAU / 24, r = i % 2 ? 92 : 100; c.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r); } c.closePath(); c.fill();
+  c.strokeStyle = '#E8628F'; c.lineWidth = 3; c.beginPath(); c.arc(sx, sy, 74, 0, TAU); c.stroke();
+  CLARI.blossom(c, sx, sy, 1.15, 0.2, { open: seg(t, T_CERT + 0.5, 0.6, 'back.out(2)') });
+  c.restore();
+  // stamp ring burst
+  const b = seg(t, T_CERT + 0.5, 0.6, 'expo.out'); if (b > 0 && b < 1) { c.save(); c.globalAlpha = 1 - b; c.strokeStyle = '#F7B6CD'; c.lineWidth = 6; rr(c, cx - cw / 2 - 30 * b, cy - ch / 2 - 30 * b, cw + 60 * b, ch + 60 * b, 30); c.stroke(); c.restore(); }
+}
+function slips(t) {
+  const p = seg(t, 15.56, 0.7, 'back.out(1.6)') * (1 - seg(t, 17.6, 0.5, 'power2.in'));
+  if (p <= 0) return;
+  [[-1, 0], [1, 1]].forEach(([d, k]) => {
+    const x = 540 + d * lerp(900, 455, p), y = 790 + 10 * Math.sin(t * 2 + k);
+    c.save(); c.translate(x, y); c.rotate(d * 0.14);
+    shadow(c, 24, 10, 0.25); c.fillStyle = '#FFFFFF'; rr(c, -48, -70, 96, 140, 12); c.fill(); noShadow(c);
+    c.fillStyle = '#C3A8EA'; for (let i = 0; i < 4; i++) rr(c, -30, -40 + i * 24, i === 3 ? 34 : 60, 9, 4), c.fill();
+    c.fillStyle = '#E8628F'; c.beginPath(); c.arc(24, 44, 12, 0, TAU); c.fill();
+    c.restore();
+  });
+}
+function price(t) {
+  const a = seg(t, T_PRICE, 0.7, 'expo.out'), b = seg(t, 10.0, 0.6, 'expo.out');
+  if (a <= 0) return;
+  const y = 870, sz = 250;
+  c.save(); c.font = FX.font('b', sz, 800);
+  const w1 = c.measureText('£19').width, w2 = c.measureText('.80').width, x0 = 540 - (w1 + w2 * b) / 2;
+  const punch = 1 + 0.04 * Math.sin(Math.PI * cl((t - 10.0) / 0.4, 0, 1));
+  c.translate(540, y - sz * 0.35); c.scale(punch, punch); c.translate(-540, -(y - sz * 0.35));
+  c.beginPath(); c.rect(0, y - sz * 0.95, W, sz * 1.2); c.clip();
+  c.fillStyle = INK; c.textAlign = 'left'; c.globalAlpha = Math.min(1, a * 1.5);
+  c.fillText('£19', x0, y + (1 - a) * sz);
+  if (b > 0) { c.fillStyle = ROSE; c.globalAlpha = Math.min(1, b * 1.5); c.fillText('.80', x0 + w1, y + (1 - b) * sz * 0.8); }
+  c.restore();
+}
+const RX = 905, Y0 = 370;
+const WORDS = [
+  { lines: [[['If you pay for', 'b']], [['HRT prescriptions', 'b']], [['in England', 'b']]], times: [0.0, 0.16, 0.32, 0.56, 0.80, 1.32, 1.80, 2.22], tout: 2.75 },
+  { lines: [[["this one's worth", 'b']], [['knowing.', 'i']]], times: [3.20, 3.44, 3.72, 3.88], tout: 5.0 },
+  { lines: [[['HRT prescription', 'b']], [['prepayment', 'b']], [['certificate', 'b']]], times: [5.50, 6.24, 6.70, 7.74], tout: 10.75 },
+  { lines: [[['Covers certain', 'b']], [['HRT medicines', 'b']], [['for 12 months.', 'b']]], times: [11.26, 11.56, 11.98, 12.66, 13.02, 13.38, 13.70], tout: 14.5 },
+  { lines: [[['The price of', 'b']], [['two single', 'b']], [['prescriptions.', 'b']]], times: [15.00, 15.10, 15.32, 15.56, 15.90, 16.34], tout: 17.4 },
+  { lines: [[['Buy online,', 'b']], [['or at some', 'b']], [['pharmacies.', 'b']]], times: [17.92, 18.24, 18.62, 19.06, 19.20, 19.40], tout: 20.1 },
+  { lines: [[['Ask your', 'b']], [['pharmacist if yours', 'b']], [['is covered.', 'b']]], times: [20.60, 20.74, 20.92, 21.50, 21.80, 22.00, 22.22], tout: 99 },
+];
+window.__timelines["main"] = S.play(function render(t) {
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  const z = 1.05 - 0.05 * seg(t, 0, 3, 'power2.out') + 0.025 * seg(t, T_PRICE, 0.8, 'expo.out') * (1 - seg(t, 11, 2, 'power2.inOut')) + 0.03 * seg(t, 17.5, 6, 'power1.inOut');
+  const shake = t > T_CERT + 0.5 ? 5 * Math.exp(-(t - T_CERT - 0.5) * 10) * Math.sin((t - T_CERT) * 70) : 0;
+  c.save(); c.translate(540, 960); c.scale(1 + (z - 1) * 0.4, 1 + (z - 1) * 0.4); c.translate(-540, -960); backdrop(t);
+  CLARI.branch(c, W + 30, 60, 2.9, true, t, {}); c.restore();
+  c.save(); c.translate(540, 960); c.scale(z, z); c.translate(-540, -960 + shake);
+  paper(t);
+  PET.forEach(([x, y, s, ph, sp]) => { const yy = (y + t * sp) % (H + 100) - 50, xx = x + 60 * Math.sin(t * 0.8 + ph); CLARI.petal(c, xx, yy, s, ph + t, 0.55); });
+  tiles(t); certificate(t); slips(t); price(t);
+  WORDS.forEach(w => FX.text(c, Object.assign({ x: RX, y: Y0, align: 'right', size: 92, lh: 1.09, color: INK, em: ROSE, shadow: 0, dur: 0.6, outDur: 0.28, stagger: 0.02, tin: w.times[0] }, w), t));
+  const src = seg(t, 5.4, 0.5);
+  if (src > 0) { c.globalAlpha = src; c.font = FX.font('s', 46, 700); c.fillStyle = '#5F556B'; c.textAlign = 'right'; c.fillText('Source: NHSBSA', RX, 1520); c.globalAlpha = 1; }
+  c.restore();
+  // petals drift over the sky edges
+  PET.forEach(([x, y, s, ph, sp]) => { const yy = (y + t * sp) % (H + 100) - 50, xx = x + 60 * Math.sin(t * 0.8 + ph); if (xx > 70 && xx < 1010 && yy > 240 && yy < 1610) return; if (yy < 0) return; CLARI.petal(c, xx, yy, s, ph + t, 0.85); });
+}, { loop: false });
+</script>
+</body>
+</html>

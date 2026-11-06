@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<style>
+  :root { --paper: #FBF6EE; --card: #FFFDF8; --ink: #241A33; --ink2: #5F556B; --rose: #B83A68; --lilac: #C3A8EA; --night: #22103F; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  .abs { position: absolute; left: 0; top: 0; }
+  #world { width: 1080px; height: 1920px; transform-origin: 540px 960px; }
+  .grain { background-color: var(--paper);
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .1  0 0 0 0 .3  0 0 0 .06 0'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>"); }
+  #sheet { left: 54px; top: 150px; width: 972px; height: 1640px; border-radius: 6px; transform-origin: 540px 960px;
+    box-shadow: 0 30px 70px rgba(10, 3, 24, .55), 0 2px 0 rgba(255, 255, 255, .5) inset; }
+  .serif { font-family: 'Fraunces', serif; font-variation-settings: "opsz" 144; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: lining-nums; }
+  .sans { font-family: 'Figtree', sans-serif; font-weight: 800; color: var(--ink); }
+  .hand { font-family: 'Caveat', cursive; font-weight: 700; color: var(--ink); }
+  .ra { text-align: right; position: absolute; right: 160px; }
+  #g41 { width: 1080px; height: 1200px; transform-origin: 0 0; }
+  #n41 { top: 380px; font-size: 600px; font-weight: 800; line-height: 1; }
+  #q { top: 1080px; font-size: 136px; font-style: italic; font-weight: 600; color: var(--rose); line-height: 1.08; }
+  .w { display: inline-block; }
+  .ln { overflow: hidden; padding: 0.02em 0.12em 0.2em; margin: -0.02em -0.12em -0.2em; }
+  .card { width: 930px; height: 880px; border-radius: 14px; transform-origin: 0 0; background: var(--card);
+    box-shadow: 0 22px 48px rgba(16, 4, 40, .30), 0 2px 6px rgba(16, 4, 40, .12); }
+  .card .lines { position: absolute; left: 0; right: 0; top: 0; bottom: 0; border-radius: 14px;
+    background: repeating-linear-gradient(to bottom, transparent 0, transparent 82px, rgba(122, 69, 181, .16) 82px, rgba(122, 69, 181, .16) 85px);
+    background-position: 0 116px; -webkit-mask: linear-gradient(#000, #000) 0 200px / 100% 100% no-repeat; }
+  .card .rule { position: absolute; left: 0; right: 0; top: 128px; height: 4px; background: rgba(232, 98, 143, .55); }
+  .card .tab { position: absolute; right: 34px; top: -90px; width: 340px; height: 98px; border-radius: 24px 24px 0 0; background: var(--card);
+    font: 800 50px 'Figtree', sans-serif; color: var(--ink); text-align: center; line-height: 98px; box-shadow: 0 -6px 14px rgba(16, 4, 40, .10); }
+  .card .tab b { color: var(--rose); }
+  .card .big { position: absolute; right: 80px; top: 120px; white-space: nowrap; font-weight: 800; line-height: 1; }
+  .card .big .sm { font-size: 120px; font-weight: 700; margin-right: 0.18em; }
+  .card .big .num { font-size: 300px; }
+  .card .st { position: absolute; right: 80px; font: 800 72px 'Figtree', sans-serif; color: var(--ink); white-space: nowrap; }
+  #box { left: 30px; top: 1560px; width: 1020px; height: 460px; border-radius: 34px 34px 0 0;
+    background: linear-gradient(180deg, #9C74D4, #6B3FA6); box-shadow: 0 -20px 50px rgba(16, 4, 40, .45); }
+  #box .lip { position: absolute; left: 0; right: 0; top: 0; height: 18px; border-radius: 34px 34px 0 0; background: rgba(255, 255, 255, .22); }
+  #box .holder { position: absolute; left: 380px; top: 70px; width: 260px; height: 70px; border-radius: 14px; background: rgba(255, 248, 236, .28); }
+  #src { right: 160px; left: auto; top: 1452px; font: 700 46px 'Figtree', sans-serif; color: var(--ink2); }
+  #pad { left: 92px; top: 500px; width: 880px; height: 760px; border-radius: 10px; transform-origin: 0 0;
+    background: #FFFDF8 repeating-linear-gradient(to bottom, transparent 0, transparent 118px, rgba(122, 69, 181, .18) 118px, rgba(122, 69, 181, .18) 121px);
+    background-position: 0 60px; box-shadow: 0 26px 56px rgba(16, 4, 40, .32); }
+  #pad .margin { position: absolute; top: 0; bottom: 0; left: 120px; width: 4px; background: rgba(232, 98, 143, .5); }
+  #pad .rings { position: absolute; left: 60px; right: 60px; top: -26px; height: 52px;
+    background: radial-gradient(circle at 26px 26px, #8E66C6 0 15px, transparent 16px) 0 0 / 80px 52px repeat-x; }
+  .hl { position: absolute; right: 70px; font-size: 140px; white-space: nowrap; line-height: 1; }
+  #end, #take { line-height: 1.02; }
+  #end i { font-style: italic; font-weight: 600; color: var(--rose); }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="32.2" data-width="1080" data-height="1920">
+  <canvas id="bg" class="abs" width="1080" height="1920"></canvas>
+  <div id="world" class="abs">
+    <div id="sheet" class="abs grain"></div>
+    <div id="g41" class="abs">
+      <div id="n41" class="serif ra">41.</div>
+    </div>
+    <div id="q" class="serif ra"><div class="ln"><span class="w" data-t="1.30">Told</span> <span class="w" data-t="1.56">you’re</span></div><div class="ln"><span class="w" data-t="1.90">too</span> <span class="w" data-t="2.06">young?</span></div></div>
+
+    <div id="box" class="abs"><div class="lip"></div><div class="holder"></div></div>
+
+    <div id="c1" class="abs card"><div class="lines"></div><div class="rule"></div><div class="tab">Over 45</div>
+      <div class="big serif"><span class="sm">Over</span><span class="num">45</span></div>
+      <div class="st" style="top:500px"><span class="w" data-t="13.42">Symptoms</span> <span class="w" data-t="13.62">are</span> <span class="w" data-t="13.86">enough.</span></div>
+      <div class="st" style="top:596px"><span class="w" data-t="14.84">No</span> <span class="w" data-t="14.96">blood</span> <span class="w" data-t="15.20">test</span> <span class="w" data-t="15.48">needed.</span></div>
+    </div>
+    <div id="c2" class="abs card"><div class="lines"></div><div class="rule"></div><div class="tab">40 to 45</div>
+      <div class="big serif"><span class="num w" data-t="16.80" style="font-size:240px">40</span><span class="sm w" data-t="17.34" style="margin:0 0.22em">to</span><span class="num w" data-t="17.54" style="font-size:240px">45</span></div>
+      <div class="st" style="top:500px"><span class="w" data-t="18.70">A</span> <span class="w" data-t="18.88">blood</span> <span class="w" data-t="19.08">test</span> <span class="w" data-t="19.38">can</span> <span class="w" data-t="19.72">be</span></div>
+      <div class="st" style="top:596px"><span class="w" data-t="19.96">considered.</span></div>
+    </div>
+    <div id="c3" class="abs card"><div class="lines"></div><div class="rule"></div><div class="tab">Under 40</div>
+      <div class="big serif"><span class="sm w" data-t="21.10">Under</span><span class="num w" data-t="21.34">40</span></div>
+      <div class="st" style="top:500px"><span class="w" data-t="22.44">Two</span> <span class="w" data-t="22.66">blood</span> <span class="w" data-t="22.90">tests,</span></div>
+      <div class="st" style="top:596px"><span class="w" data-t="23.74">4</span> <span class="w" data-t="23.82">to</span> <span class="w" data-t="23.96">6</span> <span class="w" data-t="24.20">weeks</span> <span class="w" data-t="24.42">apart.</span></div>
+    </div>
+
+    <div id="end" class="serif ra" style="top:520px;font-size:136px;font-weight:700">
+      <div class="ln"><span class="w" data-t="26.06">Too</span> <span class="w" data-t="26.38">young</span></div>
+      <div class="ln"><span class="w" data-t="26.80">isn’t</span> <span class="w" data-t="27.30">the</span> <i class="w" data-t="27.46">end</i></div>
+      <div class="ln"><span class="w" data-t="27.60">of</span> <span class="w" data-t="27.72">the</span></div>
+      <div class="ln"><span class="w" data-t="27.84">conversation.</span></div>
+    </div>
+
+    <div id="pad" class="abs"><div class="margin"></div><div class="rings"></div>
+      <div id="h1" class="hand hl" style="top:44px">Write down</div>
+      <div id="h2" class="hand hl" style="top:206px">what’s changed.</div>
+    </div>
+    <div id="take" class="serif ra" style="top:1300px;font-size:124px;font-weight:700"><div class="ln"><span class="w" data-t="30.60">Take</span> <span class="w" data-t="30.82">it</span> <span class="w" data-t="31.00">with</span> <span class="w" data-t="31.14">you.</span></div></div>
+
+    <canvas id="fg" class="abs" width="1080" height="1920"></canvas>
+    <div id="src" class="abs">Source: NICE guideline NG23</div>
+  </div>
+</div>
+<script>
+const S = STUDIO, A = CLARI, P = A.P, W = 1080, H = 1920, TAU = Math.PI * 2;
+const seg = S.seg, mix = S.mix, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const $ = id => document.getElementById(id);
+const bg = $('bg').getContext('2d'), fg = $('fg').getContext('2d');
+const world = $('world'), sheet = $('sheet'), g41 = $('g41'), q = $('q'), box = $('box'), src = $('src'), pad = $('pad');
+const cards = [$('c1'), $('c2'), $('c3')];
+const words = [...document.querySelectorAll('.w')];
+
+// ---- key times (from the VO word timings) ----
+const T = { hookOut: 6.1, nice: 5.06, box: 6.35, c: [7.55, 16.45, 20.95], out: 25.6, pad: 28.35, endOut: 28.25 };
+
+// word reveal: each word rises into its line when it is spoken
+function wordsAt(t) {
+  words.forEach(w => {
+    const p = seg(t, +w.dataset.t - 0.04, 0.42, 'expo.out');
+    w.style.transform = `translateY(${(1 - p) * 60}%)`; w.style.opacity = clamp(p * 1.6, 0, 1);
+  });
+}
+
+// ---- card transforms (translate + rotate, origin top left) ----
+const FIN = [[75, 505, -0.012], [70, 600, 0.009], [78, 695, -0.006]];
+function cardTf(i, t) {
+  const t0 = T.c[i];
+  const up = seg(t, t0, 0.95, 'expo.out');
+  const [fx, fy, fr] = FIN[i];
+  const inBox = boxY(t) - 20 - i * 52;
+  let x = mix(fx + 10, fx, up), y = mix(inBox, fy, up), r = mix(0.03 * (i % 2 ? -1 : 1), fr, S.ease('back.out(2)')(up));
+  // everything leaves on "So,"
+  const o = seg(t, T.out + i * 0.06, 0.7, 'power3.in');
+  y += o * 1500; r += o * 0.08 * (i - 1);
+  return { x, y, r, up };
+}
+function boxY(t) { return mix(1960, 1560, seg(t, T.box, 0.8, 'expo.out')) + 520 * seg(t, T.out + 0.15, 0.7, 'power3.in'); }
+// 41 group: hero, then shrinks to the top right as a header
+function g41Tf(t) {
+  const p = seg(t, T.hookOut, 1.0, 'expo.inOut');
+  const s0 = 1 + 0.035 * seg(t, 0, 4.5, 'sine.out');
+  const s = mix(s0, 0.34, p);
+  const gx = 920 * (1 - s), gy = (1 - p) * 380 * (1 - s) + p * (190 - 380 * s);
+  return { s, gx, gy, p };
+}
+
+// ---- pencil + strokes ----
+function wob(pts, seed, amp) { const r = S.rng(seed); return pts.map(([x, y]) => [x + (r() - 0.5) * amp, y + (r() - 0.5) * amp]); }
+function line(x0, y0, x1, y1, n, seed, amp) { const a = []; for (let i = 0; i <= n; i++) a.push([mix(x0, x1, i / n), mix(y0, y1, i / n) + Math.sin(i * 1.7) * 2]); return wob(a, seed, amp); }
+function ellipse(cx, cy, rx, ry, a0, turns, n, seed) { const a = []; for (let i = 0; i <= n; i++) { const u = a0 + TAU * turns * i / n; a.push([cx + rx * Math.cos(u) * (1 + 0.04 * Math.sin(i)), cy + ry * Math.sin(u)]); } return wob(a, seed, 4); }
+// flame doodle (hot flushes) and a calendar with scattered dots (irregular periods), card local
+const flame = [[150, 840], [118, 800], [122, 752], [152, 712], [160, 750], [182, 700], [200, 650], [228, 720], [246, 690], [262, 760], [252, 812], [222, 842], [150, 840]].map(([x, y]) => [x, y + 26]);
+const inner = [[180, 832], [170, 800], [186, 772], [200, 790], [214, 768], [226, 806], [212, 832]].map(([x, y]) => [x, y + 26]);
+function rect(x0, y0, x1, y1) { return [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0 - 2]]; }
+const calA = wob(rect(320, 716, 500, 866), 3, 3), calB = wob([[320, 756], [500, 756]], 4, 2);
+const dots = [[352, 796], [446, 786], [384, 836], [470, 842]];
+const tube = (x) => wob([[x, 540], [x, 660], [x + 18, 680], [x + 36, 660], [x + 36, 540]], x, 3);
+const arrow = wob([[76, 520], [104, 490], [142, 490], [170, 516], [158, 496], [170, 516], [150, 522]], 9, 2);
+// stroke list: points, t0, t1, frame ('g41' | 'q' | 'c0'.. | 'pad'), colour, width
+const STR = [
+  { p: line(300, 1012, 935, 1000, 22, 1, 5), t0: 0.32, t1: 1.05, f: 'g41', col: 'rgba(36,26,51,0.9)', w: 16 },
+  { p: line(428, 1420, 930, 1412, 18, 2, 4), t0: 2.6, t1: 3.15, f: 'world', col: 'rgba(184,58,104,0.85)', w: 9 },
+  { p: line(436, 1442, 900, 1438, 16, 5, 4), t0: 3.2, t1: 3.6, f: 'world', col: 'rgba(184,58,104,0.85)', w: 8 },
+  { p: wob(flame, 11, 3), t0: 9.6, t1: 10.25, f: 'c0', col: 'rgba(184,58,104,0.9)', w: 7 },
+  { p: inner, t0: 10.25, t1: 10.5, f: 'c0', col: 'rgba(184,58,104,0.9)', w: 6 },
+  { p: calA, t0: 10.62, t1: 11.2, f: 'c0', col: 'rgba(36,26,51,0.85)', w: 6 },
+  { p: calB, t0: 11.2, t1: 11.35, f: 'c0', col: 'rgba(36,26,51,0.85)', w: 6 },
+  ...dots.map(([x, y], j) => ({ p: ellipse(x, y, 7, 7, 0, 2.2, 14, 30 + j), t0: 11.5 + j * 0.34, t1: 11.66 + j * 0.34, f: 'c0', col: 'rgba(184,58,104,0.95)', w: 10 })),
+  { p: ellipse(530, 260, 420, 150, -0.4, 1.08, 40, 21), t0: 17.78, t1: 18.45, f: 'c1', col: 'rgba(184,58,104,0.85)', w: 8 },
+  { p: tube(62), t0: 22.5, t1: 22.85, f: 'c2', col: 'rgba(36,26,51,0.85)', w: 6 },
+  { p: tube(140), t0: 22.9, t1: 23.25, f: 'c2', col: 'rgba(36,26,51,0.85)', w: 6 },
+  { p: arrow, t0: 24.05, t1: 24.5, f: 'c2', col: 'rgba(184,58,104,0.9)', w: 6 },
+];
+STR.forEach(s => { let L = 0; s.cum = [0]; for (let i = 1; i < s.p.length; i++) { L += Math.hypot(s.p[i][0] - s.p[i - 1][0], s.p[i][1] - s.p[i - 1][1]); s.cum.push(L); } s.L = L; });
+function strokeHead(s, u) { // u 0..1 along length
+  const d = u * s.L; let i = 1; while (i < s.cum.length - 1 && s.cum[i] < d) i++;
+  const f = (d - s.cum[i - 1]) / Math.max(1e-6, s.cum[i] - s.cum[i - 1]);
+  return { i, x: mix(s.p[i - 1][0], s.p[i][0], f), y: mix(s.p[i - 1][1], s.p[i][1], f) };
+}
+function drawStroke(k, s, u, alpha) {
+  if (u <= 0 || alpha <= 0) return;
+  const h = strokeHead(s, u);
+  k.save(); k.globalAlpha = alpha; k.strokeStyle = s.col; k.lineWidth = s.w; k.lineCap = 'round'; k.lineJoin = 'round';
+  k.beginPath(); k.moveTo(s.p[0][0], s.p[0][1]); for (let i = 1; i < h.i; i++) k.lineTo(s.p[i][0], s.p[i][1]); k.lineTo(h.x, h.y); k.stroke();
+  // graphite grain: a lighter second pass
+  k.globalAlpha = alpha * 0.35; k.lineWidth = s.w * 0.4; k.strokeStyle = 'rgba(255,255,255,0.6)'; k.stroke();
+  k.restore();
+  if (s === STR[4] || s === STR[6]) return;
+}
+function pencil(k, x, y, ang, lift) {
+  // tip at x,y; the body runs up and to the right
+  k.save(); k.translate(x + lift * 18, y + lift * 30);
+  k.rotate(ang);
+  k.fillStyle = 'rgba(16,4,40,0.22)'; k.filter = 'blur(6px)'; k.beginPath(); k.moveTo(0, 0); k.lineTo(560, -22); k.lineTo(560, 22); k.closePath(); k.fill(); k.filter = 'none';
+  k.restore();
+  k.save(); k.translate(x, y); k.rotate(ang);
+  k.fillStyle = '#241A33'; k.beginPath(); k.moveTo(0, 0); k.lineTo(22, -6); k.lineTo(22, 6); k.closePath(); k.fill();
+  k.fillStyle = '#F5D7B4'; k.beginPath(); k.moveTo(20, -6); k.lineTo(78, -22); k.lineTo(78, 22); k.lineTo(20, 6); k.closePath(); k.fill();
+  const bands = [['#9A68D6', -22, -8], ['#7A45B5', -8, 8], ['#5E3196', 8, 22]];
+  bands.forEach(([c, a, b]) => { k.fillStyle = c; k.fillRect(78, a, 400, b - a); });
+  k.fillStyle = '#FFE29A'; k.fillRect(478, -23, 40, 46); k.fillStyle = 'rgba(160,110,40,0.35)'; k.fillRect(488, -23, 4, 46); k.fillRect(506, -23, 4, 46);
+  k.fillStyle = '#F7B6CD'; A.rr(k, 516, -22, 52, 44, 14); k.fill();
+  k.restore();
+}
+// frame transforms for drawing strokes on the fg canvas (world coordinates)
+function frameTf(k, f, t) {
+  if (f === 'g41') { const g = g41Tf(t); k.translate(g.gx, g.gy); k.scale(g.s, g.s); }
+  else if (f[0] === 'c') { const tf = cardTf(+f[1], t); k.translate(tf.x, tf.y); k.rotate(tf.r); }
+  else if (f === 'pad') { const p = padTf(t); k.translate(p.x, p.y); k.rotate(p.r); }
+}
+function toWorld(f, t, x, y) {
+  const m = new DOMMatrix();
+  if (f === 'g41') { const g = g41Tf(t); m.translateSelf(g.gx, g.gy); m.scaleSelf(g.s, g.s); }
+  else if (f[0] === 'c') { const tf = cardTf(+f[1], t); m.translateSelf(tf.x, tf.y); m.rotateSelf(tf.r * 180 / Math.PI); }
+  else if (f === 'pad') { const p = padTf(t); m.translateSelf(p.x, p.y); m.rotateSelf(p.r * 180 / Math.PI); }
+  const pt = m.transformPoint(new DOMPoint(x, y)); return [pt.x, pt.y];
+}
+function padTf(t) { const p = seg(t, T.pad, 0.75, 'expo.out'); return { x: mix(92, 92, p), y: mix(2000, 500, p), r: mix(0.06, 0.022, S.ease('back.out(1.6)')(p)), p }; }
+
+// handwriting heads (pad local), filled in after fonts load
+const HW = [{ el: $('h1'), t0: 28.86, t1: 29.62 }, { el: $('h2'), t0: 29.56, t1: 30.38 }];
+function hwAt(t) {
+  HW.forEach(h => {
+    const u = clamp((t - h.t0) / (h.t1 - h.t0), 0, 1);
+    h.el.style.clipPath = `inset(-20px ${(1 - u) * 100}% -40px -20px)`;
+    h.u = u;
+  });
+}
+// the pencil's whole path: draw strokes, travel between them, leave when there is a long gap
+const ACT = STR.map(s => ({ t0: s.t0, t1: s.t1, head: (t) => { const u = clamp((t - s.t0) / (s.t1 - s.t0), 0, 1); const h = strokeHead(s, S.ease('sine.inOut')(u)); return toWorld(s.f, t, h.x, h.y); } }));
+HW.forEach(h => ACT.push({ t0: h.t0, t1: h.t1, head: (t) => { const u = clamp((t - h.t0) / (h.t1 - h.t0), 0, 1); const el = h.el; const L = el.offsetLeft, Wd = el.offsetWidth, top = el.offsetTop; return toWorld('pad', t, L + Wd * u, top + 104 + Math.sin(u * 40) * 10); } }));
+ACT.sort((a, b) => a.t0 - b.t0);
+const OFF = [1250, 1650];
+function pencilAt(t) {
+  for (let i = 0; i < ACT.length; i++) {
+    const a = ACT[i], prev = ACT[i - 1], next = ACT[i + 1];
+    if (t >= a.t0 && t <= a.t1) return { p: a.head(t), lift: 0 };
+    if (next && t > a.t1 && t < next.t0) {
+      const gap = next.t0 - a.t1;
+      if (gap < 2.4) { const u = S.ease('power3.inOut')(clamp((t - a.t1) / gap, 0, 1)); const p0 = a.head(a.t1), p1 = next.head(next.t0); return { p: [mix(p0[0], p1[0], u), mix(p0[1], p1[1], u) - Math.sin(u * Math.PI) * 60], lift: Math.sin(u * Math.PI) }; }
+      const out = S.ease('power3.in')(clamp((t - a.t1) / 0.55, 0, 1)), inn = S.ease('expo.out')(clamp((t - (next.t0 - 0.6)) / 0.6, 0, 1));
+      if (t < next.t0 - 0.6) { const p0 = a.head(a.t1); return out >= 1 ? null : { p: [mix(p0[0], OFF[0], out), mix(p0[1], OFF[1], out)], lift: out }; }
+      const p1 = next.head(next.t0); return { p: [mix(OFF[0], p1[0], inn), mix(OFF[1], p1[1], inn)], lift: 1 - inn };
+    }
+  }
+  const first = ACT[0], last = ACT[ACT.length - 1];
+  if (t < first.t0) { const inn = S.ease('expo.out')(clamp((t - (first.t0 - 0.35)) / 0.35, 0, 1)); const p1 = first.head(first.t0); return { p: [mix(OFF[0], p1[0], inn), mix(OFF[1], p1[1], inn)], lift: 1 - inn }; }
+  const out = S.ease('power3.in')(clamp((t - last.t1) / 0.6, 0, 1)); if (out >= 1) return null; const p0 = last.head(last.t1); return { p: [mix(p0[0], OFF[0], out), mix(p0[1], OFF[1], out)], lift: out };
+}
+
+// ---- desk (behind the sheet) ----
+function desk(t) {
+  const g = bg.createLinearGradient(0, 0, W * 0.6, H); g.addColorStop(0, '#4A2070'); g.addColorStop(0.55, '#2C1252'); g.addColorStop(1, '#1A0A33');
+  bg.fillStyle = g; bg.fillRect(0, 0, W, H);
+  bg.strokeStyle = 'rgba(195,168,234,0.05)'; bg.lineWidth = 3;
+  for (let i = 0; i < 40; i++) { bg.beginPath(); bg.moveTo(-50, i * 52 + 10 * Math.sin(i)); bg.bezierCurveTo(300, i * 52 + 20, 700, i * 52 - 16, 1130, i * 52 + 8 * Math.cos(i)); bg.stroke(); }
+}
+
+// ---- render ----
+window.__timelines["main"] = S.play(function render(t) {
+  // camera: a slow drift, a breath in on each card
+  const z = 1.0 + 0.025 * seg(t, 0, 4.5, 'sine.out') - 0.025 * seg(t, 4.5, 1.2, 'expo.inOut') + 0.012 * Math.sin(t * 0.35);
+  const rot = -0.25 + 0.2 * Math.sin(t * 0.21);
+  world.style.transform = `scale(${z}) rotate(${rot}deg) translate(${4 * Math.sin(t * 0.3)}px, ${3 * Math.cos(t * 0.27)}px)`;
+  $('bg').style.transform = `scale(${1 + (z - 1) * 0.5 + 0.02}) rotate(${rot * 0.5}deg)`;
+  desk(t);
+  sheet.style.transform = `rotate(-1.2deg)`;
+
+  const g = g41Tf(t);
+  g41.style.transform = `translate(${g.gx}px, ${g.gy}px) scale(${g.s})`;
+  const ho = seg(t, T.hookOut, 0.45, 'power2.in');
+  q.style.opacity = 1 - ho; q.style.transform = `translateY(${-ho * 60}px)`;
+  wordsAt(t);
+  // 41 lands at frame 0 with a tiny settle
+  $('n41').style.transform = `translateY(${(1 - seg(t, 0, 0.5, 'expo.out')) * 40}px)`;
+
+  box.style.transform = `translateY(${boxY(t) - 1560}px)`;
+  cards.forEach((el, i) => {
+    const tf = cardTf(i, t);
+    el.style.transform = `translate(${tf.x}px, ${tf.y}px) rotate(${tf.r}rad)`;
+    el.style.zIndex = tf.up > 0.12 ? 10 + i : 3 - i;
+    el.style.visibility = t > T.box && tf.y < 1950 ? 'visible' : 'hidden';
+    el.querySelector('.tab').style.color = tf.up > 0.05 ? '' : 'transparent';
+  });
+  box.style.zIndex = 19;
+  const sp = seg(t, T.nice, 0.6, 'expo.out') * (1 - seg(t, T.out, 0.4, 'power2.in'));
+  src.style.opacity = sp; src.style.transform = `translateY(${(1 - sp) * 30}px)`; src.style.zIndex = 30;
+
+  // end lines
+  const eo = seg(t, T.endOut, 0.4, 'power2.in');
+  $('end').style.opacity = 1 - eo; $('end').style.transform = `translateY(${-eo * 80}px)`; $('end').style.zIndex = 20;
+  const pt = padTf(t);
+  pad.style.transform = `translate(${pt.x - 92}px, ${pt.y - 500}px) rotate(${pt.r}rad)`; pad.style.zIndex = 21;
+  pad.style.visibility = t > T.pad - 0.05 ? 'visible' : 'hidden';
+  $('take').style.zIndex = 22;
+  hwAt(t);
+
+  // fg canvas: strokes + pencil (world coordinates)
+  fg.setTransform(1, 0, 0, 1, 0, 0); fg.clearRect(0, 0, W, H);
+  $('fg').style.zIndex = 25;
+  STR.forEach((s, i) => {
+    const u = S.ease('sine.inOut')(clamp((t - s.t0) / (s.t1 - s.t0), 0, 1));
+    let al = 1;
+    if (s.f === 'world') al = 1 - ho;
+    if (s.f === 'c1') al = 1 - seg(t, T.c[2] + 0.1, 0.35);
+    if (s.f[0] === 'c' && s.f !== 'c2' && s.f !== 'c1') al = 1 - seg(t, T.c[1] + 0.1, 0.35);
+    fg.save(); frameTf(fg, s.f, t); drawStroke(fg, s, u, al); fg.restore();
+    // dots on the calendar
+    if (false) { fg.save(); frameTf(fg, 'c0', t); fg.globalAlpha = 1 - seg(t, T.c[1] + 0.1, 0.35); fg.fillStyle = '#B83A68';
+      dots.forEach(([x, y], j) => { const d = seg(t, s.t1 + 0.08 + j * 0.12, 0.2, 'back.out(3)'); fg.beginPath(); fg.arc(x, y, 10 * d, 0, TAU); fg.fill(); }); fg.restore(); }
+  });
+  const pc = pencilAt(t);
+  if (pc) pencil(fg, pc.p[0], pc.p[1], -0.62 + 0.05 * Math.sin(t * 6) * (1 - pc.lift), pc.lift);
+  // a blossom sprig resting on the top corner of the sheet, petals on the paper
+  fg.save(); fg.translate(70, 160); fg.rotate(0.25); A.branch(fg, 0, 0, 1.6, false, t, { blossoms: 6 }); fg.restore();
+  A.petal(fg, 960, 1620, 1.1, 0.8 + 0.05 * Math.sin(t), 0.9);
+  A.petal(fg, 905, 1690, 0.8, 2.2, 0.85);
+}, { loop: false });
+</script>
+</body>
+</html>

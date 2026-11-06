@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<script src="fx.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #161540; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #161540; }
+  #c { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20.5" data-width="1080" data-height="1920">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div style="position:absolute;left:-9999px;top:0;opacity:0"><span style="font:700 66px Caveat">Menopause</span><span style="font:700 40px Fraunces">a</span><span style="font:800 40px Fraunces">a</span><span style="font:italic 600 40px Fraunces">a</span><span style="font:800 40px Figtree">a</span><span style="font:700 40px Figtree">a</span></div>
+</div>
+<script>
+const S = STUDIO, W = 1080, H = 1920, TAU = Math.PI * 2;
+const { cl, lerp, seg, rr, shadow, noShadow, vgrad, rgrad } = FX;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const E = n => S.ease(n);
+
+// ---------- layout ----------
+const DX = 520, DY = 900, R = 250, PL = R + 30, RT = 372;     // dial centre, ring, plate, text arc radius
+const WIN = { x: 150, y: 120, w: 740, h: 640, f: 28 };          // window frame
+const GL = [WIN.x + WIN.f, WIN.y + WIN.f, WIN.w - WIN.f * 2, WIN.h - WIN.f * 2];
+const T = [5.0, 7.6, 10.4, 13.4, 17.2];                         // notch clicks 5>4>3>2>1>snow
+const FROST = FX.frostMake(29, GL, 74);
+const rs = S.rng(7);
+const SNOW = Array.from({ length: 70 }, () => [rs(), rs(), 1.5 + rs() * 3.2, 30 + rs() * 50, rs() * TAU]);
+const rw = S.rng(3);
+const PET = Array.from({ length: 16 }, () => [rw() * W, rw() * H, 1.6 + rw() * 1.6, rw() * TAU, 110 + rw() * 90]);
+function petals(t) { PET.forEach(([x, y, s, ph, sp]) => { const yy = (y + t * sp) % (H + 120) - 60, xx = x + 70 * Math.sin(t * 0.9 + ph); CLARI.petal(c, xx, yy, s, ph + t * 1.1, 0.8); }); }
+const PATTERN = []; for (let y = 60; y < H; y += 86) for (let x = (y / 86 % 2) * 43; x < W + 40; x += 86) PATTERN.push([x, y]);
+
+// ---------- timing helpers ----------
+function click(t, t0) {          // 0..1 with a small wind-up and an overshoot
+  const u = t - t0; if (u <= 0) return 0;
+  const wind = -0.07 * Math.sin(Math.PI * cl(u / 0.14, 0, 1));
+  return wind + E('back.out(2.2)')(cl((u - 0.07) / 0.55, 0, 1));
+}
+const setting = t => 5 - T.reduce((a, t0) => a + click(t, t0), 0);
+function heat(t) {
+  const up = seg(t, 2.85, 1.0, 'expo.out');
+  const down = [0, 1, 2, 3].reduce((a, i) => a + 0.25 * seg(t, T[i] + 0.05, 1.1, 'power2.inOut'), 0);
+  return cl(up - down, 0, 1);
+}
+function frost(t) {
+  const melt = 0.5 * (1 - seg(t, 2.95, 1.3, 'power2.out'));
+  const regrow = [0, 1, 2, 3].reduce((a, i) => a + 0.1 * seg(t, T[i] + 0.2, 1.6, 'power2.out'), 0);
+  return cl(melt + regrow + 0.62 * seg(t, T[4] + 0.1, 3.0, 'power2.out'), 0, 1);
+}
+
+// ---------- scene objects ----------
+function wall(t, h) {
+  c.fillStyle = vgrad(c, 0, H, [[0, '#141239'], [0.45, '#211E55'], [1, '#2C2566']]); c.fillRect(-60, -60, W + 120, H + 120);
+  // tiny blossom-dot wallpaper
+  c.fillStyle = 'rgba(195,168,234,0.07)';
+  PATTERN.forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 4, 0, TAU); c.fill(); });
+}
+function curtains(t, h) {
+  const sway = 6 * Math.sin(t * 1.3) * (0.3 + h);
+  [[40, 210, 1], [W - 210 - 40 + 0, 210, -1]].forEach(([x0, w, dir], k) => {
+    c.save(); shadow(c, 40, 16, 0.35);
+    c.beginPath(); c.moveTo(x0, 86);
+    c.lineTo(x0 + w, 86);
+    c.bezierCurveTo(x0 + w + sway * dir, 500, x0 + w - 20 * dir + sway, 800, x0 + w - 30 * dir + sway * 1.5, 1010);
+    c.lineTo(x0 - 30 * dir, 1010); c.lineTo(x0 - 30 * dir, 86); c.closePath();
+    const g = c.createLinearGradient(x0, 0, x0 + w, 0);
+    for (let i = 0; i <= 6; i++) g.addColorStop(i / 6, i % 2 ? '#5A3C9A' : '#6E50B2');
+    c.fillStyle = g; c.fill(); noShadow(c);
+    c.fillStyle = vgrad(c, 120, 1010, [[0, 'rgba(20,10,50,0.0)'], [1, 'rgba(20,10,50,0.35)']]); c.fill();
+    c.restore();
+  });
+  // rod
+  c.save(); shadow(c, 18, 8, 0.4); c.fillStyle = vgrad(c, 70, 98, [[0, '#E9DFF3'], [1, '#B9A6D6']]);
+  rr(c, 20, 70, W - 40, 26, 13); c.fill(); c.restore();
+}
+function windowArt(t, h, f) {
+  const [gx, gy, gw, gh] = GL;
+  c.save(); shadow(c, 60, 24, 0.45);
+  c.fillStyle = vgrad(c, WIN.y, WIN.y + WIN.h, [[0, '#F3ECFA'], [1, '#CDBDE4']]);
+  rr(c, WIN.x, WIN.y, WIN.w, WIN.h, 22); c.fill(); c.restore();
+  // glass: the Clari night sky
+  c.save(); rr(c, gx, gy, gw, gh, 8); c.clip();
+  c.translate(gx, gy);
+  CLARI.sky(c, 'night', gw, gh * 1.25, { glowX: gw * 0.78, glowY: gh * 0.22, glowR: gw * 0.9, glow: 0.2 });
+  CLARI.stars(c, gw, gh, t, { seed: 9, n: 60, bottom: 0.8, sparkles: 3 });
+  CLARI.moon(c, gw * 0.78, gh * 0.22, 74, { glow: 1 });
+  CLARI.branch(c, -30, 6, 2.4, false, t, {});
+  // rooftops far away
+  c.fillStyle = 'rgba(26,12,52,0.85)';
+  c.beginPath(); c.moveTo(0, gh); c.lineTo(0, gh - 120); c.lineTo(90, gh - 120); c.lineTo(140, gh - 175); c.lineTo(190, gh - 120);
+  c.lineTo(300, gh - 120); c.lineTo(300, gh - 90); c.lineTo(430, gh - 90); c.lineTo(480, gh - 140); c.lineTo(530, gh - 90); c.lineTo(gw, gh - 110); c.lineTo(gw, gh); c.fill();
+  c.fillStyle = 'rgba(255,226,154,0.55)'; [[110, gh - 95], [150, gh - 95], [455, gh - 68], [585, gh - 80]].forEach(([x, y]) => c.fillRect(x, y, 16, 20));
+  // snow
+  c.fillStyle = '#FFFFFF';
+  SNOW.forEach(([u, v, s, sp, ph]) => {
+    const y = ((v * gh + t * sp) % (gh + 20)) - 10, x = u * gw + 18 * Math.sin(t * 0.8 + ph);
+    c.globalAlpha = 0.75; c.beginPath(); c.arc(x, y, s, 0, TAU); c.fill();
+  });
+  c.globalAlpha = 1; c.restore();
+  // frost: haze in the corners then crystals
+  c.save(); rr(c, gx, gy, gw, gh, 8); c.clip();
+  [[gx, gy], [gx + gw, gy], [gx, gy + gh], [gx + gw, gy + gh]].forEach(([x, y]) => {
+    c.fillStyle = rgrad(c, x, y, 0, 330 * f + 1, [[0, `rgba(240,236,255,${0.55 * f})`], [0.6, `rgba(240,236,255,${0.18 * f})`], [1, 'rgba(240,236,255,0)']]);
+    c.fillRect(gx, gy, gw, gh);
+  });
+  FX.frostDraw(c, FROST, f, 0.95);
+  c.restore();
+  // sash bars
+  c.save(); shadow(c, 14, 6, 0.35); c.fillStyle = '#E6DCF1';
+  rr(c, gx + gw / 2 - 11, gy, 22, gh, 6); c.fill(); rr(c, gx, gy + gh * 0.36 - 11, gw, 22, 6); c.fill(); c.restore();
+  // sill
+  c.save(); shadow(c, 30, 14, 0.4); c.fillStyle = vgrad(c, WIN.y + WIN.h - 6, WIN.y + WIN.h + 40, [[0, '#F7F1FC'], [1, '#C9B8E2']]);
+  rr(c, WIN.x - 40, WIN.y + WIN.h - 10, WIN.w + 80, 44, 12); c.fill(); c.restore();
+}
+function radiator(t, h) {
+  const x0 = 110, y0 = 1600, w = 820, n = 13, fw = (w - (n - 1) * 10) / n;
+  c.save(); shadow(c, 50, 24, 0.45);
+  for (let i = 0; i < n; i++) {
+    const x = x0 + i * (fw + 10);
+    c.fillStyle = c.createLinearGradient(x, 0, x + fw, 0);
+    c.fillStyle.addColorStop(0, '#D9CCEA'); c.fillStyle.addColorStop(0.45, '#FBF7FE'); c.fillStyle.addColorStop(1, '#C7B7DF');
+    rr(c, x, y0, fw, 420, fw / 2); c.fill();
+  }
+  noShadow(c);
+  // warm tint on the metal
+  c.globalAlpha = 0.55 * h; c.fillStyle = vgrad(c, y0, H, [[0, '#FFB89A'], [1, '#E8628F']]);
+  for (let i = 0; i < n; i++) { rr(c, x0 + i * (fw + 10), y0, fw, 420, fw / 2); c.fill(); }
+  c.globalAlpha = 1;
+  // pipe + valve on the left
+  c.fillStyle = '#BFAEDA'; rr(c, 60, 1700, 56, 30, 12); c.fill();
+  c.restore();
+}
+function shimmer(t, h) {
+  if (h <= 0.01) return;
+  c.save(); c.lineCap = 'round';
+  for (let i = 0; i < 9; i++) {
+    const x = 170 + i * 92, ph = i * 1.7;
+    const rise = (t * 0.55 + i * 0.13) % 1;
+    c.globalAlpha = 0.32 * h * Math.sin(Math.PI * rise);
+    c.strokeStyle = '#FFD9C2'; c.lineWidth = 6;
+    c.beginPath();
+    for (let k = 0; k <= 20; k++) {
+      const y = 1560 - rise * 260 - k * 14, xx = x + 14 * Math.sin(k * 0.55 + t * 4 + ph);
+      k ? c.lineTo(xx, y) : c.moveTo(xx, y);
+    }
+    c.stroke();
+  }
+  c.restore();
+}
+function duvet(t) {
+  if (t < 1.25) return;
+  const drop = seg(t, 1.25, 0.42, 'power2.in');
+  const land = t - 1.67;
+  const squash = land > 0 ? 0.14 * Math.exp(-land * 6) * Math.cos(land * 20) : 0;
+  const fling = seg(t, 3.0, 0.7, 'power3.in');
+  if (fling >= 1) return;
+  const y = lerp(-520, 1470, drop) + fling * 380, x = 520 + fling * 1300;
+  c.save(); c.translate(x, y + 200); c.rotate(-0.035 + fling * 0.5 + (1 - drop) * 0.1); c.scale(1 + squash * 0.5, 1 - squash); c.translate(0, -200);
+  const w = 1060, rows = 4, rh = 130;
+  shadow(c, 70, 34, 0.5); c.fillStyle = '#B897DE'; rr(c, -w / 2, 30, w, 560, 80); c.fill(); noShadow(c);
+  for (let k = rows - 1; k >= 0; k--) {
+    const y0 = 10 + k * rh;
+    c.beginPath(); c.moveTo(-w / 2, y0 + rh + 40);
+    c.lineTo(-w / 2, y0 + 50);
+    for (let i = 0; i < 5; i++) { const x0 = -w / 2 + i * w / 5; c.bezierCurveTo(x0 + 30, y0 - 4 - (k === 0 ? 14 : 0), x0 + w / 5 - 30, y0 - 4 - (k === 0 ? 14 : 0), x0 + w / 5, y0 + 30); }
+    c.lineTo(w / 2, y0 + rh + 40); c.closePath();
+    c.fillStyle = vgrad(c, y0, y0 + rh + 40, [[0, '#FBEAF3'], [0.45, '#E7CBEA'], [1, '#B793DC']]); c.fill();
+  }
+  // a scatter of tiny printed blossoms
+  for (let i = 0; i < 14; i++) { const bx = -w / 2 + 60 + (i * 137) % (w - 120), by = 60 + ((i * 89) % 380); CLARI.blossom(c, bx, by, 0.32, i, { open: 1, alpha: 0.55 }); }
+  c.restore();
+}
+function flood(t, h) {
+  if (h <= 0.005) return;
+  const rise = seg(t, 2.85, 1.1, 'expo.out');
+  const top = lerp(H, -200, rise);
+  c.save(); c.globalAlpha = h;
+  c.fillStyle = vgrad(c, top, H, [[0, 'rgba(120,36,96,0)'], [0.25, 'rgba(120,36,96,0.42)'], [0.62, 'rgba(150,44,100,0.5)'], [0.85, 'rgba(200,70,110,0.5)'], [1, 'rgba(255,170,140,0.6)']]);
+  c.fillRect(-60, top, W + 120, H - top + 60);
+  c.restore();
+}
+function dial(t, h, s) {
+  const rot = -(s) * 40 * Math.PI / 180;                       // ring rotation (number s at the top)
+  c.save(); c.translate(DX, DY);
+  c.fillStyle = rgrad(c, 0, 0, PL, RT + 150, [[0, `rgba(${lerp(18,64,h)|0},${lerp(14,18,h)|0},${lerp(56,66,h)|0},0.78)`], [0.62, `rgba(${lerp(18,64,h)|0},${lerp(14,18,h)|0},${lerp(56,66,h)|0},0.62)`], [1, 'rgba(18,14,56,0)']]);
+  c.beginPath(); c.arc(0, 0, RT + 150, 0, TAU); c.fill();
+  // warm halo behind the dial
+  if (h > 0) { c.fillStyle = rgrad(c, 0, 0, PL * 0.8, PL * 2.0, [[0, `rgba(247,182,205,${0.38 * h})`], [1, 'rgba(247,182,205,0)']]); c.fillRect(-PL * 2.1, -PL * 2.1, PL * 4.2, PL * 4.2); }
+  // plate
+  shadow(c, 90, 44, 0.5);
+  c.fillStyle = vgrad(c, -PL, PL, [[0, '#F6F0FB'], [1, '#BBA8D8']]); c.beginPath(); c.arc(0, 0, PL, 0, TAU); c.fill(); noShadow(c);
+  // ring
+  c.fillStyle = vgrad(c, -R, R, [[0, '#FFFBF3'], [0.6, '#F2E9F6'], [1, '#DCCDEB']]); c.beginPath(); c.arc(0, 0, R, 0, TAU); c.fill();
+  c.strokeStyle = 'rgba(74,32,112,0.12)'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, R - 1, 0, TAU); c.stroke();
+  // scale: ticks and numbers rotate with the ring
+  for (let k = 0; k <= 5; k++) {
+    const a = -Math.PI / 2 + (k - s) * 40 * Math.PI / 180;
+    // minor ticks between numbers
+    if (k < 5) for (let m = 1; m < 5; m++) {
+      const am = a + m * 8 * Math.PI / 180;
+      c.strokeStyle = 'rgba(74,32,112,0.35)'; c.lineWidth = 4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(Math.cos(am) * (R - 14), Math.sin(am) * (R - 14)); c.lineTo(Math.cos(am) * (R - 28), Math.sin(am) * (R - 28)); c.stroke();
+    }
+    c.save(); c.rotate(a + Math.PI / 2); c.translate(0, -(R - 62));
+    const near = 1 - cl(Math.abs(k - s), 0, 1);
+    c.fillStyle = near > 0.5 ? '#B83A68' : '#4A2070';
+    if (k === 0) {                                                // snowflake
+      c.strokeStyle = c.fillStyle; c.lineWidth = 6; c.lineCap = 'round';
+      for (let j = 0; j < 3; j++) { c.save(); c.rotate(j * Math.PI / 3); c.beginPath(); c.moveTo(0, -26); c.lineTo(0, 26); c.moveTo(-9, -19); c.lineTo(0, -12); c.lineTo(9, -19); c.moveTo(-9, 19); c.lineTo(0, 12); c.lineTo(9, 19); c.stroke(); c.restore(); }
+    } else { c.font = FX.font('b', 66, 700); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(k), 0, 4); }
+    c.restore();
+  }
+  // knob (grip rotates)
+  const KR = R * 0.6;
+  shadow(c, 40, 18, 0.5);
+  c.fillStyle = rgrad(c, -KR * 0.35, -KR * 0.45, KR * 0.1, KR * 1.3, [[0, '#9A6BD0'], [0.55, '#6A37A6'], [1, '#3F1B66']]);
+  c.beginPath(); c.arc(0, 0, KR, 0, TAU); c.fill(); noShadow(c);
+  c.save(); c.rotate(rot);
+  for (let i = 0; i < 28; i++) { const a = i * TAU / 28; c.fillStyle = 'rgba(30,10,60,0.32)'; c.beginPath(); c.ellipse(Math.cos(a) * (KR - 12), Math.sin(a) * (KR - 12), 5, 11, a, 0, TAU); c.fill(); }
+  c.restore();
+  // face: blossom cap and the source label (stays upright)
+  c.fillStyle = rgrad(c, 0, -10, 10, KR - 26, [[0, '#5B2C93'], [1, '#4A2070']]); c.beginPath(); c.arc(0, 0, KR - 26, 0, TAU); c.fill();
+  const src = seg(t, 5.2, 0.6, 'power3.out') * (1 - seg(t, T[4], 0.5, 'power2.in'));
+  CLARI.blossom(c, 0, -38 * src - 2, 1.25 - 0.3 * src, rot * 0.6, { open: 1 });
+  if (src > 0) {
+    c.globalAlpha = src; c.fillStyle = '#FFF8EC'; c.font = FX.font('s', 44, 700); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    c.fillText('Source: NHS', 0, 66 + (1 - src) * 14); c.globalAlpha = 1;
+  }
+  // fixed pointer at the top of the plate
+  c.save(); c.translate(0, -PL + 15);
+  c.fillStyle = '#E8628F'; c.beginPath(); c.moveTo(-16, -8); c.lineTo(16, -8); c.lineTo(0, 16); c.closePath(); c.fill();
+  c.restore();
+  c.restore();
+}
+
+// ---------- words ----------
+const ARC = [   // [parts, in, out, size]
+  [[["The heating's on.", 'b']], 0.05, 2.62, 104],
+  [[["And you're", 'b']], 2.85, 4.85, 112],
+  [[["Light clothes", 'b']], T[0] + 0.08, T[1] - 0.02, 112],
+  [[["Keep the bedroom", 'b']], T[1] + 0.08, T[2] - 0.02, 108],
+  [[["A cool shower,", 'b']], T[2] + 0.08, T[3] - 0.02, 110],
+  [[["Go easy on", 'b']], T[3] + 0.08, T[4] - 0.02, 112],
+  [[["Save this for", 'b']], T[4] + 0.12, 99, 110],
+];
+const BASE = DY + PL + 150;
+const UNDER = [
+  { lines: [[["The duvet's out.", 'b']]], tin: 1.45, tout: 2.6, size: 100 },
+  { lines: [[['on fire.', 'i']]], tin: 3.02, tout: 4.82, size: 170, y: BASE + 30 },
+  { lines: [[['to bed.', 'b']]], tin: T[0] + 0.25, tout: T[1] - 0.06, size: 110 },
+  { lines: [[['cool at night.', 'b']]], tin: T[1] + 0.25, tout: T[2] - 0.06, size: 110 },
+  { lines: [[['a fan, or', 'b']], [['a cold drink.', 'b']]], tin: T[2] + 0.25, tout: T[3] - 0.06, size: 100 },
+  { lines: [[['the triggers:', 'b']], [['spicy food, caffeine,', 's']], [['hot drinks, alcohol.', 's']]], tin: T[3] + 0.25, tout: T[4] - 0.06, size: 100,
+    sizes: [100, 62, 62], lineY: [0, 92, 170], stagger: 0.07 },
+  { lines: [[['tonight.', 'i']]], tin: T[4] + 0.35, tout: 99, size: 170, y: BASE + 30 },
+];
+
+window.__timelines["main"] = S.play(function render(t) {
+  const h = heat(t), f = frost(t), s = setting(t);
+  // camera: settle-in push, a punch on "on fire", calm push at the end
+  const punch = seg(t, 2.85, 0.5, 'expo.out') * (1 - seg(t, 3.4, 1.6, 'power2.inOut'));
+  const z = 1.07 - 0.07 * seg(t, 0, 2.7, 'power2.out') + 0.035 * punch + 0.04 * seg(t, T[4], 3.3, 'power2.inOut');
+  const kick = T.slice(0, 5).reduce((a, t0) => a + Math.max(0, Math.sin(Math.PI * cl((t - t0) / 0.35, 0, 1))) * 1, 0);
+  const cam = (k, fn) => { c.save(); const zz = 1 + (z - 1) * k; c.translate(540, 900); c.scale(zz, zz); c.translate(-540, -900 + 14 * k * Math.sin(t * 0.7) - kick * 3 * k); fn(); c.restore(); };
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  cam(0.45, () => { wall(t, h); windowArt(t, h, f); curtains(t, h); });
+  cam(1.25, () => { radiator(t, h); shimmer(t, h); petals(t); duvet(t); });
+  flood(t, h);
+  cam(1.0, () => {
+    dial(t, h, s);
+    // arc words: swing in from the left, out to the right, the way the dial turns
+    ARC.forEach(([parts, tin, tout, size]) => {
+      if (t < tin || t > tout + 0.7) return;
+      const p = seg(t, tin, 0.85, 'none'), q = seg(t, tout, 0.55, 'none');
+      FX.arcText(c, parts, DX, DY, RT, -Math.PI / 2, size, { p, q, swing: 0.42 });
+    });
+    UNDER.forEach(u => FX.text(c, Object.assign({ x: DX, y: BASE, align: 'center', stagger: 0.06 }, u), t));
+  });
+}, { loop: false });
+</script>
+</body>
+</html>

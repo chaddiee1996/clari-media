@@ -1,0 +1,6 @@
+{"title": "R10 How long does it last?", "format": "9:16", "seconds": 25, "shots": [
+ {"time": "0.0-4.3", "graphic": "Moon row slides in; question centred above", "asset": {"kind": "code"}},
+ {"time": "4.3-8.0", "graphic": "Moons accelerate with streaks; year odometer 1 to 9, then +", "asset": {"kind": "code"}},
+ {"time": "8.0-15.4", "graphic": "Moons slow; symptom label changes with the words", "asset": {"kind": "code"}},
+ {"time": "15.5-20.8", "graphic": "Row becomes a 12 x 9 grid of moons on a card, slow push in", "asset": {"kind": "code"}},
+ {"time": "20.8-25.0", "graphic": "A wave of pink moons lights the pattern; dawn; calm hold", "asset": {"kind": "code"}}]}

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<style>
+  :root { --night: #22103F; --cream: #FFF8EC; --pink: #F7B6CD; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--night); }
+  .abs { position: absolute; }
+  #c { left: 0; top: 0; width: 1080px; height: 1920px; }
+  .mask { position: absolute; left: 0; width: 1080px; overflow: hidden; text-align: center; }
+  .ln { display: inline-block; font-family: 'Fraunces', serif; font-weight: 700; color: var(--cream);
+    font-variation-settings: "opsz" 144; letter-spacing: -0.015em; white-space: nowrap;
+    text-shadow: 0 6px 34px rgba(16, 4, 40, .55); }
+  .ln i { font-style: italic; font-weight: 600; color: var(--pink); }
+  #src { left: 150px; top: 1250px; width: 780px; padding: 26px 36px; border-radius: 30px; text-align: center;
+    background: rgba(34, 16, 63, .72); font-family: 'Figtree', sans-serif; font-weight: 700; font-size: 46px; line-height: 60px; color: var(--cream); }
+  #warm { position: absolute; left: -9999px; opacity: 0; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="23.14" data-width="1080" data-height="1920">
+  <canvas id="c" class="abs" width="1080" height="1920"></canvas>
+  <div class="mask" id="h1" style="top:520px;height:160px"><div class="ln" style="font-size:124px;line-height:160px">Self care isn't</div></div>
+  <div class="mask" id="h2" style="top:670px;height:160px"><div class="ln" style="font-size:124px;line-height:160px">always a</div></div>
+  <div class="mask" id="h3" style="top:820px;height:170px"><div class="ln" style="font-size:124px;line-height:160px"><i>bubble</i> bath.</div></div>
+  <div class="mask" id="k1" style="top:560px;height:210px"><div class="ln" style="font-size:150px;line-height:200px">Small things</div></div>
+  <div class="mask" id="k2" style="top:740px;height:210px"><div class="ln" style="font-size:150px;line-height:200px"><i>count</i>.</div></div>
+  <div id="src" class="abs">Ideas from NHS advice on rest, exercise and talking to others.</div>
+  <div id="warm"><span style="font-family:Fraunces;font-weight:600">A</span><span style="font-family:Figtree;font-weight:700">A</span></div>
+</div>
+<script>
+const S = STUDIO, C = CLARI, W = 1080, H = 1920, TAU = Math.PI * 2, BT = 60 / 70, BAR = 3 * BT, D = 23.14;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+['600 70px Fraunces', '700 46px Figtree'].forEach(f => { try { document.fonts.load(f); } catch (e) {} });
+const T_POP = 7 * BAR;   // 18.0 s
+
+// ---------- prebuilt layers ----------
+const mk = (w, h) => { const k = document.createElement('canvas'); k.width = w; k.height = h; return k; };
+const skyE = mk(700, 1100), skyN = mk(700, 1100), wall = mk(W, 2300), bath = mk(W, 700), bg = mk(W, H);
+const bk = bg.getContext('2d');
+let built = false;
+function build() {
+  C.sky(skyE.getContext('2d'), 'evening', 700, 1100, { glowX: 520, glowY: 380, glowR: 600, glow: 0.2 });
+  C.sky(skyN.getContext('2d'), 'night', 700, 1100, { glowX: 520, glowY: 380, glowR: 600, glow: 0.2 });
+  // tiled wall: soft vertical gradient, rounded tiles with a sheen
+  const k = wall.getContext('2d');
+  const g = k.createLinearGradient(0, 0, 0, 2300); g.addColorStop(0, '#3A1C63'); g.addColorStop(0.55, '#5A3290'); g.addColorStop(1, '#6E43A6');
+  k.fillStyle = g; k.fillRect(0, 0, W, 2300);
+  for (let y = 0; y < 2300; y += 120) for (let x = (y / 120) % 2 ? -60 : 0; x < W; x += 120) {
+    k.fillStyle = 'rgba(16,4,40,0.22)'; C.rr(k, x + 3, y + 3, 114, 114, 14); k.fill();
+    const tg = k.createLinearGradient(x, y, x, y + 114); tg.addColorStop(0, 'rgba(255,255,255,0.07)'); tg.addColorStop(1, 'rgba(255,255,255,0.0)');
+    k.fillStyle = tg; C.rr(k, x + 4, y + 4, 110, 108, 12); k.fill();
+  }
+  // bath (cream roll-top), drawn once
+  const b = bath.getContext('2d');
+  b.save(); b.shadowColor = 'rgba(16,4,40,0.45)'; b.shadowBlur = 70; b.shadowOffsetY = 30;
+  const bg2 = b.createLinearGradient(0, 120, 0, 640); bg2.addColorStop(0, '#FFF8EC'); bg2.addColorStop(0.55, '#F1E4EE'); bg2.addColorStop(1, '#C9B3DC');
+  b.fillStyle = bg2; b.beginPath(); b.moveTo(40, 150); b.lineTo(1040, 150); b.bezierCurveTo(1040, 470, 900, 600, 760, 600); b.lineTo(320, 600);
+  b.bezierCurveTo(180, 600, 40, 470, 40, 150); b.closePath(); b.fill(); b.restore();
+  const sh = b.createLinearGradient(40, 0, 1040, 0); sh.addColorStop(0, 'rgba(74,32,112,0.25)'); sh.addColorStop(0.3, 'rgba(74,32,112,0)'); sh.addColorStop(0.75, 'rgba(255,255,255,0.18)'); sh.addColorStop(1, 'rgba(74,32,112,0.28)');
+  b.fillStyle = sh; b.beginPath(); b.moveTo(40, 150); b.lineTo(1040, 150); b.bezierCurveTo(1040, 470, 900, 600, 760, 600); b.lineTo(320, 600); b.bezierCurveTo(180, 600, 40, 470, 40, 150); b.fill();
+  // rolled rim
+  const rg = b.createLinearGradient(0, 120, 0, 182); rg.addColorStop(0, '#FFFFFF'); rg.addColorStop(1, '#E6D6EA');
+  b.fillStyle = rg; C.rr(b, 20, 126, 1040, 54, 27); b.fill();
+  // gold feet
+  [[240, 590], [840, 590]].forEach(([x, y]) => { const fg = b.createLinearGradient(0, y, 0, y + 90); fg.addColorStop(0, '#FFE29A'); fg.addColorStop(1, '#D9A85E');
+    b.fillStyle = fg; b.beginPath(); b.moveTo(x - 40, y); b.quadraticCurveTo(x - 50, y + 70, x - 20, y + 92); b.lineTo(x + 20, y + 92); b.quadraticCurveTo(x + 50, y + 70, x + 40, y); b.fill(); });
+  built = true;
+}
+// foam: many overlapping soft circles above the rim; grows as the bath fills
+const FOAM = Array.from({ length: 46 }, (_, i) => { const r = S.rng(200 + i); return { x: 70 + r() * 940, y: r() * 1, r: 34 + r() * 52, ph: r() * TAU, d: r() * 0.9 }; });
+function drawFoam(k, ox, oy, t, grow) {
+  FOAM.forEach(f => {
+    const g = S.seg(t, f.d * 1.1, 1.0, 'expo.out') * grow;
+    if (g <= 0.01) return;
+    const rad = f.r * (0.4 + 0.6 * g) * (1 + 0.03 * Math.sin(t * 1.6 + f.ph));
+    const x = ox + f.x, y = oy + 1610 - (18 + f.r * 0.7) * g - 10 * Math.sin(f.x * 0.01);
+    const gg = k.createRadialGradient(x - rad * 0.3, y - rad * 0.4, rad * 0.1, x, y, rad);
+    gg.addColorStop(0, '#FFFFFF'); gg.addColorStop(0.7, '#F4ECF8'); gg.addColorStop(1, '#D8C6EA');
+    k.fillStyle = gg; k.beginPath(); k.arc(x, y, rad, 0, TAU); k.fill();
+  });
+}
+function drawWindow(k, cx, top, t) {
+  const w = 640, h = 980, x = cx - w / 2;
+  const night = S.seg(t, 4, 14, 'sine.inOut');
+  k.save();
+  k.beginPath(); k.moveTo(x, top + h); k.lineTo(x, top + w / 2); k.arc(cx, top + w / 2, w / 2, Math.PI, 0); k.lineTo(x + w, top + h); k.closePath();
+  k.save(); k.clip();
+  k.drawImage(skyE, x - 30, top); k.globalAlpha = night; k.drawImage(skyN, x - 30, top); k.globalAlpha = 1;
+  C.stars(k, w, 700, t, { seed: 8, n: 60, top: 0.0, bottom: 1, alpha: 0.25 + 0.75 * night, sparkles: 3 });
+  C.moon(k, cx + 165, top + 200 + 720 * (1 - S.seg(t, 3.0, 7, 'power2.inOut')), 74, { glow: 1 });
+  // distant hills through the glass
+  k.fillStyle = '#2A1548'; k.beginPath(); k.moveTo(x, top + h); k.lineTo(x, top + 800); k.bezierCurveTo(x + 200, top + 700, x + 380, top + 820, x + w, top + 740); k.lineTo(x + w, top + h); k.fill();
+  k.restore();
+  // frame
+  k.strokeStyle = '#2A1548'; k.lineWidth = 30;
+  k.beginPath(); k.moveTo(x, top + h); k.lineTo(x, top + w / 2); k.arc(cx, top + w / 2, w / 2, Math.PI, 0); k.lineTo(x + w, top + h); k.closePath(); k.stroke();
+  k.lineWidth = 16; k.beginPath(); k.moveTo(cx, top); k.lineTo(cx, top + h); k.moveTo(x, top + 560); k.lineTo(x + w, top + 560); k.stroke();
+  k.strokeStyle = 'rgba(195,168,234,0.3)'; k.lineWidth = 3; k.beginPath(); k.arc(cx, top + w / 2, w / 2 - 12, Math.PI, 0); k.stroke();
+  // sill + vase with a blossom sprig
+  const sg = k.createLinearGradient(0, top + h, 0, top + h + 50); sg.addColorStop(0, '#FFF8EC'); sg.addColorStop(1, '#D8C6EA');
+  k.shadowColor = 'rgba(16,4,40,0.4)'; k.shadowBlur = 30; k.shadowOffsetY = 14;
+  k.fillStyle = sg; C.rr(k, x - 60, top + h - 6, w + 120, 46, 14); k.fill(); k.shadowColor = 'transparent';
+  const vx = x + 70, vy = top + h - 6;
+  k.strokeStyle = '#B89AD8'; k.lineWidth = 5; k.lineCap = 'round';
+  k.beginPath(); k.moveTo(vx, vy - 60); k.quadraticCurveTo(vx - 14, vy - 110, vx - 40, vy - 150); k.moveTo(vx, vy - 80); k.quadraticCurveTo(vx + 24, vy - 110, vx + 36, vy - 136); k.stroke();
+  C.blossom(k, vx - 40, vy - 152, 0.58, 0.3 + 0.04 * Math.sin(t), {}); C.blossom(k, vx + 36, vy - 138, 0.48, 1.1, {}); C.blossom(k, vx - 18, vy - 112, 0.4, 2.0, {});
+  const vg = k.createLinearGradient(vx - 40, 0, vx + 40, 0); vg.addColorStop(0, '#E8628F'); vg.addColorStop(1, '#B83A68');
+  k.fillStyle = vg; k.beginPath(); k.moveTo(vx - 26, vy - 90); k.lineTo(vx + 26, vy - 90); k.quadraticCurveTo(vx + 50, vy - 20, vx + 30, vy); k.lineTo(vx - 30, vy); k.quadraticCurveTo(vx - 50, vy - 20, vx - 26, vy - 90); k.fill();
+  k.restore();
+}
+
+// ---------- bubbles ----------
+const LINES = ['Bed at 9:30. No guilt.', 'A cold drink by the bed.', 'A walk while it\'s still light.', 'Saying no to one thing.',
+  'Telling one person how you actually feel.', 'Writing down today, so tomorrow has the facts.'];
+const SPOT = [[400, 720, 268], [640, 1060, 276], [420, 1090, 290], [620, 700, 280], [470, 900, 318], [540, 920, 330]];
+const PARK = [[150, 330, 0.32], [960, 1300, 0.3], [120, 1330, 0.3], [940, 440, 0.32], [150, 860, 0.28]];
+const FROM = [300, 760, 220, 820, 480, 560];
+let wrapped = null;
+const SPLIT = [['Bed at 9:30.', 'No guilt.'], ['A cold drink', 'by the bed.'], ['A walk while', "it's still light."], ['Saying no to', 'one thing.'],
+  ['Telling one', 'person how you', 'actually feel.'], ['Writing down', 'today, so', 'tomorrow has', 'the facts.']];
+function wrapAll() { wrapped = SPLIT; }
+function bubbleState(i, t) {
+  const t0 = (i + 1) * BAR - 0.35, [tx, ty, R] = SPOT[i];
+  if (t < t0) return null;
+  const rise = S.seg(t, t0, 1.25, 'power3.out');
+  let x = S.mix(FROM[i], tx, rise) + Math.sin(rise * Math.PI) * 50 * (i % 2 ? 1 : -1);
+  let y = S.mix(1600, ty, rise);
+  let s = S.mix(0.32, 1, S.seg(t, t0, 1.0, 'back.out(1.3)'));
+  let text = S.seg(t, t0 + 0.55, 0.45, 'power2.out');
+  const last = i === LINES.length - 1;
+  if (!last) {
+    const tp = (i + 2) * BAR - 0.55;   // empties and parks as the next one rises
+    const pk = S.seg(t, tp, 1.1, 'power2.inOut');
+    text *= 1 - S.seg(t, tp - 0.05, 0.28, 'power2.in');
+    const [px, py, ps] = PARK[i];
+    x = S.mix(x, px, pk); y = S.mix(y, py, pk); s = S.mix(s, ps, pk);
+  }
+  // gentle drift forever
+  x += 10 * Math.sin(t * 0.9 + i * 1.7); y += 12 * Math.sin(t * 0.7 + i);
+  // squash wobble after launch, damped
+  const age = t - t0, wob = 0.035 * Math.exp(-age * 1.6) * Math.sin(age * 9) + 0.008 * Math.sin(t * 2.1 + i);
+  // pop
+  const pt = last ? T_POP : T_POP + 0.14 * (i + 1);
+  return { x, y, R: R * s, text, wob, pop: t >= pt, pt };
+}
+function drawBubble(st, i, t) {
+  const { x, y, R, text, wob } = st;
+  c.save(); c.translate(x, y); c.scale(1 + wob, 1 - wob);
+  // lens: the room behind, shrunk and flipped slightly, inside the bubble
+  c.save(); c.beginPath(); c.arc(0, 0, R, 0, TAU); c.clip();
+  const z = 0.78; c.drawImage(bg, x - R / z, y - R / z, 2 * R / z, 2 * R / z, -R, -R, 2 * R, 2 * R);
+  const ig = c.createRadialGradient(-R * 0.2, -R * 0.25, R * 0.1, 0, 0, R);
+  ig.addColorStop(0, 'rgba(34,16,63,0.78)'); ig.addColorStop(0.8, 'rgba(48,22,88,0.70)'); ig.addColorStop(1, 'rgba(195,168,234,0.40)');
+  c.fillStyle = ig; c.fillRect(-R, -R, 2 * R, 2 * R);
+  c.restore();
+  // iridescent rim
+  const cg = c.createConicGradient(t * 0.4 + i, 0, 0);
+  ['rgba(247,182,205,0.9)', 'rgba(195,168,234,0.7)', 'rgba(255,239,201,0.8)', 'rgba(255,248,236,0.5)', 'rgba(247,182,205,0.9)'].forEach((col, j) => cg.addColorStop(j / 4, col));
+  c.strokeStyle = cg; c.lineWidth = Math.max(2, R * 0.022); c.beginPath(); c.arc(0, 0, R - 1, 0, TAU); c.stroke();
+  // highlight: a soft crescent top-left + a dot
+  c.save(); c.globalAlpha = 0.55; c.fillStyle = '#FFFFFF';
+  c.beginPath(); c.arc(0, 0, R * 0.86, Math.PI * 1.05, Math.PI * 1.45); c.arc(R * 0.06, R * 0.06, R * 0.8, Math.PI * 1.45, Math.PI * 1.05, true); c.fill();
+  c.globalAlpha = 0.7; c.beginPath(); c.arc(-R * 0.42, -R * 0.62, R * 0.045, 0, TAU); c.fill(); c.restore();
+  // words
+  if (text > 0.01 && wrapped) {
+    const ls = wrapped[i], lh = 88, y0 = -((ls.length - 1) * lh) / 2 + 26;
+    c.font = "600 76px 'Fraunces', serif"; c.textAlign = 'center'; c.fillStyle = '#FFF8EC';
+    ls.forEach((l, j) => { const p = S.mix(0, 1, Math.min(1, Math.max(0, text * 1.6 - j * 0.2)));
+      c.globalAlpha = p; c.fillText(l, 0, y0 + j * lh + (1 - p) * 18); });
+    c.globalAlpha = 1;
+  }
+  c.restore();
+}
+// petals from pops
+const PP = Array.from({ length: 6 }, (_, i) => Array.from({ length: 9 }, (_, j) => { const r = S.rng(500 + i * 20 + j); return { a: r() * TAU, sp: 160 + r() * 260, s: 0.8 + r() * 0.9, rot: r() * TAU, vr: (r() - 0.5) * 3, fall: 70 + r() * 70, sw: r() * TAU }; }));
+// tiny ambient bubbles
+const AMB = Array.from({ length: 26 }, (_, i) => { const r = S.rng(900 + i); return { x: 80 + r() * 920, sp: 70 + r() * 90, r: 6 + r() * 16, ph: r() * 30, sw: r() * TAU }; });
+
+function render(t) {
+  if (!built) build();
+  if (!wrapped || !wrapAll.done) { wrapAll(); if (document.fonts.check("600 70px Fraunces")) wrapAll.done = true; }
+  const camY = -160 * S.seg(t, 0, D, 'sine.inOut'), zoom = 1 + 0.05 * S.seg(t, 0, D, 'sine.inOut');
+  const bob = 8 * Math.sin(t * 1.3);
+  // scene into bg
+  bk.setTransform(zoom, 0, 0, zoom, 540 * (1 - zoom), 960 * (1 - zoom));
+  bk.drawImage(wall, 0, -200 - camY * 0.75);
+  drawWindow(bk, 540, 150 - camY * 0.5, t);
+  // ambient bubbles behind the main ones
+  AMB.forEach(a => { const life = ((t + a.ph) * a.sp) % 1700; const y = 1560 - life - camY; const x = a.x + 20 * Math.sin(life * 0.01 + a.sw);
+    bk.strokeStyle = 'rgba(255,248,236,0.45)'; bk.lineWidth = 2; bk.fillStyle = 'rgba(195,168,234,0.12)';
+    bk.beginPath(); bk.arc(x, y, a.r, 0, TAU); bk.fill(); bk.stroke(); });
+  bk.drawImage(bath, 0, 1440 - camY + bob * 0.2);
+  drawFoam(bk, 0, -camY, t, 1);
+  bk.fillStyle = '#22103F'; bk.fillRect(-100, 2130 - camY, W + 200, 400);
+  bk.setTransform(1, 0, 0, 1, 0, 0);
+  c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(bg, 0, 0);
+  const dim = S.seg(t, T_POP, 1.0, 'power2.out');
+  if (dim > 0) { const dg = c.createRadialGradient(540, 820, 100, 540, 820, 900); dg.addColorStop(0, `rgba(18,7,35,${0.55 * dim})`); dg.addColorStop(1, `rgba(18,7,35,${0.25 * dim})`); c.fillStyle = dg; c.fillRect(0, 0, W, H); }
+  // bubbles
+  for (let i = 0; i < LINES.length; i++) {
+    const st = bubbleState(i, t); if (!st) continue;
+    if (!st.pop) drawBubble(st, i, t);
+    else { // burst into petals
+      const dt = t - st.pt;
+      const ring = 1 - S.seg(t, st.pt, 0.25, 'power2.out');
+      if (ring > 0) { c.strokeStyle = `rgba(255,248,236,${0.7 * ring})`; c.lineWidth = 4; c.beginPath(); c.arc(st.x, st.y, st.R * (1 + 0.25 * (1 - ring)), 0, TAU); c.stroke(); }
+      PP[i].forEach(p => { const e = 1 - Math.exp(-dt * 3.2);
+        const x = st.x + Math.cos(p.a) * p.sp * e * (st.R / 240) + Math.sin(dt * 1.5 + p.sw) * 22;
+        const y = st.y + Math.sin(p.a) * p.sp * e * (st.R / 240) + p.fall * dt;
+        C.petal(c, x, y, p.s * 1.25, p.rot + p.vr * dt, Math.min(1, dt * 6) * 0.95); });
+    }
+  }
+  // DOM type
+  const ln = (id, a, b, dy) => { const m = $(id), el = m.firstElementChild; const pin = S.seg(t, a, 0.75, 'expo.out'), pout = b ? S.seg(t, b, 0.34, 'power3.in') : 0;
+    el.style.transform = `translateY(${(1 - pin) * dy - pout * dy}px)`; m.style.visibility = pin > 0 && pout < 1 ? 'visible' : 'hidden'; };
+  ln('h1', 0.1, BAR - 0.4, 170); ln('h2', 0.2, BAR - 0.35, 170); ln('h3', 0.3, BAR - 0.3, 170);
+  ln('k1', T_POP + 0.22, 0, 215); ln('k2', T_POP + 0.34, 0, 215);
+  const sp = S.seg(t, T_POP + 1.0, 0.7, 'power3.out');
+  $('src').style.opacity = sp; $('src').style.transform = `translateY(${(1 - sp) * 40}px)`;
+}
+window.__timelines = window.__timelines || {};
+window.__timelines["main"] = S.play(render, { loop: false });
+</script>
+</body>
+</html>

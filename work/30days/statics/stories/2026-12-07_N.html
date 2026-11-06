@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Clari story</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--night:#22103F;--plum:#4A2070;--violet:#7A45B5;--lilac:#C3A8EA;--cream:#FFF8EC;--pink:#F7B6CD;
+--blossom:#E8628F;--rose:#B83A68;--gold:#FFEFC9;--paper:#FBF6EE;--ink:#241A33;--deep:#2A1548}
+html,body{margin:0;padding:0;overflow:hidden;background:#22103F}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+#art,#svg{position:absolute;left:0;top:0}
+.cell{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column}
+.cell>*{flex-shrink:0}
+.abs{position:absolute}
+.h{font-family:'Fraunces',serif;font-weight:700;font-variation-settings:"opsz" 144;letter-spacing:-0.012em;word-spacing:0.05em;line-height:1.04;margin:0;color:var(--cream)}
+.h em{font-style:italic;font-weight:600;color:var(--pink);letter-spacing:-0.01em}
+.light .h{color:var(--ink)} .light .h em{color:var(--rose)}
+.s{font-family:'Figtree',sans-serif;font-weight:700;color:var(--cream);margin:0;line-height:1.25}
+.light .s{color:var(--ink)}
+.lab{font-family:'Figtree',sans-serif;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.hand{font-family:'Caveat',cursive;font-weight:700;line-height:1.05}
+.chrome-mark{position:absolute;height:86px}
+.counter{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:42px;letter-spacing:.04em;color:var(--cream);opacity:.9;line-height:86px;font-variant-numeric:tabular-nums}
+.src{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:44px;color:var(--cream);opacity:.92;line-height:1.15;margin:0}
+.light .counter,.light .src{color:var(--ink)}
+.lock{position:absolute}
+
+html,body{width:1080px;height:1920px;background:#22103F}
+</style></head>
+<body class="dark"><div id="stage" style="width:1080px;height:1920px">
+<canvas id="art" width="1080" height="1920"></canvas>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <radialGradient id="glowW"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset=".35" stop-color="#F9C9D8" stop-opacity=".35"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowP"><stop offset="0" stop-color="#F9C9D8" stop-opacity=".55"/><stop offset=".5" stop-color="#F9C9D8" stop-opacity=".16"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowHot"><stop offset="0" stop-color="#FFF3D6" stop-opacity="1"/><stop offset=".18" stop-color="#FFD9A8" stop-opacity=".75"/><stop offset=".45" stop-color="#F59AB8" stop-opacity=".28"/><stop offset="1" stop-color="#E8628F" stop-opacity="0"/></radialGradient>
+ <radialGradient id="moonG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".55" stop-color="#FFEFC9"/><stop offset="1" stop-color="#F5C99E"/></radialGradient>
+ <linearGradient id="petalG" x1="0" y1="-46" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF0F5"/><stop offset="1" stop-color="#F28DB2"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#10042A" flood-opacity=".35"/></filter>
+ <filter id="softS" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#10042A" flood-opacity=".28"/></filter>
+</defs><line x1="616" y1="685" x2="613" y2="479" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><line x1="613" y1="479" x2="833" y2="680" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><line x1="833" y1="680" x2="752" y2="803" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><line x1="752" y1="803" x2="514" y2="782" stroke="#FFF8EC" stroke-opacity=".4" stroke-width="3"/><circle cx="613.0" cy="478.8" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(613.0,478.8) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="613.0" cy="478.8" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="833.5" cy="680.4" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(833.5,680.4) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="833.5" cy="680.4" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="752.5" cy="802.7" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(752.5,802.7) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="752.5" cy="802.7" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="514.0" cy="781.6" r="36" fill="url(#glowW)" opacity="0.85"/><path transform="translate(514.0,781.6) scale(1.250)" fill="#FFF6DD" opacity="0.85" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="514.0" cy="781.6" r="6" fill="#FFF8EC" opacity="0.85"/><circle cx="616" cy="685" r="360" fill="url(#glowHot)" opacity=".75"/><path transform="translate(616.0,685.0) scale(7.500)" fill="#FFF6E2" opacity="1" d="M0-16Q0 0 16 0Q0 0 0 16Q0 0-16 0Q0 0 0-16Z"/><circle cx="616" cy="685" r="20" fill="#FFFDF6"/><path fill="#2A1150" opacity="0.9" d="M0,1920 L0,1579.2 L40,1577.3 L80,1572.6 L120,1566.8 L160,1561.6 L200,1558.0 L240,1555.7 L280,1553.1 L320,1548.9 L360,1541.8 L400,1532.4 L440,1522.3 L480,1514.1 L520,1510.4 L560,1512.5 L600,1520.1 L640,1531.4 L680,1543.5 L720,1553.7 L760,1560.6 L800,1564.2 L840,1565.6 L880,1566.8 L920,1569.2 L960,1573.0 L1000,1577.3 L1040,1580.5 L1080,1581.1 L1120,1578.6 L1080,1920 Z"/></svg>
+<canvas id="art2" width="1080" height="1920" style="position:absolute;left:0;top:0"></canvas>
+<div class="cell" style="left:0;width:1080px;height:1920px;padding:370px 170px 530px 88px">
+        <p class="lab" style="font-size:50px;color:var(--pink);letter-spacing:.18em">On the NHS list</p>
+        <div style="flex:1"></div>
+        <h1 class="h" style="font-size:168px;line-height:1.0">Menopause</h1><p class="h" style="font-size:60px;font-style:italic;font-weight:600;color:var(--pink);margin-top:34px;line-height:1.1">12 months without a period. Before that, it's perimenopause.</p></div><img class="chrome-mark" src="../assets/mark.png" style="left:88px;top:230px"><p class="src" style="left:88px;top:1440px">Source: NHS</p>
+</div>
+<script src="../assets/clari-art.js"></script>
+<script>
+const W=1080, H=1920, N=1, PW=1080;
+const c=document.getElementById('art').getContext('2d'); const c2=document.getElementById('art2').getContext('2d');
+const IM={};
+function loadAll(list){return Promise.all(list.map(n=>new Promise(r=>{const i=new Image();i.onload=()=>r();i.onerror=()=>r();i.src='../assets/'+n;IM[n]=i;})));}
+function show(i){document.getElementById('stage').style.transform='translateX('+(-i*W)+'px)';}
+function draw(){const g=c.createLinearGradient(0,0,0,H); const s=['#2A1858','#5A3A98','#A86BB0','#E79BA8','#FFC9A8']; [0,.36,.66,.86,1].forEach((p,k)=>g.addColorStop(p,s[k])); c.fillStyle=g; c.fillRect(0,0,W,H);CLARI.stars(c,W,H,0.5,{seed:117,n:200,bottom:0.8,alpha:0.85,sparkles:8});}
+Promise.all([document.fonts.ready, loadAll([])]).then(()=>{ if(typeof draw==='function') draw(); show(0); window.__ready=true; });
+</script></body></html>

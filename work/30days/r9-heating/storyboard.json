@@ -1,0 +1,12 @@
+{
+  "title": "R9 Heating on, duvet out",
+  "format": "9:16",
+  "seconds": 20.5,
+  "shots": [
+    {"time": "0.0-1.4", "graphic": "Push in on the dial at 5; 'The heating's on.' swings onto the arc; radiator ticks, snow outside", "asset": {"kind": "code"}},
+    {"time": "1.4-2.8", "graphic": "Duvet drops onto the radiator with a squash; 'The duvet's out.' rises under the dial", "asset": {"kind": "code"}},
+    {"time": "2.8-5.0", "graphic": "Rose heat floods up from the radiator, frost melts, duvet flung off; 'And you're / on fire.'", "asset": {"kind": "code"}},
+    {"time": "5.0-17.2", "graphic": "Four notches down, 5 to 1; each click swaps the arc tip and the line below; the room cools a step each time; Source: NHS", "asset": {"kind": "code"}},
+    {"time": "17.2-20.5", "graphic": "Frost grows back on the window, calm push; 'Save this for / tonight.'; calm hold", "asset": {"kind": "code"}}
+  ]
+}

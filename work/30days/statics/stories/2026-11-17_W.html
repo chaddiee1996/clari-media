@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Clari story</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--night:#22103F;--plum:#4A2070;--violet:#7A45B5;--lilac:#C3A8EA;--cream:#FFF8EC;--pink:#F7B6CD;
+--blossom:#E8628F;--rose:#B83A68;--gold:#FFEFC9;--paper:#FBF6EE;--ink:#241A33;--deep:#2A1548}
+html,body{margin:0;padding:0;overflow:hidden;background:#22103F}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+#art,#svg{position:absolute;left:0;top:0}
+.cell{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column}
+.cell>*{flex-shrink:0}
+.abs{position:absolute}
+.h{font-family:'Fraunces',serif;font-weight:700;font-variation-settings:"opsz" 144;letter-spacing:-0.012em;word-spacing:0.05em;line-height:1.04;margin:0;color:var(--cream)}
+.h em{font-style:italic;font-weight:600;color:var(--pink);letter-spacing:-0.01em}
+.light .h{color:var(--ink)} .light .h em{color:var(--rose)}
+.s{font-family:'Figtree',sans-serif;font-weight:700;color:var(--cream);margin:0;line-height:1.25}
+.light .s{color:var(--ink)}
+.lab{font-family:'Figtree',sans-serif;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.hand{font-family:'Caveat',cursive;font-weight:700;line-height:1.05}
+.chrome-mark{position:absolute;height:86px}
+.counter{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:42px;letter-spacing:.04em;color:var(--cream);opacity:.9;line-height:86px;font-variant-numeric:tabular-nums}
+.src{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:44px;color:var(--cream);opacity:.92;line-height:1.15;margin:0}
+.light .counter,.light .src{color:var(--ink)}
+.lock{position:absolute}
+
+html,body{width:1080px;height:1920px;background:#22103F}
+</style></head>
+<body class="dark"><div id="stage" style="width:1080px;height:1920px">
+<canvas id="art" width="1080" height="1920"></canvas>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <radialGradient id="glowW"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset=".35" stop-color="#F9C9D8" stop-opacity=".35"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowP"><stop offset="0" stop-color="#F9C9D8" stop-opacity=".55"/><stop offset=".5" stop-color="#F9C9D8" stop-opacity=".16"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowHot"><stop offset="0" stop-color="#FFF3D6" stop-opacity="1"/><stop offset=".18" stop-color="#FFD9A8" stop-opacity=".75"/><stop offset=".45" stop-color="#F59AB8" stop-opacity=".28"/><stop offset="1" stop-color="#E8628F" stop-opacity="0"/></radialGradient>
+ <radialGradient id="moonG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".55" stop-color="#FFEFC9"/><stop offset="1" stop-color="#F5C99E"/></radialGradient>
+ <linearGradient id="petalG" x1="0" y1="-46" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF0F5"/><stop offset="1" stop-color="#F28DB2"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#10042A" flood-opacity=".35"/></filter>
+ <filter id="softS" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#10042A" flood-opacity=".28"/></filter>
+</defs><path fill="#7A4FA8" opacity="0.8" d="M0,1920 L0,1474.7 L40,1473.7 L80,1471.6 L120,1467.9 L160,1463.1 L200,1457.7 L240,1452.9 L280,1449.7 L320,1448.7 L360,1450.4 L400,1454.1 L440,1458.9 L480,1463.3 L520,1466.0 L560,1465.7 L600,1461.8 L640,1454.5 L680,1444.6 L720,1433.4 L760,1422.5 L800,1413.3 L840,1406.7 L880,1403.2 L920,1402.5 L960,1403.8 L1000,1406.1 L1040,1408.5 L1080,1410.5 L1120,1411.9 L1080,1920 Z"/><path fill="#3E1C6C" opacity="1" d="M0,1920 L0,1582.6 L40,1584.4 L80,1585.2 L120,1584.7 L160,1582.8 L200,1579.6 L240,1575.3 L280,1570.6 L320,1565.9 L360,1561.8 L400,1558.8 L440,1557.0 L480,1556.4 L520,1556.7 L560,1557.6 L600,1558.7 L640,1559.6 L680,1560.2 L720,1560.5 L760,1560.7 L800,1561.1 L840,1562.2 L880,1564.2 L920,1567.3 L960,1571.4 L1000,1576.4 L1040,1581.6 L1080,1586.6 L1120,1590.8 L1080,1920 Z"/><g transform="translate(670,1600) scale(0.66)"><linearGradient id="pl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF8EC"/><stop offset="1" stop-color="#E6D6F3"/></linearGradient><linearGradient id="ck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6A3BA0"/><stop offset="1" stop-color="#3E1C6C"/></linearGradient><path filter="url(#soft)" d="M-300 0 C-330 -40 -320 -150 -280 -170 C-150 -200 120 -200 270 -172 C320 -150 330 -40 300 0 C120 14 -120 14 -300 0Z" fill="url(#pl)"/><path d="M-230 -110 C-120 -126 120 -126 230 -108" stroke="#D9C6EC" stroke-width="5" fill="none" stroke-linecap="round"/><g transform="translate(250,-170)"><rect x="-18" y="70" width="12" height="44" rx="6" fill="#3E1C6C"/><rect x="18" y="70" width="12" height="44" rx="6" fill="#3E1C6C"/><circle cx="0" cy="0" r="112" fill="url(#ck)" filter="url(#softS)"/><circle r="88" fill="#FFF8EC"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(0)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(30)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(60)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(90)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(120)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(150)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(180)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(210)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(240)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(270)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(300)"/><rect x="-3" y="-80" width="6" height="16" rx="3" fill="#C3A8EA" transform="rotate(330)"/><rect x="-5" y="-56" width="10" height="60" rx="5" fill="#22103F" transform="rotate(-60)"/><rect x="-4" y="-72" width="8" height="76" rx="4" fill="#B83A68" transform="rotate(0)"/><circle r="10" fill="#22103F"/><circle cx="-70" cy="-96" r="26" fill="#6A3BA0"/><circle cx="70" cy="-96" r="26" fill="#6A3BA0"/></g></g></svg>
+<canvas id="art2" width="1080" height="1920" style="position:absolute;left:0;top:0"></canvas>
+<div class="cell" style="left:0;width:1080px;height:1920px;padding:370px 170px 420px 88px">
+        <p class="lab" style="font-size:50px;color:var(--pink);letter-spacing:.18em">Self Care Week</p>
+        <div style="display:flex;align-items:flex-end;gap:24px;margin-top:40px"><span class="h" style="font-size:380px;line-height:.78;font-weight:800">2</span><span class="lab" style="font-size:60px;color:var(--cream);letter-spacing:.14em;margin-bottom:20px">Day</span></div>
+        <h2 class="h" style="font-size:100px;margin-top:44px">Go to bed at the <em>same</em> time as last night.</h2></div><img class="chrome-mark" src="../assets/mark.png" style="left:88px;top:230px">
+</div>
+<script src="../assets/clari-art.js"></script>
+<script>
+const W=1080, H=1920, N=1, PW=1080;
+const c=document.getElementById('art').getContext('2d'); const c2=document.getElementById('art2').getContext('2d');
+const IM={};
+function loadAll(list){return Promise.all(list.map(n=>new Promise(r=>{const i=new Image();i.onload=()=>r();i.onerror=()=>r();i.src='../assets/'+n;IM[n]=i;})));}
+function show(i){document.getElementById('stage').style.transform='translateX('+(-i*W)+'px)';}
+function draw(){ const g=c.createLinearGradient(0,0,0,H); const s=["#34226D", "#6F4CAD", "#CB85B8", "#F7B2A8", "#FFDEB8"]; [0,.36,.66,.86,1].forEach((p,k)=>g.addColorStop(p,s[k])); c.fillStyle=g; c.fillRect(0,0,W,H);CLARI.stars(c,W,H,0.5,{seed:14,n:110,bottom:0.4,alpha:0.70,sparkles:5});const x=842, y=1440, r=110; const gl=c.createRadialGradient(x,y,r*0.4,x,y,r*4.5); gl.addColorStop(0,'rgba(255,236,190,0.6)'); gl.addColorStop(1,'rgba(255,236,190,0)'); c.fillStyle=gl; c.fillRect(0,0,W,H);const dd=c.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r); dd.addColorStop(0,'#FFFBEA'); dd.addColorStop(1,'#FFD9A0'); c.fillStyle=dd; c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); }
+Promise.all([document.fonts.ready, loadAll([])]).then(()=>{ if(typeof draw==='function') draw(); show(0); window.__ready=true; });
+</script></body></html>

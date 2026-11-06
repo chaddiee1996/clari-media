@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<script src="fx.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #22103F; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #22103F; }
+  #c { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="25" data-width="1080" data-height="1920">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div style="position:absolute;left:-9999px;top:0;opacity:0"><span style="font:700 66px Caveat">Menopause</span><span style="font:700 40px Fraunces">a</span><span style="font:800 40px Fraunces">a</span><span style="font:italic 600 40px Fraunces">a</span><span style="font:800 40px Figtree">a</span><span style="font:700 40px Figtree">a</span></div>
+</div>
+<script>
+const S = STUDIO, W = 1080, H = 1920, TAU = Math.PI * 2;
+const { cl, lerp, seg, rr, shadow, noShadow, vgrad, rgrad } = FX;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const E = n => S.ease(n);
+const ROWY = 1060, GAP = 268, CX = 540;
+const GRID = { cols: 12, rows: 9, cell: 64, x: 540 - 6 * 64 + 32, y: 905 };
+const T_GRID = 15.5, T_REC = 21.18;
+
+// ---------- the moon row: scroll position in moons, from an accelerating speed ----------
+function speed(t) {
+  const v = 0.35 + 5.2 * E('power3.in')(cl((t - 4.3) / 3.4, 0, 1));   // faster and faster through the years
+  const slow = seg(t, 7.7, 1.6, 'power2.out');                         // eases off for "it can change"
+  return lerp(v, 0.55, slow);
+}
+const POS = []; { let m = 0; for (let i = 0; i <= 25 * 60; i++) { POS.push(m); m += speed(i / 60) / 60; } }
+const pos = t => { const k = cl(t * 60, 0, POS.length - 1), i = Math.floor(k); return lerp(POS[i], POS[Math.min(i + 1, POS.length - 1)], k - i); };
+
+function phaseMoon(x, y, r, ph, o) {
+  o = o || {};
+  // dark disc
+  c.fillStyle = o.dark || 'rgba(195,168,234,0.16)'; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+  const k = ((ph % 1) + 1) % 1;
+  if (k < 0.015 || k > 0.985) return;
+  const waxing = k < 0.5, rx = r * Math.cos(TAU * k) * (waxing ? 1 : 1);
+  c.beginPath();
+  const side = waxing ? 1 : -1;
+  for (let i = 0; i <= 24; i++) { const a = -Math.PI / 2 + Math.PI * i / 24; c.lineTo(x + side * r * Math.cos(a), y + r * Math.sin(a)); }
+  for (let i = 0; i <= 24; i++) { const a = Math.PI / 2 - Math.PI * i / 24; c.lineTo(x + side * rx * Math.cos(a), y + r * Math.sin(a)); }
+  c.closePath();
+  const g = c.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r * 1.1);
+  if (o.pink) { g.addColorStop(0, '#FFF0F5'); g.addColorStop(0.6, '#F7B6CD'); g.addColorStop(1, '#E8628F'); }
+  else { g.addColorStop(0, '#FFFCF2'); g.addColorStop(0.55, '#FFEFC9'); g.addColorStop(1, '#F5C99E'); }
+  c.fillStyle = g; c.fill();
+}
+function moonRow(t, vis) {
+  if (vis <= 0) return;
+  const m = pos(t), v = speed(t);
+  const first = Math.floor(m) - 4, enter = seg(t, 0.1, 1.4, 'expo.out');
+  for (let i = first; i < first + 10; i++) {
+    const x = CX + (i - m) * GAP + (1 - enter) * 900;
+    const d = Math.abs(x - CX) / 560;
+    if (d > 1.25) continue;
+    const s = 1 - 0.5 * Math.pow(Math.min(d, 1), 1.3);
+    const r = 122 * s, a = vis * cl(1.25 - d, 0, 1);
+    const ph = i / 8 + 0.06;
+    // motion streak at speed
+    if (v > 1.6) { c.globalAlpha = a * 0.22 * cl((v - 1.6) / 3, 0, 1); for (let k = 1; k <= 3; k++) phaseMoon(x + k * 26 * v / 5, ROWY, r, ph); }
+    c.globalAlpha = a;
+    if (d < 0.25) { c.fillStyle = rgrad(c, x, ROWY, r * 0.4, r * 2.6, [[0, `rgba(249,201,216,${0.3 * (1 - d * 4)})`], [1, 'rgba(249,201,216,0)']]); c.fillRect(x - r * 3, ROWY - r * 3, r * 6, r * 6); }
+    phaseMoon(x, ROWY, r, ph);
+  }
+  c.globalAlpha = 1;
+  // a hairline the moons travel along
+  c.globalAlpha = 0.25 * vis * enter; c.fillStyle = '#C3A8EA'; c.fillRect(60, ROWY + 175, 960, 3); c.globalAlpha = 1;
+}
+function grid(t) {
+  const a0 = seg(t, T_GRID, 0.5, 'power2.out'); if (a0 <= 0) return;
+  { const cp = seg(t, T_GRID, 0.8, 'expo.out'); c.save(); c.globalAlpha = cp; shadow(c, 60, 26, 0.45); c.fillStyle = 'rgba(34,16,63,0.82)';
+    rr(c, GRID.x - 62, GRID.y - 62 + (1 - cp) * 40, GRID.cols * GRID.cell + 60, GRID.rows * GRID.cell + 60, 44); c.fill(); c.restore(); }
+  for (let r = 0; r < GRID.rows; r++) for (let k = 0; k < GRID.cols; k++) {
+    const i = r * 12 + k, st = T_GRID + 0.05 + r * 0.17 + k * 0.025;
+    const p = seg(t, st, 0.6, 'back.out(1.8)'); if (p <= 0) continue;
+    const x = GRID.x + k * GRID.cell, y = GRID.y + r * GRID.cell + (1 - p) * 30;
+    // the pattern: a soft wave across the years
+    const on = Math.abs(r - (4 + 3.1 * Math.sin(k * 0.62 + 0.4))) < 0.75;
+    const lit = on ? seg(t, T_REC + 0.2 + (k + r) * 0.07, 0.5, 'expo.out') : 0;
+    const pulse = on ? 0.06 * Math.max(0, Math.sin((t - 22.86) * 5)) * seg(t, 22.86, 0.2) * (1 - seg(t, 23.6, 0.6)) : 0;
+    c.globalAlpha = Math.min(1, p) * (0.3 + 0.7 * Math.max(lit, 1 - seg(t, T_REC, 0.6)));
+    const rad = 23 * (0.7 + 0.3 * p) * (1 + pulse);
+    if (lit > 0) { c.fillStyle = rgrad(c, x, y, 2, 46, [[0, `rgba(247,182,205,${0.45 * lit})`], [1, 'rgba(247,182,205,0)']]); c.fillRect(x - 48, y - 48, 96, 96); }
+    phaseMoon(x, y, rad, lit > 0.5 ? 0.5 : i / 8 + 0.06, { pink: lit > 0.5, dark: 'rgba(195,168,234,0.12)' });
+  }
+  c.globalAlpha = 1;
+  // year labels on the left of each row (1 to 9)
+}
+function counter(t) {
+  const a = seg(t, 4.3, 0.5, 'power3.out') * (1 - seg(t, 8.0, 0.5, 'power2.in'));
+  if (a <= 0) return;
+  const yr = 1 + 8 * E('power2.in')(cl((t - 4.4) / 3.3, 0, 1));    // 1 .. 9, accelerating like the moons
+  const n = Math.floor(yr), f = yr - n, roll = E('expo.out')(cl(f * 3, 0, 1));
+  const x = 930, y = 1480, sz = 220;
+  c.save(); c.globalAlpha = a;
+  c.font = FX.font('s', 52, 800); c.textAlign = 'right'; c.fillStyle = '#C3A8EA';
+  c.fillText('YEAR', x, 1290);
+  c.beginPath(); c.rect(x - 400, y - sz * 0.8, 420, sz * 0.95); c.clip();
+  c.font = FX.font('b', sz, 700); c.fillStyle = '#FFF8EC';
+  const plus = seg(t, 7.14, 0.5, 'back.out(2)');
+  const px = plus > 0 ? 92 * plus : 0;
+  if (n >= 9) c.fillText('9', x - px, y);
+  else { c.fillText(String(n), x, y - roll * sz * 0.95); c.fillText(String(n + 1), x, y + (1 - roll) * sz * 0.95); }
+  if (plus > 0) { c.fillStyle = '#F7B6CD'; c.font = FX.font('i', sz * 0.8, 600); c.globalAlpha = a * Math.min(1, plus); c.fillText('+', x, y - (1 - plus) * 60); }
+  c.restore();
+}
+const LABELS = [['Hot flushes', 8.64, 11.5], ['Low mood', 12.44, 13.2], ['Anxiety', 13.32, 15.3]];
+function label(t) {
+  LABELS.forEach(([tx, a, b], i) => {
+    const pin = seg(t, a, 0.55, 'expo.out'), pout = seg(t, b, 0.4, 'power2.in');
+    if (pin <= 0 || pout >= 1) return;
+    const ease = i === 0 ? seg(t, 11.22, 0.9, 'power2.out') : 0;   // "ease": the flushes label cools and sinks
+    c.save(); c.globalAlpha = pin * (1 - pout) * (1 - 0.45 * ease);
+    c.font = FX.font('s', 60, 800);
+    const w = c.measureText(tx).width + 90, y = ROWY + 250 + (1 - pin) * 40 + pout * -30 + ease * 14;
+    c.fillStyle = 'rgba(255,248,236,0.12)'; rr(c, CX - w / 2, y - 62, w, 96, 48); c.fill();
+    c.strokeStyle = 'rgba(247,182,205,0.55)'; c.lineWidth = 3; rr(c, CX - w / 2, y - 62, w, 96, 48); c.stroke();
+    c.fillStyle = '#FFF8EC'; c.textAlign = 'center'; c.fillText(tx, CX, y + 4);
+    c.restore();
+  });
+}
+const rp = S.rng(5);
+const PET = Array.from({ length: 18 }, () => [rp() * W, rp() * H, 1.2 + rp() * 1.8, rp() * TAU, 55 + rp() * 60]);
+
+// words, exactly when spoken (times from vo/R10.words.json)
+const Y1 = 640, Y2 = 790;
+const WORDS = [
+  { lines: [[['How long does', 'b']], [['it last?', 'b']]], times: [0.0, 0.28, 0.48, 0.68, 1.62], tout: 3.25, size: 132, lh: 1.12, y: Y1 },
+  { lines: [[['Usually', 'b']], [['7 to 9', 'i'], [' years.', 'b']]], times: [4.32, 4.88, 5.30, 5.52, 5.78], tout: 6.2, size: 132, lh: 1.12, y: Y1 },
+  { lines: [[['Sometimes', 'b']], [['longer.', 'b']]], times: [6.70, 7.14], tout: 7.6, size: 132, lh: 1.12, y: Y1 },
+  { lines: [[['And it can', 'b']], [['change.', 'b']]], times: [8.12, 8.36, 8.46, 8.64], tout: 9.9, size: 132, lh: 1.12, y: Y1 },
+  { lines: [[['Hot flushes', 'b']], [['ease.', 'b']]], times: [10.38, 10.58, 11.22], tout: 11.85, size: 132, lh: 1.12, y: Y1 },
+  { lines: [[['Low mood or anxiety', 'b']], [['take their place.', 'b']]], times: [12.44, 12.78, 13.16, 13.32, 13.76, 14.14, 14.34], tout: 15.05, size: 104, lh: 1.2, y: Y1 + 10 },
+  { lines: [[["That's a lot", 'b']], [['to remember.', 'b']]], times: [15.50, 17.48, 17.58, 17.84, 18.06], tout: 20.35, size: 124, lh: 1.12, y: Y1 - 20 },
+  { lines: [[['Keep a record.', 'b']], [['Let the pattern ', 'b'], ['speak.', 'i']]], times: [20.88, 21.18, 21.36, 22.22, 22.34, 22.50, 22.86], tout: 99, size: 108, lh: 1.25, y: Y1 - 20 },
+];
+
+window.__timelines["main"] = S.play(function render(t) {
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  const z = 1.05 - 0.05 * seg(t, 0, 4, 'power2.out') + 0.03 * seg(t, 8, 7, 'power1.inOut') - 0.03 * seg(t, T_GRID, 1.2, 'expo.out') + 0.05 * seg(t, 16.6, 5.5, 'power1.inOut');
+  const dawn = 0.55 * seg(t, 19.8, 3.2, 'power2.inOut');
+  // sky: night slowly turning to dawn
+  c.save(); c.translate(540, 960); c.scale(1 + (z - 1) * 0.3, 1 + (z - 1) * 0.3); c.translate(-540, -960 - 30 * seg(t, 0, 25, 'none'));
+  CLARI.sky(c, 'night', W, H + 60, { glowX: 820, glowY: 330, glow: 0.18 });
+  if (dawn > 0) { c.globalAlpha = dawn; CLARI.sky(c, 'dawn', W, H + 60, { glowX: 820, glowY: 330, glow: 0.2 }); c.globalAlpha = 1; }
+  CLARI.stars(c, W, H, t, { seed: 21, n: 150, bottom: 0.8, alpha: 1 - 0.6 * dawn });
+  c.restore();
+  // foreground parallax
+  c.save(); c.translate(540, 960); c.scale(1 + (z - 1) * 1.4, 1 + (z - 1) * 1.4); c.translate(-540, -960);
+  CLARI.branch(c, -40, 150, 3.1, false, t, {});
+  CLARI.branch(c, W + 40, 1500, 2.6, true, t + 1, { blossoms: 5 });
+  CLARI.hills(c, W, H, 'night', { y: 40 });
+  PET.forEach(([x, y, s, ph, sp], i) => {
+    const yy = (y + t * sp * 2) % (H + 80) - 40, xx = x + 40 * Math.sin(t * 0.6 + ph);
+    CLARI.petal(c, xx, yy, s, ph + t * 0.7, 0.75);
+  });
+  c.restore();
+  // the stage: moons, counter, labels, grid
+  c.save(); c.translate(540, 960); c.scale(z, z); c.translate(-540, -960);
+  const rowVis = 1 - seg(t, T_GRID, 0.6, 'power2.in');
+  moonRow(t, rowVis);
+  grid(t);
+  counter(t);
+  label(t);
+  WORDS.forEach(w => FX.text(c, Object.assign({ x: CX, align: 'center', dur: 0.6, outDur: 0.3, stagger: 0.02, tin: w.times[0] }, w), t));
+  // source while the facts are on screen
+  const src = seg(t, 4.4, 0.5) * (1 - seg(t, 15.3, 0.4, 'power2.in'));
+  if (src > 0) { c.globalAlpha = src * 0.92; c.font = FX.font('s', 46, 700); c.fillStyle = '#FFF8EC'; c.textAlign = 'left'; c.fillText('Source: NHS', 110, 1505); c.globalAlpha = 1; }
+  c.restore();
+}, { loop: false });
+</script>
+</body>
+</html>

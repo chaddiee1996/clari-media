@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,500;1,9..144,600;1,9..144,700&family=Figtree:wght@500;600;700;800&family=Caveat:wght@600;700&display=swap" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="studio.js"></script>
+<script src="clari-art.js"></script>
+<script src="fx.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: #150929; }
+  #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #150929; }
+  #c { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="20.8" data-width="1080" data-height="1920">
+  <canvas id="c" width="1080" height="1920"></canvas>
+  <div style="position:absolute;left:-9999px;top:0;opacity:0"><span style="font:700 66px Caveat">Menopause</span><span style="font:700 40px Fraunces">a</span><span style="font:800 40px Fraunces">a</span><span style="font:italic 600 40px Fraunces">a</span><span style="font:800 40px Figtree">a</span><span style="font:700 40px Figtree">a</span></div>
+</div>
+<script>
+const S = STUDIO, W = 1080, H = 1920, TAU = Math.PI * 2;
+const { cl, lerp, seg, rr, shadow, noShadow, vgrad, rgrad } = FX;
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+const E = n => S.ease(n);
+const scr = CLARI.loadImg('triggers.png');
+const GX = 520, RIM = 300, BOT = 1240;
+const T_PH = 13.3;
+// bowl half-width at y
+function hw(y) {
+  const u = cl((y - RIM) / (BOT - RIM), 0, 1);
+  if (u < 0.38) return 440 - 70 * Math.pow((0.38 - u) / 0.38, 2);
+  return 440 * Math.sqrt(Math.max(0, 1 - Math.pow((u - 0.38) / 0.62, 2)));
+}
+// liquid surface y over time, with the rises
+const RISES = [[0.0, 1250, 1110, 0.9], [1.5, 1110, 960, 1.0], [3.0, 960, 640, 1.2]];
+function level(t) {
+  let y = 1250; RISES.forEach(([t0, a, b, d]) => { if (t >= t0) y = lerp(a, b, E('power3.out')(cl((t - t0) / d, 0, 1))); });
+  return y;
+}
+function slosh(t) { return RISES.reduce((a, [t0]) => a + (t > t0 ? 16 * Math.exp(-(t - t0) * 1.8) : 0), 3); }
+const warm = t => seg(t, 3.0, 1.4, 'power3.out') * (1 - 0.5 * seg(t, 10.0, 2.5, 'power2.inOut')) * (1 - 0.5 * seg(t, T_PH, 1.5, 'power2.inOut'));
+
+const rpp = S.rng(23);
+const PET = Array.from({ length: 18 }, () => [rpp() * W, rpp() * H, 1.6 + rpp() * 1.8, rpp() * TAU, 120 + rpp() * 110]);
+const rb = S.rng(17);
+const BOKEH = Array.from({ length: 26 }, () => [rb() * W, 200 + rb() * 1500, 20 + rb() * 70, rb() * TAU, rb() < 0.5 ? '255,226,154' : '247,182,205']);
+// garlands: three catenaries across the top with bulbs
+const GARL = [[-40, 120, 1120, 170, 120], [-40, 250, 1120, 215, 90], [-40, 1500, 1120, 1560, 110]];
+function garland(t, bright) {
+  GARL.forEach(([x0, y0, x1, y1, sag], gi) => {
+    c.save(); c.strokeStyle = 'rgba(30,14,50,0.85)'; c.lineWidth = 4; c.beginPath();
+    const P = u => [lerp(x0, x1, u), lerp(y0, y1, u) + sag * 4 * u * (1 - u)];
+    for (let i = 0; i <= 40; i++) { const [x, y] = P(i / 40); i ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+    for (let i = 1; i < 14; i++) {
+      const [x, y] = P(i / 14), tw = 0.75 + 0.25 * Math.sin(t * 3 + i * 1.7 + gi);
+      const a = (0.55 + 0.45 * bright) * tw;
+      c.fillStyle = rgrad(c, x, y + 14, 2, 46 + 30 * bright, [[0, `rgba(255,226,154,${0.55 * a})`], [1, 'rgba(255,226,154,0)']]);
+      c.fillRect(x - 80, y - 66, 160, 160);
+      c.fillStyle = i % 3 === 0 ? '#F7B6CD' : '#FFE9B0'; c.globalAlpha = 0.6 + 0.4 * a;
+      c.beginPath(); c.ellipse(x, y + 14, 9, 13, 0, 0, TAU); c.fill(); c.globalAlpha = 1;
+    }
+    c.restore();
+  });
+}
+function room(t, wm) {
+  CLARI.sky(c, 'evening', W, H, { glowX: 820, glowY: 520, glow: 0.2 });
+  CLARI.stars(c, W, H, t, { seed: 31, n: 170, bottom: 0.75 });
+  CLARI.moon(c, 860, 720, 70);
+  // window frame: a big grid of panes full of stars
+  c.save(); c.fillStyle = 'rgba(30,12,52,0.92)';
+  for (let x = 0; x <= W; x += 360) c.fillRect(x - 12, 0, 24, H);
+  for (let y = 120; y < 1400; y += 420) c.fillRect(0, y - 12, W, 24);
+  c.restore();
+  // inside: a dark sill and a sideboard silhouette at the bottom
+  c.fillStyle = vgrad(c, 1380, H, [[0, 'rgba(26,10,46,0.0)'], [0.15, 'rgba(26,10,46,0.92)'], [1, '#12061f']]); c.fillRect(0, 1380, W, H - 1380);
+  // bokeh
+  BOKEH.forEach(([x, y, r, ph, col]) => {
+    const a = (0.10 + 0.14 * wm) * (0.7 + 0.3 * Math.sin(t * 1.3 + ph));
+    c.fillStyle = rgrad(c, x + 10 * Math.sin(t * 0.4 + ph), y, r * 0.2, r, [[0, `rgba(${col},${a})`], [0.8, `rgba(${col},${a * 0.6})`], [1, `rgba(${col},0)`]]);
+    c.beginPath(); c.arc(x + 10 * Math.sin(t * 0.4 + ph), y, r, 0, TAU); c.fill();
+  });
+}
+function flood(t, lv, wm) {
+  if (wm <= 0.01) return;
+  // the frame fills with the glass: band top follows the liquid
+  const top = lv - 60 - 80 * Math.sin(t * 1.4) * 0.2;
+  c.save(); c.globalAlpha = wm;
+  c.fillStyle = vgrad(c, top - 240, H, [[0, 'rgba(184,58,104,0)'], [0.16, 'rgba(184,58,104,0.32)'], [0.6, 'rgba(232,98,143,0.34)'], [1, 'rgba(255,190,150,0.5)']]);
+  c.fillRect(0, top - 240, W, H - top + 240);
+  c.restore();
+}
+function bowlPath(y0) {
+  c.beginPath();
+  for (let y = y0; y <= BOT; y += 8) c.lineTo(GX - hw(y), y);
+  for (let y = BOT; y >= y0; y -= 8) c.lineTo(GX + hw(y), y);
+  c.closePath();
+}
+function glass(t, lv, wm) {
+  // interior shade (a clear area for type)
+  bowlPath(RIM); c.fillStyle = 'rgba(24,8,44,0.42)'; c.fill();
+  // liquid with a sloshing surface
+  const amp = slosh(t);
+  c.save(); bowlPath(RIM); c.clip();
+  c.beginPath(); c.moveTo(GX - 460, H);
+  for (let x = GX - 460; x <= GX + 460; x += 12) c.lineTo(x, lv + amp * Math.sin(x * 0.012 + t * 4.2) + amp * 0.5 * Math.sin(x * 0.025 - t * 3.1));
+  c.lineTo(GX + 460, H); c.closePath();
+  c.fillStyle = vgrad(c, lv - 20, BOT, [[0, '#C9487A'], [0.25, '#9A2C63'], [1, '#4A1340']]); c.fill();
+  // surface highlight
+  c.strokeStyle = 'rgba(255,214,228,0.55)'; c.lineWidth = 5; c.beginPath();
+  for (let x = GX - 460; x <= GX + 460; x += 12) { const y = lv + amp * Math.sin(x * 0.012 + t * 4.2) + amp * 0.5 * Math.sin(x * 0.025 - t * 3.1); x === GX - 460 ? c.moveTo(x, y) : c.lineTo(x, y); }
+  c.stroke();
+  // bubbles rising
+  for (let i = 0; i < 16; i++) {
+    const bx = GX - 250 + (i * 97) % 500, sp = 50 + (i * 37) % 60, by = BOT - ((t * sp + i * 113) % Math.max(10, BOT - lv - 20));
+    if (by < lv + 10) continue; c.fillStyle = 'rgba(255,220,235,0.35)'; c.beginPath(); c.arc(bx, by, 4 + (i % 3) * 2, 0, TAU); c.fill();
+  }
+  c.restore();
+  // glass: outline, rim ellipse, highlights, stem, foot
+  c.save(); shadow(c, 50, 0, 0.0);
+  c.strokeStyle = 'rgba(245,238,255,0.92)'; c.lineWidth = 7; c.lineJoin = 'round';
+  bowlPath(RIM); c.stroke();
+  c.strokeStyle = 'rgba(245,238,255,0.7)'; c.lineWidth = 5; c.beginPath(); c.ellipse(GX, RIM, hw(RIM), 26, 0, 0, TAU); c.stroke();
+  // highlight streak
+  c.strokeStyle = 'rgba(255,255,255,0.45)'; c.lineWidth = 16; c.lineCap = 'round'; c.beginPath();
+  for (let y = RIM + 90; y < 980; y += 10) { const x = GX - hw(y) + 54; y === RIM + 90 ? c.moveTo(x, y) : c.lineTo(x, y); } c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,0.22)'; c.lineWidth = 8; c.beginPath();
+  for (let y = RIM + 140; y < 700; y += 10) { const x = GX + hw(y) - 44; y === RIM + 140 ? c.moveTo(x, y) : c.lineTo(x, y); } c.stroke();
+  // stem and foot
+  c.fillStyle = vgrad(c, BOT, 1600, [[0, 'rgba(245,238,255,0.9)'], [1, 'rgba(210,196,236,0.9)']]);
+  rr(c, GX - 13, BOT - 6, 26, 360, 12); c.fill();
+  c.beginPath(); c.ellipse(GX, 1600, 230, 36, 0, 0, TAU); c.fill();
+  c.restore();
+}
+function clinker(t) {   // a second glass taps the rim at 1.55
+  const a = seg(t, 1.2, 0.36, 'power2.in'), b = seg(t, 1.62, 0.7, 'power3.out');
+  if (t < 1.2 || b >= 1) return;
+  const x = lerp(1400, 1050, a) + b * 420, y = 360, ang = -0.35 + a * 0.1;
+  c.save(); c.translate(x, y); c.rotate(ang);
+  c.strokeStyle = 'rgba(245,238,255,0.85)'; c.lineWidth = 6; c.beginPath();
+  c.moveTo(-90, -120); c.quadraticCurveTo(-110, 120, 0, 150); c.quadraticCurveTo(110, 120, 90, -120); c.stroke();
+  c.fillStyle = 'rgba(201,72,122,0.8)'; c.beginPath(); c.moveTo(-100, 20); c.quadraticCurveTo(-90, 130, 0, 145); c.quadraticCurveTo(90, 130, 100, 20); c.closePath(); c.fill();
+  c.restore();
+  // sparkle at the touch
+  const sp = seg(t, 1.56, 0.5, 'expo.out') * (1 - seg(t, 1.8, 0.5));
+  if (sp > 0) for (let i = 0; i < 6; i++) { const aa = i * TAU / 6 + 0.3; CLARI.sparkle(c, 940 + Math.cos(aa) * 70 * sp, 300 + Math.sin(aa) * 70 * sp, 1.3 * (1 - 0.4 * sp), sp); }
+}
+function phone(t) {
+  const p = seg(t, T_PH + 0.2, 1.2, 'expo.out'); if (p <= 0) return;
+  const x = 540, y = lerp(2500, 1170, p), rot = lerp(0.18, -0.05, p) + 0.01 * Math.sin(t * 0.8);
+  CLARI.phone(c, scr, x, y + 10 * Math.sin(t * 0.9), 440, { rot });
+  // a soft pink ring around the Alcohol row (overlay only, the screen is untouched)
+  const hl = seg(t, T_PH + 1.4, 0.6) * (0.75 + 0.25 * Math.sin(t * 3));
+  if (hl > 0) {
+    c.save(); c.translate(x, y + 10 * Math.sin(t * 0.9)); c.rotate(rot);
+    const sh = 440 * 2796 / 1290, ry = -sh / 2 + sh * (146 / 867);
+    c.strokeStyle = `rgba(247,182,205,${hl})`; c.lineWidth = 6; rr(c, -440 / 2 + 8, ry - 40, 440 - 16, 84, 26); c.stroke();
+    c.restore();
+  }
+}
+// ---------- words ----------
+const WORDS = [
+  { lines: [[['Christmas', 'b']], [['party.', 'b']]], tin: 0.1, tout: 1.4, size: 128, ride: [0, -150] },
+  { lines: [[['Second', 'b']], [['glass.', 'b']]], tin: 1.62, tout: 2.9, size: 128, ride: [1.5, -150] },
+  { lines: [[['Here it', 'b']], [['comes.', 'i']]], tin: 3.15, tout: 5.2, size: 150, ride: [3.0, 330] },
+  { lines: [[['Alcohol is on', 'b']], [['the NHS list', 'b']], [['of possible', 'b']], [['hot flush triggers.', 'b']]], tin: 5.4, tout: 9.55, size: 80, lh: 1.16, y: 750, stagger: 0.05 },
+  { lines: [[['Not a lecture.', 'b']]], tin: 9.8, tout: 13.0, size: 104, y: 790 },
+  { lines: [[['Just worth', 'b']], [['noticing.', 'i']]], tin: 10.7, tout: 13.0, size: 104, y: 930 },
+  { lines: [[['Log what you drank,', 'b']], [['and how you felt.', 'b']]], tin: T_PH + 0.5, tout: 16.6, size: 96, y: 420, lh: 1.18 },
+  { lines: [[['Then see your', 'b']], [['own ', 'b'], ['pattern.', 'i']]], tin: 16.85, tout: 99, size: 108, y: 420, lh: 1.15 },
+];
+window.__timelines["main"] = S.play(function render(t) {
+  c.setTransform(1, 0, 0, 1, 0, 0); c.globalAlpha = 1;
+  const lv = level(t), wm = warm(t);
+  const z = 1.06 - 0.06 * seg(t, 0, 3, 'power2.out') + 0.03 * seg(t, 3.0, 1.0, 'expo.out') * (1 - seg(t, 4.2, 2, 'power2.inOut'));
+  c.save(); c.translate(540, 960); c.scale(1 + (z - 1) * 0.4, 1 + (z - 1) * 0.4); c.translate(-540, -960 + 10 * Math.sin(t * 0.6)); room(t, wm); c.restore();
+  flood(t, lv, wm);
+  PET.forEach(([x, y, sc, ph, sp]) => { const yy = (y + t * sp) % (H + 120) - 60, xx = x + 80 * Math.sin(t * 0.9 + ph); CLARI.petal(c, xx, yy, sc, ph + t * 1.2, 0.85); });
+  garland(t, 0.3 + 0.7 * wm);
+  const gone = seg(t, T_PH, 1.0, 'power3.in');
+  c.save(); c.translate(540, 960); c.scale(z, z); c.translate(-540, -960 + gone * 1500);
+  c.globalAlpha = 1 - gone;
+  glass(t, lv, wm); clinker(t);
+  c.globalAlpha = 1;
+  // words that ride the liquid
+  WORDS.slice(0, 3).forEach(w => {
+    const y = lv + w.ride[1] - w.size * 1.08;
+    FX.text(c, Object.assign({ x: GX, y, align: 'center', lh: 1.04 }, w), t);
+  });
+  WORDS.slice(3, 6).forEach(w => FX.text(c, Object.assign({ x: GX, align: 'center' }, w), t));
+  const src = seg(t, 5.9, 0.5) * (1 - seg(t, 9.55, 0.4, 'power2.in'));
+  if (src > 0) { c.globalAlpha = src; c.font = FX.font('s', 46, 700); c.fillStyle = '#FFF8EC'; c.textAlign = 'center'; c.fillText('Source: NHS', GX, 1160); c.globalAlpha = 1; }
+  c.restore();
+  phone(t);
+  WORDS.slice(6).forEach(w => FX.text(c, Object.assign({ x: 520, align: 'center' }, w), t));
+}, { loop: false });
+</script>
+</body>
+</html>
