@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Clari story</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--night:#22103F;--plum:#4A2070;--violet:#7A45B5;--lilac:#C3A8EA;--cream:#FFF8EC;--pink:#F7B6CD;
+--blossom:#E8628F;--rose:#B83A68;--gold:#FFEFC9;--paper:#FBF6EE;--ink:#241A33;--deep:#2A1548}
+html,body{margin:0;padding:0;overflow:hidden;background:#22103F}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+#art,#svg{position:absolute;left:0;top:0}
+.cell{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column}
+.cell>*{flex-shrink:0}
+.abs{position:absolute}
+.h{font-family:'Fraunces',serif;font-weight:700;font-variation-settings:"opsz" 144;letter-spacing:-0.012em;word-spacing:0.05em;line-height:1.04;margin:0;color:var(--cream)}
+.h em{font-style:italic;font-weight:600;color:var(--pink);letter-spacing:-0.01em}
+.light .h{color:var(--ink)} .light .h em{color:var(--rose)}
+.s{font-family:'Figtree',sans-serif;font-weight:700;color:var(--cream);margin:0;line-height:1.25}
+.light .s{color:var(--ink)}
+.lab{font-family:'Figtree',sans-serif;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.hand{font-family:'Caveat',cursive;font-weight:700;line-height:1.05}
+.chrome-mark{position:absolute;height:86px}
+.counter{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:42px;letter-spacing:.04em;color:var(--cream);opacity:.9;line-height:86px;font-variant-numeric:tabular-nums}
+.src{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:44px;color:var(--cream);opacity:.92;line-height:1.15;margin:0}
+.light .counter,.light .src{color:var(--ink)}
+.lock{position:absolute}
+
+html,body{width:1080px;height:1920px;background:#22103F}
+</style></head>
+<body class="dark"><div id="stage" style="width:1080px;height:1920px">
+<canvas id="art" width="1080" height="1920"></canvas>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <radialGradient id="glowW"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset=".35" stop-color="#F9C9D8" stop-opacity=".35"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowP"><stop offset="0" stop-color="#F9C9D8" stop-opacity=".55"/><stop offset=".5" stop-color="#F9C9D8" stop-opacity=".16"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowHot"><stop offset="0" stop-color="#FFF3D6" stop-opacity="1"/><stop offset=".18" stop-color="#FFD9A8" stop-opacity=".75"/><stop offset=".45" stop-color="#F59AB8" stop-opacity=".28"/><stop offset="1" stop-color="#E8628F" stop-opacity="0"/></radialGradient>
+ <radialGradient id="moonG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".55" stop-color="#FFEFC9"/><stop offset="1" stop-color="#F5C99E"/></radialGradient>
+ <linearGradient id="petalG" x1="0" y1="-46" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF0F5"/><stop offset="1" stop-color="#F28DB2"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#10042A" flood-opacity=".35"/></filter>
+ <filter id="softS" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#10042A" flood-opacity=".28"/></filter>
+</defs><path fill="#2A1150" opacity="0.9" d="M0,1920 L0,1557.8 L40,1556.6 L80,1557.2 L120,1559.3 L160,1561.4 L200,1562.0 L240,1560.2 L280,1556.4 L320,1552.1 L360,1549.3 L400,1549.7 L440,1553.8 L480,1560.4 L520,1567.0 L560,1571.0 L600,1570.1 L640,1563.9 L680,1553.5 L720,1541.3 L760,1529.8 L800,1521.1 L840,1515.6 L880,1512.5 L920,1510.4 L960,1507.9 L1000,1504.5 L1040,1501.2 L1080,1499.6 L1120,1501.5 L1080,1920 Z"/></svg>
+<canvas id="art2" width="1080" height="1920" style="position:absolute;left:0;top:0"></canvas>
+<div class="cell" style="left:0;width:1080px;height:1920px;padding:370px 170px 0 88px">
+        <p class="lab" style="font-size:50px;color:var(--pink);letter-spacing:.18em">Start here &nbsp;3/4</p>
+        <h1 class="h" style="font-size:150px;margin-top:40px">See your <em>patterns.</em></h1>
+        <p class="s" style="font-size:58px;margin-top:44px;opacity:.95;line-height:1.22">Then take a one-page summary to your GP, made from your own notes.</p></div><img class="chrome-mark" src="../assets/mark.png" style="left:88px;top:230px">
+</div>
+<script src="../assets/clari-art.js"></script>
+<script>
+const W=1080, H=1920, N=1, PW=1080;
+const c=document.getElementById('art').getContext('2d'); const c2=document.getElementById('art2').getContext('2d');
+const IM={};
+function loadAll(list){return Promise.all(list.map(n=>new Promise(r=>{const i=new Image();i.onload=()=>r();i.onerror=()=>r();i.src='../assets/'+n;IM[n]=i;})));}
+function show(i){document.getElementById('stage').style.transform='translateX('+(-i*W)+'px)';}
+function draw(){const g=c.createLinearGradient(0,0,0,H); const s=['#150929','#391766','#7742AE','#C47CBD','#F7B9CB']; [0,.36,.66,.86,1].forEach((p,k)=>g.addColorStop(p,s[k])); c.fillStyle=g; c.fillRect(0,0,W,H);CLARI.stars(c,W,H,0.5,{seed:37,n:200,bottom:0.85,alpha:0.7,sparkles:0});CLARI.moon(c,250,1250,110,{glow:1});CLARI.branch(c2,1100,1380,2.4,true,0,{});}
+Promise.all([document.fonts.ready, loadAll([])]).then(()=>{ if(typeof draw==='function') draw(); show(0); window.__ready=true; });
+</script></body></html>

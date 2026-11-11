@@ -1,0 +1,51 @@
+<!doctype html><html><head><meta charset="utf-8"><title>cover</title>
+<link rel="stylesheet" href="../fonts/fonts.css">
+<style>
+:root{--night:#22103F;--plum:#4A2070;--violet:#7A45B5;--lilac:#C3A8EA;--cream:#FFF8EC;--pink:#F7B6CD;
+--blossom:#E8628F;--rose:#B83A68;--gold:#FFEFC9;--paper:#FBF6EE;--ink:#241A33;--deep:#2A1548}
+html,body{margin:0;padding:0;overflow:hidden;background:#22103F}
+#stage{position:absolute;left:0;top:0;transform-origin:0 0}
+#art,#svg{position:absolute;left:0;top:0}
+.cell{position:absolute;top:0;box-sizing:border-box;display:flex;flex-direction:column}
+.cell>*{flex-shrink:0}
+.abs{position:absolute}
+.h{font-family:'Fraunces',serif;font-weight:700;font-variation-settings:"opsz" 144;letter-spacing:-0.012em;word-spacing:0.05em;line-height:1.04;margin:0;color:var(--cream)}
+.h em{font-style:italic;font-weight:600;color:var(--pink);letter-spacing:-0.01em}
+.light .h{color:var(--ink)} .light .h em{color:var(--rose)}
+.s{font-family:'Figtree',sans-serif;font-weight:700;color:var(--cream);margin:0;line-height:1.25}
+.light .s{color:var(--ink)}
+.lab{font-family:'Figtree',sans-serif;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin:0}
+.hand{font-family:'Caveat',cursive;font-weight:700;line-height:1.05}
+.chrome-mark{position:absolute;height:86px}
+.counter{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:42px;letter-spacing:.04em;color:var(--cream);opacity:.9;line-height:86px;font-variant-numeric:tabular-nums}
+.src{position:absolute;font-family:'Figtree',sans-serif;font-weight:700;font-size:44px;color:var(--cream);opacity:.92;line-height:1.15;margin:0}
+.light .counter,.light .src{color:var(--ink)}
+.lock{position:absolute}
+
+html,body{width:1080px;height:1920px;background:#22103F}
+</style></head>
+<body class="dark"><div id="stage" style="width:1080px;height:1920px">
+<canvas id="art" width="1080" height="1920"></canvas>
+<svg id="svg" width="1080" height="1920" viewBox="0 0 1080 1920" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <radialGradient id="glowW"><stop offset="0" stop-color="#FFF6DD" stop-opacity=".9"/><stop offset=".35" stop-color="#F9C9D8" stop-opacity=".35"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowP"><stop offset="0" stop-color="#F9C9D8" stop-opacity=".55"/><stop offset=".5" stop-color="#F9C9D8" stop-opacity=".16"/><stop offset="1" stop-color="#F9C9D8" stop-opacity="0"/></radialGradient>
+ <radialGradient id="glowHot"><stop offset="0" stop-color="#FFF3D6" stop-opacity="1"/><stop offset=".18" stop-color="#FFD9A8" stop-opacity=".75"/><stop offset=".45" stop-color="#F59AB8" stop-opacity=".28"/><stop offset="1" stop-color="#E8628F" stop-opacity="0"/></radialGradient>
+ <radialGradient id="moonG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFCF2"/><stop offset=".55" stop-color="#FFEFC9"/><stop offset="1" stop-color="#F5C99E"/></radialGradient>
+ <linearGradient id="petalG" x1="0" y1="-46" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF0F5"/><stop offset="1" stop-color="#F28DB2"/></linearGradient>
+ <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#10042A" flood-opacity=".35"/></filter>
+ <filter id="softS" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#10042A" flood-opacity=".28"/></filter>
+</defs><rect x="370" y="730" width="340" height="450" rx="34" fill="none" stroke="#FFF8EC" stroke-width="18"/><rect x="460" y="694" width="160" height="72" rx="22" fill="#F7B6CD"/><path d="M430 860 l26 26 l46 -50" fill="none" stroke="#F7B6CD" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><line x1="535" y1="860" x2="650" y2="860" stroke="#FFF8EC" stroke-width="16" stroke-linecap="round"/><path d="M430 960 l26 26 l46 -50" fill="none" stroke="#F7B6CD" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><line x1="535" y1="960" x2="650" y2="960" stroke="#FFF8EC" stroke-width="16" stroke-linecap="round"/><path d="M430 1060 l26 26 l46 -50" fill="none" stroke="#F7B6CD" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><line x1="535" y1="1060" x2="650" y2="1060" stroke="#FFF8EC" stroke-width="16" stroke-linecap="round"/></svg>
+<canvas id="art2" width="1080" height="1920" style="position:absolute;left:0;top:0"></canvas>
+
+</div>
+<script src="../assets/clari-art.js"></script>
+<script>
+const W=1080, H=1920, N=1, PW=1080;
+const c=document.getElementById('art').getContext('2d'); const c2=document.getElementById('art2').getContext('2d');
+const IM={};
+function loadAll(list){return Promise.all(list.map(n=>new Promise(r=>{const i=new Image();i.onload=()=>r();i.onerror=()=>r();i.src='../assets/'+n;IM[n]=i;})));}
+function show(i){document.getElementById('stage').style.transform='translateX('+(-i*W)+'px)';}
+function draw(){const g=c.createLinearGradient(0,0,W*0.55,H);['#7A45B5','#6233A0','#4A2180','#331762','#22103F'].forEach((s,k)=>g.addColorStop([0,.36,.66,.86,1][k],s));c.fillStyle=g;c.fillRect(0,0,W,H);const r=c.createRadialGradient(540,960,40,540,960,520);r.addColorStop(0,'rgba(249,201,216,0.30)');r.addColorStop(1,'rgba(249,201,216,0)');c.fillStyle=r;c.fillRect(0,0,W,H);CLARI.stars(c,W,H,0.5,{seed:7,n:90,bottom:1,alpha:0.5,sparkles:0});}
+Promise.all([document.fonts.ready, loadAll([])]).then(()=>{ if(typeof draw==='function') draw(); show(0); window.__ready=true; });
+</script></body></html>
